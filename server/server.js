@@ -21,9 +21,11 @@ app.use(express.static("public"));
 app.use(cookieParser());
 
 import healthCheckRoutes from "./routes/healthCheck.route.js";
+import superAdminRoutes from "./routes/superAdmin.route.js";
 
 // route declarations
 app.use("/api/v1/health", healthCheckRoutes);
+app.use("/api/v1/super-admin", superAdminRoutes);
 
 connectDB().then(() => {
     app.listen(PORT, () => {
