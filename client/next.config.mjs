@@ -1,13 +1,21 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  /* config options here */
   reactCompiler: true,
+
   images: {
-    // allow external images from pexels (used in teachers data)
     remotePatterns: [
+      // PEXELS (teachers, calendar, sample photos)
       {
         protocol: "https",
         hostname: "images.pexels.com",
+        port: "",
+        pathname: "/**",
+      },
+
+      // RANDOMUSER (student photos)
+      {
+        protocol: "https",
+        hostname: "randomuser.me",
         port: "",
         pathname: "/**",
       },
