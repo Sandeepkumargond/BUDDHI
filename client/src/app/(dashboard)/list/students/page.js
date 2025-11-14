@@ -20,28 +20,16 @@ const columns = [
 ];
 
 export default function StudentListPage() {
-  const [filterOpen, setFilterOpen] = useState(false);
-  const [sortOpen, setSortOpen] = useState(false);
-
-  const [tempFilters, setTempFilters] = useState({
-    department: "",
-    semester: "",
-    class: "",
-  });
-
   const [filters, setFilters] = useState({
     department: "",
     semester: "",
     class: "",
   });
 
-  const [sortConfig, setSortConfig] = useState({
-    key: "",
-    order: "asc",
-  });
+  const [sortOpen, setSortOpen] = useState(false);
 
   /* ------------------------------------
-    FILTERED LIST (string-safe comparisons)
+    FILTERED LIST
   -------------------------------------*/
   const filtered = useMemo(() => {
     return studentsData
@@ -57,8 +45,10 @@ export default function StudentListPage() {
   }, [filters]);
 
   /* ------------------------------------
-    SORTED LIST (string-safe)
+    SORTED LIST
   -------------------------------------*/
+  const [sortConfig, setSortConfig] = useState({ key: "", order: "asc" });
+
   const sorted = useMemo(() => {
     const arr = [...filtered];
 
@@ -68,7 +58,6 @@ export default function StudentListPage() {
       const A = String(a[sortConfig.key] ?? "");
       const B = String(b[sortConfig.key] ?? "");
 
-      // numeric compare if both values are numeric strings
       if (!Number.isNaN(Number(A)) && !Number.isNaN(Number(B))) {
         return sortConfig.order === "asc" ? Number(A) - Number(B) : Number(B) - Number(A);
       }
@@ -116,130 +105,79 @@ export default function StudentListPage() {
   return (
     <div className="bg-white p-4 rounded-md flex-1 m-4">
       {/* TOP BAR */}
-      <div className="flex items-center justify-between">
-        <h1 className="hidden md:block text-lg font-semibold">All Students</h1>
+<div className="flex items-center justify-between mb-4">
+  <h1 className="hidden md:block text-lg font-semibold">All Students</h1>
 
-        <div className="flex items-center gap-4">
-          <TableSearch />
+  <div className="flex items-center gap-4">
 
-          {/* FILTER */}
-          <button
-            onClick={() => {
-              setTempFilters(filters);
-              setFilterOpen(true);
-            }}
-            className="w-8 h-8 rounded-full bg-[#FAE27C] flex items-center justify-center"
-          >
-            <Image src="/filter.png" width={14} height={14} alt="filter" />
-          </button>
+    <TableSearch />
 
-          {/* SORT */}
-          <button
-            onClick={() => setSortOpen(true)}
-            className="w-8 h-8 rounded-full bg-[#FAE27C] flex items-center justify-center"
-          >
-            <Image src="/sort.png" width={14} height={14} alt="sort" />
-          </button>
+    {/* ----------- INLINE FILTERS ------------- */}
+    <select
+      className="border p-2 rounded text-sm"
+      value={filters.department}
+      onChange={(e) =>
+        setFilters((prev) => ({ ...prev, department: e.target.value }))
+      }
+    >
+      <option value="">All Dept</option>
+      <option value="CSE">CSE</option>
+      <option value="ECE">ECE</option>
+      <option value="MECH">MECH</option>
+    </select>
 
-          {(role === "admin" || role === "subadmin") && <FormModal table="student" type="create" />}
-        </div>
-      </div>
+    <select
+      className="border p-2 rounded text-sm"
+      value={filters.semester}
+      onChange={(e) =>
+        setFilters((prev) => ({ ...prev, semester: e.target.value }))
+      }
+    >
+      <option value="">All Sem</option>
+      {[1, 2, 3, 4].map((s) => (
+        <option key={s} value={s}>{s}</option>
+      ))}
+    </select>
 
-      {/* FILTER MODAL */}
-      {filterOpen && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white w-80 p-6 rounded relative">
-            <h2 className="text-lg font-semibold mb-4">Filter Students</h2>
+    <select
+      className="border p-2 rounded text-sm"
+      value={filters.class}
+      onChange={(e) =>
+        setFilters((prev) => ({ ...prev, class: e.target.value }))
+      }
+    >
+      <option value="">All Class</option>
+      <option value="A">A</option>
+      <option value="B">B</option>
+      <option value="C">C</option>
+    </select>
 
-            {/* Department */}
-            <select
-              className="border p-2 rounded w-full mb-3"
-              value={tempFilters.department}
-              onChange={(e) => setTempFilters({ ...tempFilters, department: e.target.value })}
-            >
-              <option value="">All Departments</option>
-              <option value="CSE">CSE</option>
-              <option value="ECE">ECE</option>
-              <option value="MECH">MECH</option>
-            </select>
+    {/* RESET FILTERS BUTTON */}
+    <button
+      onClick={() =>
+        setFilters({ department: "", semester: "", class: "" })
+      }
+      className="px-3 py-2 text-sm rounded bg-gray-200 hover:bg-gray-300"
+    >
+      Reset
+    </button>
 
-            {/* Semester */}
-            <select
-              className="border p-2 rounded w-full mb-3"
-              value={tempFilters.semester}
-              onChange={(e) => setTempFilters({ ...tempFilters, semester: e.target.value })}
-            >
-              <option value="">All Semesters</option>
-              <option value="1">1</option>
-              <option value="2">2</option>
-              <option value="3">3</option>
-              <option value="4">4</option>
-            </select>
+    {/* SORT BUTTON */}
+    <button
+      onClick={() => setSortOpen(true)}
+      className="w-8 h-8 rounded-full bg-[#FAE27C] flex items-center justify-center"
+    >
+      <Image src="/sort.png" width={14} height={14} alt="sort" />
+    </button>
 
-            {/* Class */}
-            <select
-              className="border p-2 rounded w-full mb-3"
-              value={tempFilters.class}
-              onChange={(e) => setTempFilters({ ...tempFilters, class: e.target.value })}
-            >
-              <option value="">All Classes</option>
-              <option value="A">A</option>
-              <option value="B">B</option>
-              <option value="C">C</option>
-            </select>
+    {(role === "admin" || role === "subadmin") && (
+      <FormModal table="student" type="create" />
+    )}
+  </div>
+</div>
 
-            {/* Apply button */}
-            <button
-              className="bg-blue-500 text-white p-2 rounded w-full mb-2"
-              onClick={() => {
-                setFilters(tempFilters);
-                setFilterOpen(false);
-              }}
-            >
-              Apply
-            </button>
 
-            {/* Deselect / Reset options */}
-            <div className="flex gap-2 mb-2">
-              <button
-                className="flex-1 bg-gray-100 p-2 rounded"
-                onClick={() => setTempFilters({ ...tempFilters, department: "" })}
-              >
-                Deselect Dept
-              </button>
-              <button
-                className="flex-1 bg-gray-100 p-2 rounded"
-                onClick={() => setTempFilters({ ...tempFilters, semester: "" })}
-              >
-                Deselect Sem
-              </button>
-              <button
-                className="flex-1 bg-gray-100 p-2 rounded"
-                onClick={() => setTempFilters({ ...tempFilters, class: "" })}
-              >
-                Deselect Class
-              </button>
-            </div>
-
-            {/* Reset All */}
-            <button
-              className="bg-gray-200 p-2 rounded w-full mb-2"
-              onClick={() => {
-                setTempFilters({ department: "", semester: "", class: "" });
-                setFilters({ department: "", semester: "", class: "" });
-              }}
-            >
-              Reset All
-            </button>
-
-            <button className="absolute top-4 right-4" onClick={() => setFilterOpen(false)}>
-              <Image src="/close.png" width={16} height={16} alt="close" />
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* SORT MODAL */}
+      {/* SORT MODAL (unchanged) */}
       {sortOpen && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <div className="bg-white w-80 p-6 rounded relative">
@@ -254,6 +192,7 @@ export default function StudentListPage() {
             >
               Name (A → Z)
             </button>
+
             <button
               className="p-2 border rounded w-full mb-3"
               onClick={() => {
@@ -273,6 +212,7 @@ export default function StudentListPage() {
             >
               Roll No (Asc)
             </button>
+
             <button
               className="p-2 border rounded w-full mb-3"
               onClick={() => {
@@ -284,25 +224,9 @@ export default function StudentListPage() {
             </button>
 
             <button
-              className="p-2 border rounded w-full mb-2"
-              onClick={() => {
-                setSortConfig({ key: "enrolmentNo", order: "asc" });
-                setSortOpen(false);
-              }}
+              className="absolute top-4 right-4"
+              onClick={() => setSortOpen(false)}
             >
-              Enrollment No (Asc)
-            </button>
-            <button
-              className="p-2 border rounded w-full mb-3"
-              onClick={() => {
-                setSortConfig({ key: "enrolmentNo", order: "desc" });
-                setSortOpen(false);
-              }}
-            >
-              Enrollment No (Desc)
-            </button>
-
-            <button className="absolute top-4 right-4" onClick={() => setSortOpen(false)}>
               <Image src="/close.png" width={16} height={16} alt="close" />
             </button>
           </div>
