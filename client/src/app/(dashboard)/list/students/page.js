@@ -187,8 +187,13 @@ export default function StudentListPage() {
           </button>
 
           {(role === "admin" || role === "subadmin") && (
-            <FormModal table="student" type="create" />
-          )}
+  <Link href="/list/students/create">
+    <button className="w-8 h-8 rounded-full bg-[#C3EBFA] flex items-center justify-center">
+      <Image src="/create.png" width={16} height={16} alt="add" />
+    </button>
+  </Link>
+)}
+
         </div>
       </div>
 
