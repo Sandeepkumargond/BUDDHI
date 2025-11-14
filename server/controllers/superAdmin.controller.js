@@ -105,7 +105,7 @@ export const registerSuperAdmin = asyncHandler(async (req, res, next) => {
         password
     });
 
-    const createdSuperAdmin = await getSuperAdminDetailsById(superAdmin._id);
+    const createdSuperAdmin = await getSuperAdminDetailsById(superAdmin?._id);
     // console.log(createdSuperAdmin);
 
     if (!createdSuperAdmin) {
@@ -125,7 +125,7 @@ export const registerSuperAdmin = asyncHandler(async (req, res, next) => {
 
 export const loginSuperAdmin = asyncHandler(async (req, res, next) => {
     let { username, email, password } = req.body;
-    console.log(`username: ${username}, email: ${email}`)
+    // console.log(`username: ${username}, email: ${email}`)
 
     if (!password) {
         throw new ApiError(400, "Password is required");
@@ -153,7 +153,7 @@ export const loginSuperAdmin = asyncHandler(async (req, res, next) => {
         throw new ApiError(401, "Incorrect Password.");
     }
 
-    const { accessToken, refreshToken } = await generateSuperAdminAccessAndRefreshToken(superAdmin._id);
+    const { accessToken, refreshToken } = await generateSuperAdminAccessAndRefreshToken(superAdmin?._id);
 
     // console.log(`AccessToken : ${accessToken} refreshToken: ${refreshToken}`);
 
@@ -221,7 +221,7 @@ export const refreshSuperAdminAccessToken = asyncHandler(async (req, res) => {
     try {
         const decodedToken = jwt.verify(incomingRefreshToken, process.env.REFRESH_TOKEN_SECRET);
 
-        const superAdmin = await getSuperAdminDetailsById(decodedToken._id);
+        const superAdmin = await SuperAdmin.findById(decodedToken?._id);
 
         if (!superAdmin) {
             throw new ApiError(401, "Invalid Refresh Token")
