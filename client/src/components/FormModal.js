@@ -16,9 +16,27 @@ const StudentForm = dynamic(() => import("./forms/StudentForm"), {
   loading: () => <h1>Loading...</h1>,
 });
 
+const DepartmentForm = dynamic(() => import("./forms/DepartmentForm"), {
+  loading: () => <h1>Loading...</h1>,
+});
+
+const CourseForm = dynamic(() => import("./forms/CourseForm"), {
+  loading: () => <h1>Loading...</h1>,
+});
+
+
 const forms = {
   faculty: (type, data) => <FacultyForm type={type} data={data} />,
-  student: (type, data) => <StudentForm type={type} data={data} />
+  student: (type, data) => <StudentForm type={type} data={data} />,
+  department: (type, data) => <DepartmentForm type={type} data={data} />,
+  course: (type, data, extra) => (
+    <CourseForm
+      type={type}
+      data={data}
+      departmentId={extra?.departmentId}
+      onCreate={extra?.onCreate}
+    />
+  ),
 };
 
 const FormModal = ({ table, type, data, id }) => {
