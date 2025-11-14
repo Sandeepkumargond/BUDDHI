@@ -5,7 +5,7 @@ import FormModal from "@/components/FormModal";
 import Pagination from "@/components/Pagination";
 import Table from "@/components/Table";
 import TableSearch from "@/components/TableSearch";
-import { role, studentsData } from "@/lib/data";
+import { role, studentsData } from "@/lib/aryandata";
 import Image from "next/image";
 import Link from "next/link";
 

@@ -4,7 +4,7 @@ import BigCalendar from "@/components/BigCalender";
 import Performance from "@/components/Performance";
 import Image from "next/image";
 import Link from "next/link";
-import { studentsData } from "@/lib/data";
+import { studentsData } from "@/lib/aryandata";
 
 export default function SingleStudentPage({ params }) {
   const { enrolmentNo } = params;
