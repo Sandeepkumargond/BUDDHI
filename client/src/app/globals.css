@@ -236,3 +236,8 @@
   background-position: center;
   
 }
+
+
+.section-title {
+  @apply text-xl font-semibold text-slate-800 border-b pb-2 border-sky-200;
+}
