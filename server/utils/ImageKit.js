@@ -40,7 +40,7 @@ const getFileIdFromUrl = async (url) => {
             return files[0].fileId;
         }
 
-        console.log("❌ File not found");
+        // console.log("❌ File not found");
         return null;
 
     } catch (error) {
