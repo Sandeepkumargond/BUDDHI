@@ -30,6 +30,7 @@ const studentSchema = new Schema(
             required: [true, 'Email is required'],
             lowercase: true,
             trim: true,
+            index: true,
         },
         password: {
             type: String,
@@ -191,6 +192,9 @@ const studentSchema = new Schema(
             type: String,
             unique: true,
         },
+        refreshToken: {
+            type: String,
+        }
     },
     { timestamps: true }
 );

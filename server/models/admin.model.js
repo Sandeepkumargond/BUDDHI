@@ -20,10 +20,23 @@ const adminSchema = new Schema(
             required: [true, 'Email is required'],
             lowercase: true,
             trim: true,
+            index: true,
+        },
+        personalMail: {
+            type: String,
+            unique: true,
+            required: [true, 'Email is required'],
+            lowercase: true,
+            trim: true,
         },
         password: {
             type: String,
             required: [true, 'Password is required'],
+        },
+        collegeName: {
+            type: String,
+            required: true,
+            trim: true,
         },
         mobile: {
             type: Number,
@@ -39,11 +52,17 @@ const adminSchema = new Schema(
             }
         ],
         collegeRegistartionNo: {
-            type: Number,
+            type: String,
             unique: true,
             required: true,
             index: true,
         },
+        abbreviation: {
+            type: String,
+        },
+        refreshToken: {
+            type: String,
+        }
     }, { timestamps: true }
 );
 

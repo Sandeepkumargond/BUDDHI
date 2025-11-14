@@ -22,10 +22,12 @@ app.use(cookieParser());
 
 import healthCheckRoutes from "./routes/healthCheck.route.js";
 import superAdminRoutes from "./routes/superAdmin.route.js";
+import adminRoutes from "./routes/admin.route.js";
 
 // route declarations
 app.use("/api/v1/health", healthCheckRoutes);
 app.use("/api/v1/super-admin", superAdminRoutes);
+app.use("/api/v1/admin", adminRoutes);
 
 connectDB().then(() => {
     app.listen(PORT, () => {
