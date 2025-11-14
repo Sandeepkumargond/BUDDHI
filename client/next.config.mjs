@@ -4,7 +4,7 @@ const nextConfig = {
 
   images: {
     remotePatterns: [
-      // PEXELS (teachers, calendar, sample photos)
+      // PEXELS (facultys, calendar, sample photos)
       {
         protocol: "https",
         hostname: "images.pexels.com",

@@ -2,7 +2,7 @@ import FormModal from "@/components/FormModal";
 import Pagination from "@/components/Pagination";
 import Table from "@/components/Table";
 import TableSearch from "@/components/TableSearch";
-import { role, teachersData } from "@/lib/data";
+import { role, facultysData } from "@/lib/data";
 import Image from "next/image";
 import Link from "next/link";
 
@@ -12,17 +12,17 @@ const columns = [
     accessor: "info",
   },
   {
-    header: "Teacher ID",
-    accessor: "teacherId",
+    header: "faculty ID",
+    accessor: "facultyId",
     className: "hidden md:table-cell",
   },
   {
-    header: "Subjects",
-    accessor: "subjects",
+    header: "Departments",
+    accessor: "Departments",
     className: "hidden md:table-cell",
   },
   {
-    header: "Classes",
+    header: "Email",
     accessor: "classes",
     className: "hidden md:table-cell",
   },
@@ -42,7 +42,7 @@ const columns = [
   },
 ];
 
-const TeacherListPage = () => {
+const facultyListPage = () => {
   const renderRow = (item) => (
     <tr
       key={item.id}
@@ -61,20 +61,20 @@ const TeacherListPage = () => {
           <p className="text-xs text-gray-500">{item.email}</p>
         </div>
       </td>
-      <td className="hidden md:table-cell">{item.teacherId}</td>
-      <td className="hidden md:table-cell">{item.subjects.join(", ")}</td>
-      <td className="hidden md:table-cell">{item.classes.join(", ")}</td>
+      <td className="hidden md:table-cell">{item.facultyId}</td>
+      <td className="hidden md:table-cell">{item.department}</td>
+      <td className="hidden md:table-cell">{item.email}</td>
       <td className="hidden md:table-cell">{item.phone}</td>
       <td className="hidden md:table-cell">{item.address}</td>
       <td>
         <div className="flex items-center gap-2">
-          <Link href={`/list/teachers/${item.id}`}>
+          <Link href={`/list/faculty/${item.id}`}>
             <button className="w-7 h-7 flex items-center justify-center rounded-full bg-[#C3EBFA]">
               <Image src="/view.png" alt="" width={16} height={16} />
             </button>
           </Link>
           {role === "admin" && (
-            <FormModal table="teacher" type="delete" id={item.id} />
+            <FormModal table="faculty" type="delete" id={item.id} />
           )}
         </div>
       </td>
@@ -96,14 +96,14 @@ const TeacherListPage = () => {
               <Image src="/sort.png" alt="" width={14} height={14} />
             </button>
             {role === "admin" && (
-              <FormModal table="teacher" type="create" />
+              <FormModal table="faculty" type="create" />
             )}
           </div>
         </div>
       </div>
 
       {/* LIST */}
-      <Table columns={columns} renderRow={renderRow} data={teachersData} />
+      <Table columns={columns} renderRow={renderRow} data={facultysData} />
 
       {/* PAGINATION */}
       <Pagination />
@@ -111,4 +111,4 @@ const TeacherListPage = () => {
   );
 };
 
-export default TeacherListPage;
+export default facultyListPage;

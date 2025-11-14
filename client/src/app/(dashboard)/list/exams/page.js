@@ -16,8 +16,8 @@ const columns = [
     accessor: "class",
   },
   {
-    header: "Teacher",
-    accessor: "teacher",
+    header: "faculty",
+    accessor: "faculty",
     className: "hidden md:table-cell",
   },
   {
@@ -39,7 +39,7 @@ const ExamListPage = () => {
     >
       <td className="flex items-center gap-4 p-4">{item.subject}</td>
       <td>{item.class}</td>
-      <td className="hidden md:table-cell">{item.teacher}</td>
+      <td className="hidden md:table-cell">{item.faculty}</td>
       <td className="hidden md:table-cell">{item.date}</td>
       <td>
         <div className="flex items-center gap-2">
