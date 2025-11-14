@@ -1,30 +1,47 @@
 "use client";
 
+import { useState } from "react";
 import dynamic from "next/dynamic";
 
 const MarksheetDownloader = dynamic(
-  () => import("@/components/MarksheetDownloader.js"),
+  () => import("@/components/MarksheetDownloader"),
   { ssr: false }
 );
 
 export default function ProfileClientSection({ student }) {
+  const currentSem = Number(student.semester) || 1;
+  const availableSems = [];
+  for (let i = 1; i < currentSem; i++) availableSems.push(i);
+
+  const [selectedSem, setSelectedSem] = useState(
+    availableSems.length ? availableSems[availableSems.length - 1] : ""
+  );
+
   return (
-    <div className="bg-white p-4 rounded-md mt-4">
-      <h2 className="text-lg font-semibold mb-2">Downloads</h2>
+    <div className="bg-white p-4 rounded-md shadow">
+      <h2 className="text-lg font-semibold mb-2">Download Grade Card</h2>
 
-      <MarksheetDownloader student={student} />
+      {!availableSems.length ? (
+        <div className="text-sm text-gray-500">
+          No previous semester grade cards available.
+        </div>
+      ) : (
+        <>
+          <select
+            className="border p-2 rounded w-full mb-3"
+            value={selectedSem}
+            onChange={(e) => setSelectedSem(Number(e.target.value))}
+          >
+            {availableSems.map((s) => (
+              <option key={s} value={s}>
+                Semester {s}
+              </option>
+            ))}
+          </select>
 
-      <button className="bg-blue-600 text-white px-4 py-2 rounded mt-2">
-        Download Transcript (Dummy)
-      </button>
-
-      <button className="bg-purple-600 text-white px-4 py-2 rounded mt-2">
-        Download Bonafide Certificate (Dummy)
-      </button>
-
-      <button className="bg-orange-600 text-white px-4 py-2 rounded mt-2">
-        Download Attendance Report (Dummy)
-      </button>
+          <MarksheetDownloader student={student} semester={selectedSem} />
+        </>
+      )}
     </div>
   );
 }
