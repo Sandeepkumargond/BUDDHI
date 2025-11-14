@@ -223,3 +223,16 @@
     @apply bg-background text-foreground;
   }
 }
+.hero{
+  background-image: linear-gradient(to top, rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.4)),url(../../public/image7.jpg);
+  background-position: center;
+  background-size: cover;
+  
+}
+
+.works{
+  background-image: linear-gradient(to top, rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.4)),url(../../public/image4.jpg);
+  background-size: cover;
+  background-position: center;
+  
+}

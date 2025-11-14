@@ -30,7 +30,7 @@ const menusByRole = {
     { icon: "/home.png", label: "Add Subadmin", href: "/add/subadmin" },
     { icon: "/home.png", label: "Departments", href: "/list/departments" },
     { icon: "/home.png", label: "Grade Card", href: "/grade-card" },
-    { icon: "/home.png", label: "Add Notices", href: "/add-notice" },
+    { icon: "/home.png", label: "Add Notices", href: "/list/add-notice" },
   ],
   subadmin: [
     { icon: "/home.png", label: "Add Students", href: "/list/students" },
