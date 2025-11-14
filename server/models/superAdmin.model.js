@@ -42,6 +42,9 @@ const superAdminSchema = new Schema(
                 url: { type: String, trim: true }
             }
         ],
+        refreshToken: {
+            type: String,
+        }
     },
     { timestamps: true }
 );
