@@ -62,6 +62,11 @@ const adminSchema = new Schema(
         },
         refreshToken: {
             type: String,
+        },
+        role: {
+            type: String,
+            enum: ['admin'],
+            default: 'admin',
         }
     }, { timestamps: true }
 );

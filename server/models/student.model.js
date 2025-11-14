@@ -32,6 +32,13 @@ const studentSchema = new Schema(
             trim: true,
             index: true,
         },
+        personalMail: {
+            type: String,
+            unique: true,
+            required: [true, 'Email is required'],
+            lowercase: true,
+            trim: true,
+        },
         password: {
             type: String,
             required: [true, 'Password is required'],
@@ -64,6 +71,7 @@ const studentSchema = new Schema(
         rollNo: {
             type: Number,
             required: true,
+            index: true,
         },
         fatherName: {
             type: String,
@@ -106,7 +114,6 @@ const studentSchema = new Schema(
         },
         aadharNo: {
             type: Number,
-            unique: true,
         },
         pwd: {
             type: Boolean,
@@ -194,6 +201,11 @@ const studentSchema = new Schema(
         },
         refreshToken: {
             type: String,
+        },
+        role: {
+            type: String,
+            enum: ['student'],
+            default: 'student',
         }
     },
     { timestamps: true }
@@ -237,3 +249,11 @@ studentSchema.methods.generateRefreshToken = function () {
 
 
 export const Student = mongoose.model("Student", studentSchema);
+
+// Create a conditional unique index on aadharNo so that uniqueness is enforced
+// only when the field exists and is not null. This allows documents without
+// an aadharNo to coexist without violating the unique constraint.
+studentSchema.index(
+    { aadharNo: 1 },
+    { unique: true, partialFilterExpression: { aadharNo: { $exists: true, $ne: null } } }
+);
