@@ -1,3 +1,4 @@
+// app/list/students/page.js
 "use client";
 
 import { useState, useMemo } from "react";
@@ -40,17 +41,15 @@ export default function StudentListPage() {
   });
 
   /* ------------------------------------
-        FILTERED LIST
-  ------------------------------------ */
+    FILTERED LIST (string-safe comparisons)
+  -------------------------------------*/
   const filtered = useMemo(() => {
     return studentsData
       .filter((s) =>
         filters.department ? String(s.department) === String(filters.department) : true
       )
       .filter((s) =>
-        filters.semester
-          ? String(s.semester) === String(filters.semester)
-          : true
+        filters.semester ? String(s.semester) === String(filters.semester) : true
       )
       .filter((s) =>
         filters.class ? String(s.class) === String(filters.class) : true
@@ -58,30 +57,33 @@ export default function StudentListPage() {
   }, [filters]);
 
   /* ------------------------------------
-        SORTED LIST
-  ------------------------------------ */
+    SORTED LIST (string-safe)
+  -------------------------------------*/
   const sorted = useMemo(() => {
     const arr = [...filtered];
 
     if (!sortConfig.key) return arr;
 
     return arr.sort((a, b) => {
-      const A = String(a[sortConfig.key]);
-      const B = String(b[sortConfig.key]);
+      const A = String(a[sortConfig.key] ?? "");
+      const B = String(b[sortConfig.key] ?? "");
 
-      return sortConfig.order === "asc"
-        ? A.localeCompare(B)
-        : B.localeCompare(A);
+      // numeric compare if both values are numeric strings
+      if (!Number.isNaN(Number(A)) && !Number.isNaN(Number(B))) {
+        return sortConfig.order === "asc" ? Number(A) - Number(B) : Number(B) - Number(A);
+      }
+
+      return sortConfig.order === "asc" ? A.localeCompare(B) : B.localeCompare(A);
     });
   }, [filtered, sortConfig]);
 
   /* ------------------------------------
-        RENDER EACH ROW
-  ------------------------------------ */
-  const renderRow = (item, index) => (
-    <tr key={index} className="border-b border-gray-200 even:bg-slate-50 text-sm">
+    RENDER ROW
+  -------------------------------------*/
+  const renderRow = (item) => (
+    <tr key={String(item.enrolmentNo)} className="border-b border-gray-200 even:bg-slate-50 text-sm">
       <td className="flex items-center gap-4 p-4">
-        <Image src={item.photo} width={40} height={40} className="rounded-full" alt="" />
+        <Image src={item.photo} width={40} height={40} className="rounded-full" alt={item.name} />
         <div>
           <h3 className="font-semibold">{item.name}</h3>
           <p className="text-xs text-gray-500">
@@ -99,7 +101,7 @@ export default function StudentListPage() {
         <div className="flex items-center gap-2">
           <Link href={`/list/students/${item.enrolmentNo}`}>
             <button className="w-7 h-7 bg-[#C3EBFA] rounded-full flex items-center justify-center">
-              <Image src="/view.png" width={16} height={16} alt="" />
+              <Image src="/view.png" width={16} height={16} alt="view" />
             </button>
           </Link>
 
@@ -111,9 +113,6 @@ export default function StudentListPage() {
     </tr>
   );
 
-  /* ------------------------------------
-        RETURN JSX
-  ------------------------------------ */
   return (
     <div className="bg-white p-4 rounded-md flex-1 m-4">
       {/* TOP BAR */}
@@ -131,7 +130,7 @@ export default function StudentListPage() {
             }}
             className="w-8 h-8 rounded-full bg-[#FAE27C] flex items-center justify-center"
           >
-            <Image src="/filter.png" width={14} height={14} alt="" />
+            <Image src="/filter.png" width={14} height={14} alt="filter" />
           </button>
 
           {/* SORT */}
@@ -139,12 +138,10 @@ export default function StudentListPage() {
             onClick={() => setSortOpen(true)}
             className="w-8 h-8 rounded-full bg-[#FAE27C] flex items-center justify-center"
           >
-            <Image src="/sort.png" width={14} height={14} alt="" />
+            <Image src="/sort.png" width={14} height={14} alt="sort" />
           </button>
 
-          {(role === "admin" || role === "subadmin") && (
-            <FormModal table="student" type="create" />
-          )}
+          {(role === "admin" || role === "subadmin") && <FormModal table="student" type="create" />}
         </div>
       </div>
 
@@ -154,13 +151,11 @@ export default function StudentListPage() {
           <div className="bg-white w-80 p-6 rounded relative">
             <h2 className="text-lg font-semibold mb-4">Filter Students</h2>
 
-            {/* DEPARTMENT */}
+            {/* Department */}
             <select
               className="border p-2 rounded w-full mb-3"
               value={tempFilters.department}
-              onChange={(e) =>
-                setTempFilters({ ...tempFilters, department: e.target.value })
-              }
+              onChange={(e) => setTempFilters({ ...tempFilters, department: e.target.value })}
             >
               <option value="">All Departments</option>
               <option value="CSE">CSE</option>
@@ -168,13 +163,11 @@ export default function StudentListPage() {
               <option value="MECH">MECH</option>
             </select>
 
-            {/* SEMESTER */}
+            {/* Semester */}
             <select
               className="border p-2 rounded w-full mb-3"
               value={tempFilters.semester}
-              onChange={(e) =>
-                setTempFilters({ ...tempFilters, semester: e.target.value })
-              }
+              onChange={(e) => setTempFilters({ ...tempFilters, semester: e.target.value })}
             >
               <option value="">All Semesters</option>
               <option value="1">1</option>
@@ -183,13 +176,11 @@ export default function StudentListPage() {
               <option value="4">4</option>
             </select>
 
-            {/* CLASS */}
+            {/* Class */}
             <select
               className="border p-2 rounded w-full mb-3"
               value={tempFilters.class}
-              onChange={(e) =>
-                setTempFilters({ ...tempFilters, class: e.target.value })
-              }
+              onChange={(e) => setTempFilters({ ...tempFilters, class: e.target.value })}
             >
               <option value="">All Classes</option>
               <option value="A">A</option>
@@ -197,7 +188,7 @@ export default function StudentListPage() {
               <option value="C">C</option>
             </select>
 
-            {/* APPLY */}
+            {/* Apply button */}
             <button
               className="bg-blue-500 text-white p-2 rounded w-full mb-2"
               onClick={() => {
@@ -208,7 +199,29 @@ export default function StudentListPage() {
               Apply
             </button>
 
-            {/* RESET */}
+            {/* Deselect / Reset options */}
+            <div className="flex gap-2 mb-2">
+              <button
+                className="flex-1 bg-gray-100 p-2 rounded"
+                onClick={() => setTempFilters({ ...tempFilters, department: "" })}
+              >
+                Deselect Dept
+              </button>
+              <button
+                className="flex-1 bg-gray-100 p-2 rounded"
+                onClick={() => setTempFilters({ ...tempFilters, semester: "" })}
+              >
+                Deselect Sem
+              </button>
+              <button
+                className="flex-1 bg-gray-100 p-2 rounded"
+                onClick={() => setTempFilters({ ...tempFilters, class: "" })}
+              >
+                Deselect Class
+              </button>
+            </div>
+
+            {/* Reset All */}
             <button
               className="bg-gray-200 p-2 rounded w-full mb-2"
               onClick={() => {
@@ -219,11 +232,8 @@ export default function StudentListPage() {
               Reset All
             </button>
 
-            <button
-              className="absolute top-4 right-4"
-              onClick={() => setFilterOpen(false)}
-            >
-              <Image src="/close.png" width={16} height={16} alt="" />
+            <button className="absolute top-4 right-4" onClick={() => setFilterOpen(false)}>
+              <Image src="/close.png" width={16} height={16} alt="close" />
             </button>
           </div>
         </div>
@@ -235,7 +245,6 @@ export default function StudentListPage() {
           <div className="bg-white w-80 p-6 rounded relative">
             <h2 className="text-lg font-semibold mb-4">Sort Students</h2>
 
-            {/* NAME */}
             <button
               className="p-2 border rounded w-full mb-2"
               onClick={() => {
@@ -245,7 +254,6 @@ export default function StudentListPage() {
             >
               Name (A → Z)
             </button>
-
             <button
               className="p-2 border rounded w-full mb-3"
               onClick={() => {
@@ -256,7 +264,6 @@ export default function StudentListPage() {
               Name (Z → A)
             </button>
 
-            {/* ROLL */}
             <button
               className="p-2 border rounded w-full mb-2"
               onClick={() => {
@@ -266,7 +273,6 @@ export default function StudentListPage() {
             >
               Roll No (Asc)
             </button>
-
             <button
               className="p-2 border rounded w-full mb-3"
               onClick={() => {
@@ -277,7 +283,6 @@ export default function StudentListPage() {
               Roll No (Desc)
             </button>
 
-            {/* ENROL */}
             <button
               className="p-2 border rounded w-full mb-2"
               onClick={() => {
@@ -285,9 +290,8 @@ export default function StudentListPage() {
                 setSortOpen(false);
               }}
             >
-              Enrol No (Asc)
+              Enrollment No (Asc)
             </button>
-
             <button
               className="p-2 border rounded w-full mb-3"
               onClick={() => {
@@ -295,14 +299,11 @@ export default function StudentListPage() {
                 setSortOpen(false);
               }}
             >
-              Enrol No (Desc)
+              Enrollment No (Desc)
             </button>
 
-            <button
-              className="absolute top-4 right-4"
-              onClick={() => setSortOpen(false)}
-            >
-              <Image src="/close.png" width={16} height={16} alt="" />
+            <button className="absolute top-4 right-4" onClick={() => setSortOpen(false)}>
+              <Image src="/close.png" width={16} height={16} alt="close" />
             </button>
           </div>
         </div>
