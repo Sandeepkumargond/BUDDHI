@@ -4,6 +4,10 @@ import ApiError from "../utils/ApiError.js";
 import { Admin } from "../models/admin.model.js";
 import jwt from "jsonwebtoken"
 import { deleteFromImageKit, getFileIdFromUrl, uploadImageOnImageKit } from "../utils/ImageKit.js";
+import { Student } from "../models/student.model.js";
+import { getStudentDetailsById } from "./student.controller.js";
+import rollPrefixMap from "../configs/rollPrefixMap.js";
+import { generateEnrollmentNo, generateRollNo } from "../utils/getNextSequence.js";
 
 export const getAdminById = asyncHandler(async (req, res) => {
     const adminId = req.params.id;
@@ -323,3 +327,67 @@ export const updateAdminImage = asyncHandler(async (req, res, next) => {
         )
     );
 });
+
+export const createStudent = asyncHandler(async (req, res, next) => {
+    const { firstName, lastName, email, personalMail, program, branch, semester, mobile, registrationNumber, dateOfAdmission, password, dateOfBirth } = req.body;
+
+    const values = { firstName, lastName, email, personalMail, program, branch, semester, mobile, registrationNumber, dateOfAdmission, password };
+    for (const [k, v] of Object.entries(values)) {
+        if (v === undefined) throw new ApiError(400, `${k} is required`);
+    }
+
+
+    const existingStudent = await Student.findOne(
+        { $or: [{ email }, { personalMail }, { registrationNumber }] }
+    );
+
+    if (existingStudent) {
+        throw new ApiError(400, "Student with provided email, personal mail or registration number already exists");
+    }
+
+    if (!rollPrefixMap[program] || !rollPrefixMap[program][branch]) {
+        throw new Error(`Invalid program/branch mapping for ${program} - ${branch}`);
+    }
+
+    const prefix = rollPrefixMap[program][branch];
+
+    const admissionYear = new Date(dateOfAdmission).getFullYear();
+    const enrollmentNo = await generateEnrollmentNo();
+
+    const { raw: rollSeq, formatted: rollNo } = await generateRollNo(prefix, admissionYear);
+
+    const student = new Student({
+        firstName,
+        lastName,
+        email,
+        enrollmentNo,
+        rollNo,
+        dateOfBirth,
+        personalMail,
+        program,
+        branch,
+        semester,
+        mobile,
+        registrationNumber,
+        password
+    });
+
+    await student.save();
+
+    const createdStudent = await getStudentDetailsById(student?._id);
+
+    if (!createdStudent) {
+        throw new ApiError(500, "Failed to create student");
+    }
+
+    return res.status(201).json(
+        new ApiResponse(
+            201,
+            {
+                student: createdStudent,
+            },
+            "Student created successfully"
+        )
+    );
+});
+

@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { loginAdmin, logoutAdmin, refreshAdminAccessToken, changeAdminPassword, updateAdminAccountDetails, updateAdminImage } from "../controllers/admin.controller.js";
+import { loginAdmin, logoutAdmin, refreshAdminAccessToken, changeAdminPassword, updateAdminAccountDetails, updateAdminImage, createStudent } from "../controllers/admin.controller.js";
 import { authenticateAdmin } from "../middlewares/admin.middleware.js";
 import { upload } from "../middlewares/multer.middleware.js";
 
@@ -29,5 +29,10 @@ router.route('/update-image').patch(
     , upload.single("image"),
     updateAdminImage
 );
+
+router.route('/create-student').post(
+    authenticateAdmin,
+    createStudent
+)
 
 export default router;
