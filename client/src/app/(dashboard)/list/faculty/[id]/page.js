@@ -2,11 +2,42 @@ import Announcements from "@/components/Announcements";
 import BigCalendar from "@/components/BigCalender";
 import FormModal from "@/components/FormModal";
 import Performance from "@/components/Performance";
-import { role } from "@/lib/data";
+import { role, facultysData } from "@/lib/data";
 import Image from "next/image";
 import Link from "next/link";
 
-const SingleTeacherPage = () => {
+const SinglefacultyPage = async ({ params }) => {
+  const resolvedParams = await params;
+  const id = Number(resolvedParams?.id || 0);
+  const faculty = facultysData.find((f) => Number(f.id) === id);
+
+  if (!faculty) {
+    return (
+      <div className="flex-1 p-4">
+        <h1 className="text-xl font-semibold">Faculty not found</h1>
+      </div>
+    );
+  }
+
+  const firstName = faculty.firstName || (faculty.name || "").split(" ")[0] || "";
+  const lastName = faculty.lastName || (faculty.name || "").split(" ").slice(1).join(" ") || "";
+
+  const formData = {
+    id: faculty.id,
+    username: faculty.username || (faculty.name || "").toLowerCase().replace(/\s+/g, "") || `user${faculty.id}`,
+    email: faculty.email || "",
+    password: faculty.password || "",
+    firstName,
+    lastName,
+    phone: faculty.phone || "",
+    address: faculty.address || "",
+    bloodType: faculty.bloodType || "A+",
+    dateOfBirth: faculty.dateOfBirth || "",
+    sex: faculty.sex || "male",
+    img: faculty.img || faculty.photo || "",
+    departments: faculty.department || "",
+  };
+
   return (
     <div className="flex-1 p-4 flex flex-col gap-4 xl:flex-row">
       {/* LEFT */}
@@ -15,10 +46,10 @@ const SingleTeacherPage = () => {
         <div className="flex flex-col lg:flex-row gap-4">
           {/* USER INFO CARD */}
           <div className="bg-[#C3EBFA] py-6 px-4 rounded-md flex-1 flex gap-4">
-            <div className="w-1/3">
+              <div className="w-1/3">
               <Image
-                src="https://images.pexels.com/photos/2182970/pexels-photo-2182970.jpeg?auto=compress&cs=tinysrgb&w=1200"
-                alt=""
+                src={faculty.img || faculty.photo}
+                alt={faculty.name}
                 width={144}
                 height={144}
                 className="w-36 h-36 rounded-full object-cover"
@@ -26,25 +57,10 @@ const SingleTeacherPage = () => {
             </div>
             <div className="w-2/3 flex flex-col justify-between gap-4">
               <div className="flex items-center gap-4">
-                <h1 className="text-xl font-semibold">Leonard Snyder</h1>
-                {role === "admin" && <FormModal
-                  table="teacher"
-                  type="update"
-                  data={{
-                    id: 1,
-                    username: "deanguerrero",
-                    email: "deanguerrero@gmail.com",
-                    password: "password",
-                    firstName: "Dean",
-                    lastName: "Guerrero",
-                    phone: "+1 234 567 89",
-                    address: "1234 Main St, Anytown, USA",
-                    bloodType: "A+",
-                    dateOfBirth: "2000-01-01",
-                    sex: "male",
-                    img: "https://images.pexels.com/photos/2182970/pexels-photo-2182970.jpeg?auto=compress&cs=tinysrgb&w=1200",
-                  }}
-                />}
+                <h1 className="text-xl font-semibold">{`${firstName} ${lastName}`.trim() || faculty.name}</h1>
+                {role === "admin" && (
+                  <FormModal table="faculty" type="update" data={formData} />
+                )}
               </div>
               <p className="text-sm text-gray-500">
                 Lorem ipsum, dolor sit amet consectetur adipisicing elit.
@@ -52,20 +68,21 @@ const SingleTeacherPage = () => {
               <div className="flex items-center justify-between gap-2 flex-wrap text-xs font-medium">
                 <div className="w-full md:w-1/3 lg:w-full 2xl:w-1/3 flex items-center gap-2">
                   <Image src="/blood.png" alt="" width={14} height={14} />
-                  <span>A+</span>
+                  <span>{faculty.bloodType || "A+"}</span>
                 </div>
                 <div className="w-full md:w-1/3 lg:w-full 2xl:w-1/3 flex items-center gap-2">
                   <Image src="/date.png" alt="" width={14} height={14} />
-                  <span>January 2025</span>
+                  <span>{faculty.dateOfBirth || "—"}</span>
                 </div>
                 <div className="w-full md:w-1/3 lg:w-full 2xl:w-1/3 flex items-center gap-2">
                   <Image src="/mail.png" alt="" width={14} height={14} />
-                  <span>user@gmail.com</span>
+                  <span>{faculty.email}</span>
                 </div>
                 <div className="w-full md:w-1/3 lg:w-full 2xl:w-1/3 flex items-center gap-2">
                   <Image src="/phone.png" alt="" width={14} height={14} />
-                  <span>+1 234 567</span>
+                  <span>{faculty.phone}</span>
                 </div>
+                
               </div>
             </div>
           </div>
@@ -131,7 +148,7 @@ const SingleTeacherPage = () => {
         </div>
         {/* BOTTOM */}
         <div className="mt-4 bg-white rounded-md p-4 h-[800px]">
-          <h1>Teacher&apos;s Schedule</h1>
+          <h1>faculty&apos;s Schedule</h1>
           <BigCalendar />
         </div>
       </div>
@@ -141,19 +158,19 @@ const SingleTeacherPage = () => {
           <h1 className="text-xl font-semibold">Shortcuts</h1>
           <div className="mt-4 flex gap-4 flex-wrap text-xs text-gray-500">
             <Link className="p-3 rounded-md bg-[#C3EBFA]Light" href="/">
-              Teacher&apos;s Classes
+              faculty&apos;s Classes
             </Link>
             <Link className="p-3 rounded-md bg-[#CFCEFF]Light" href="/">
-              Teacher&apos;s Students
+              faculty&apos;s Students
             </Link>
             <Link className="p-3 rounded-md bg-[#FAE27C]Light" href="/">
-              Teacher&apos;s Lessons
+              faculty&apos;s Lessons
             </Link>
             <Link className="p-3 rounded-md bg-pink-50" href="/">
-              Teacher&apos;s Exams
+              faculty&apos;s Exams
             </Link>
             <Link className="p-3 rounded-md bg-[#C3EBFA]Light" href="/">
-              Teacher&apos;s Assignments
+              faculty&apos;s Assignments
             </Link>
           </div>
         </div>
@@ -164,4 +181,4 @@ const SingleTeacherPage = () => {
   );
 };
 
-export default SingleTeacherPage;
+export default SinglefacultyPage;

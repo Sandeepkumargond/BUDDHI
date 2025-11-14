@@ -85,7 +85,7 @@ const AddNoticePage = () => {
               >
                 <option value="all">All</option>
                 <option value="students">Students</option>
-                <option value="teachers">Teachers</option>
+                <option value="facultys">facultys</option>
                 <option value="staff">Staff</option>
                 <option value="department">Department</option>
               </select>

@@ -14,8 +14,8 @@ const menusByRole = {
     { icon: "/home.png", label: "Feedback", href: "/feedback" },
     { icon: "/setting.png", label: "Settings", href: "/settings" },
   ],
-  teacher: [
-    { icon: "/home.png", label: "Dashboard", href: "/teacher" },
+  faculty: [
+    { icon: "/home.png", label: "Dashboard", href: "/faculty" },
     { icon: "/attendance.png", label: "Attendance", href: "/attendance" },
     { icon: "/home.png", label: "Marks", href: "/marks" },
     { icon: "/home.png", label: "Study Materials", href: "/study-materials" },
@@ -24,7 +24,7 @@ const menusByRole = {
   ],
   admin: [
     { icon: "/home.png", label: "Dashboard", href: "/admin" },
-    { icon: "/teacher.png", label: "Faculty", href: "/list/teachers" },
+    { icon: "/home.png", label: "Faculty", href: "/list/faculty" },
     { icon: "/student.png", label: "Students", href: "/list/students" },
     { icon: "/home.png", label: "Finance", href: "/finance" },
     { icon: "/home.png", label: "Add Subadmin", href: "/add/subadmin" },

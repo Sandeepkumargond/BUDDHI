@@ -8,7 +8,7 @@ import {
 } from "@/lib/data";
 import Image from "next/image";
 
-// Assignment shape: { id, subject, class, teacher, dueDate }
+// Assignment shape: { id, subject, class, faculty, dueDate }
 
 const columns = [
   {
@@ -20,8 +20,8 @@ const columns = [
     accessor: "class",
   },
   {
-    header: "Teacher",
-    accessor: "teacher",
+    header: "faculty",
+    accessor: "faculty",
     className: "hidden md:table-cell",
   },
   {
@@ -43,11 +43,11 @@ const AssignmentListPage = () => {
     >
       <td className="flex items-center gap-4 p-4">{item.subject}</td>
       <td>{item.class}</td>
-      <td className="hidden md:table-cell">{item.teacher}</td>
+      <td className="hidden md:table-cell">{item.faculty}</td>
       <td className="hidden md:table-cell">{item.dueDate}</td>
       <td>
         <div className="flex items-center gap-2">
-          {role === "teacher" && (
+          {role === "faculty" && (
             <>
               <FormModal table="assignment" type="update" data={item} />
               <FormModal table="assignment" type="delete" id={item.id} />
@@ -74,7 +74,7 @@ const AssignmentListPage = () => {
             <button className="w-8 h-8 flex items-center justify-center rounded-full bg-[#FAE27C]">
               <Image src="/sort.png" alt="" width={14} height={14} />
             </button>
-            {role === "teacher" && <FormModal table="assignment" type="create" />}
+            {role === "faculty" && <FormModal table="assignment" type="create" />}
           </div>
         </div>
       </div>

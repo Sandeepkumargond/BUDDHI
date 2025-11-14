@@ -6,10 +6,10 @@ import { useState } from "react";
 
 // USE LAZY LOADING
 
-// import TeacherForm from "./forms/TeacherForm";
+// import facultyForm from "./forms/facultyForm";
 // import StudentForm from "./forms/StudentForm";
 
-const TeacherForm = dynamic(() => import("./forms/TeacherForm"), {
+const FacultyForm = dynamic(() => import("./forms/FacultyForm"), {
   loading: () => <h1>Loading...</h1>,
 });
 const StudentForm = dynamic(() => import("./forms/StudentForm"), {
@@ -17,7 +17,7 @@ const StudentForm = dynamic(() => import("./forms/StudentForm"), {
 });
 
 const forms = {
-  teacher: (type, data) => <TeacherForm type={type} data={data} />,
+  faculty: (type, data) => <FacultyForm type={type} data={data} />,
   student: (type, data) => <StudentForm type={type} data={data} />
 };
 
