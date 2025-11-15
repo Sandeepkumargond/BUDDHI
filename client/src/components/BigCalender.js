@@ -22,7 +22,7 @@ const BigCalendar = () => {
       events={calendarEvents}
       startAccessor="start"
       endAccessor="end"
-      views={["work_week", "day"]}
+      views={["day","work_week"]}
       view={view}
       style={{ height: "98%" }}
       onView={handleOnChangeView}
