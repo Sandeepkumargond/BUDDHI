@@ -29,7 +29,7 @@ const menusByRole = {
     { icon: "/home.png", label: "Admit Card", href: "/student/admit-card" },
     { icon: "/home.png", label: "Grade Card", href: "/student/grade-card" },
     { icon: "/attendance.png", label: "Attendance", href: "/student/attendance" },
-    { icon: "/home.png", label: "Feedback", href: "/student/feedback" },
+    { icon: "/home.png", label: "Feedback", href: "/list/feedback" },
     { icon: "/setting.png", label: "Settings", href: "/student/settings" },
   ],
 

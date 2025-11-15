@@ -357,3 +357,68 @@ export const registrationRecords = [
     photo: "https://randomuser.me/api/portraits/men/32.jpg",
   },
 ];
+
+
+//--------------Feedback questions----------------
+export const studentFeedbackQuestions = [
+  { id: 1, question: "The teacher is well prepared for the class." },
+  { id: 2, question: "The teacher’s communication skills are clear and effective." },
+  { id: 3, question: "The teacher explains concepts with appropriate examples." },
+  { id: 4, question: "The teacher encourages students to ask questions." },
+  { id: 5, question: "The teacher covers the syllabus as per the academic plan." },
+  { id: 6, question: "The course enhances your understanding of the subject." },
+  { id: 7, question: "The course objectives were clearly explained." },
+  { id: 8, question: "Overall teaching quality of this course is excellent." },
+];
+
+/** ------------------------------
+    CURRENT SEMESTER SUBJECT LIST
+-------------------------------**/
+export const currentSemesterSubjects = [
+  {
+    id: 101,
+    name: "Data Structures & Algorithms",
+    code: "CSE201",
+    credits: 4,
+    faculty: "Dr. Kavita Sharma",
+    facultyPhoto: "https://randomuser.me/api/portraits/women/65.jpg",
+    status: "Pending",
+  },
+  {
+    id: 102,
+    name: "Operating Systems",
+    code: "CSE203",
+    credits: 3,
+    faculty: "Prof. Arvind Gupta",
+    facultyPhoto: "https://randomuser.me/api/portraits/men/43.jpg",
+    status: "Completed",
+  },
+  {
+    id: 103,
+    name: "Database Management Systems",
+    code: "CSE205",
+    credits: 4,
+    faculty: "Dr. Neetu Joshi",
+    facultyPhoto: "https://randomuser.me/api/portraits/women/12.jpg",
+    status: "Pending",
+  },
+  {
+    id: 104,
+    name: "Computer Networks",
+    code: "CSE207",
+    credits: 3,
+    faculty: "Prof. Vikas Mehra",
+    facultyPhoto: "https://randomuser.me/api/portraits/men/78.jpg",
+    status: "Completed",
+  },
+  {
+    id: 105,
+    name: "Discrete Mathematics",
+    code: "CSE209",
+    credits: 3,
+    faculty: "Dr. Asha Verma",
+    facultyPhoto: "https://randomuser.me/api/portraits/women/53.jpg",
+    status: "Pending",
+  }
+];
+
