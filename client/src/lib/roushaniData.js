@@ -255,6 +255,9 @@ export const studentProfileData = {
   photo: "https://randomuser.me/api/portraits/women/68.jpg", // dummy image
 };
 
+
+
+
 // ---------------------------
 // REGISTERED SEMESTER LIST
 // ---------------------------
