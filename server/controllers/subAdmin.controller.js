@@ -1,7 +1,7 @@
 import asyncHandler from "../utils/asyncHandler.js";
 import ApiResponse from "../utils/ApiResponse.js";
 import ApiError from "../utils/ApiError.js";
-import { Admin } from "../models/admin.model.js";
+import { SubAdmin } from "../models/subAdmin.model.js"; 
 import jwt from "jsonwebtoken"
 import { deleteFromImageKit, getFileIdFromUrl, uploadImageOnImageKit } from "../utils/ImageKit.js";
 import { Student } from "../models/student.model.js";
@@ -11,57 +11,55 @@ import { generateEnrollmentNo, generateFacultyId, generateRollNo } from "../util
 import { Faculty } from "../models/faculty.model.js";
 import { deptartmentMap } from "../configs/maps.js";
 import { getFacultyById, getFacultyDetailsById } from "./faculty.controller.js";
-import { SubAdmin } from "../models/subAdmin.model.js";
-import { getSubAdminDetailsById } from "./subAdmin.controller.js";
 
-export const getAdminById = asyncHandler(async (req, res) => {
-    const adminId = req.params.id;
+export const getSubAdminById = asyncHandler(async (req, res) => {
+    const subAdminId = req.params.id;
 
-    const admin = await getAdminDetailsById(adminId);
+    const subAdmin = await getSubAdminDetailsById(subAdminId);
 
     res.status(200)
         .json(
             new ApiResponse(
                 200,
-                admin,
-                "Admin details fetched successfully"
+                subAdmin,
+                "SubAdmin details fetched successfully"
             )
         )
 });
 
-export const getAdminDetailsById = async (adminId) => {
-    if (!adminId) {
-        throw new ApiError(400, "Admin ID is required");
+export const getSubAdminDetailsById = async (subAdminId) => {
+    if (!subAdminId) {
+        throw new ApiError(400, "SubAdmin ID is required");
     }
 
-    const admin = await Admin.findById(adminId).select("-password -refreshToken");
+    const subAdmin = await SubAdmin.findById(subAdminId).select("-password -refreshToken");
 
-    if (!admin) {
-        throw new ApiError(404, "Admin not found");
+    if (!subAdmin) {
+        throw new ApiError(404, "SubAdmin not found");
     }
 
-    return admin;
+    return subAdmin;
 };
 
 export const changePassword = asyncHandler(async (req, res, next) => {
-    const adminId = req.user?._id;
+    const subAdminId = req.user?._id;
 
-    const admin = await getAdminDetailsById(adminId);
+    const subAdmin = await getSubAdminDetailsById(subAdminId);
 
-    if (!admin) {
-        throw new ApiError(404, "admin not found");
+    if (!subAdmin) {
+        throw new ApiError(404, "subAdmin not found");
     }
 
     const { currentPassword, newPassword } = req.body;
 
-    const isPasswordCorrect = await admin.isPasswordCorrect(currentPassword);
+    const isPasswordCorrect = await subAdmin.isPasswordCorrect(currentPassword);
 
     if (!isPasswordCorrect) {
         throw new ApiError(401, "Incorrect Current Password.");
     }
 
-    admin.password = newPassword;
-    await admin.save({ validateBeforeSave: false });
+    subAdmin.password = newPassword;
+    await subAdmin.save({ validateBeforeSave: false });
 
     return res
         .status(200)
@@ -74,16 +72,16 @@ export const changePassword = asyncHandler(async (req, res, next) => {
         );
 });
 
-export const generateAdminAccessAndRefreshToken = async (adminId) => {
+export const generateSubAdminAccessAndRefreshToken = async (subAdminId) => {
     try {
-        const admin = await getAdminDetailsById(adminId);
+        const subAdmin = await getSubAdminDetailsById(subAdminId);
 
-        const accessToken = admin.generateAccessToken();
-        const refreshToken = admin.generateRefreshToken();
+        const accessToken = subAdmin.generateAccessToken();
+        const refreshToken = subAdmin.generateRefreshToken();
 
-        admin.refreshToken = refreshToken;
+        subAdmin.refreshToken = refreshToken;
 
-        await admin.save({ validateBeforeSave: false });
+        await subAdmin.save({ validateBeforeSave: false });
 
         return { accessToken, refreshToken };
     } catch (error) {
@@ -91,7 +89,7 @@ export const generateAdminAccessAndRefreshToken = async (adminId) => {
     }
 }
 
-export const loginAdmin = asyncHandler(async (req, res, next) => {
+export const loginSubAdmin = asyncHandler(async (req, res, next) => {
     const { email, password } = req.body;
 
     if (!password) {
@@ -102,21 +100,21 @@ export const loginAdmin = asyncHandler(async (req, res, next) => {
         throw new ApiError(400, "Email is required");
     }
 
-    const admin = await Admin.findOne({ email });
+    const subAdmin = await SubAdmin.findOne({ email });
 
-    if (!admin) {
-        throw new ApiError(404, "Admin doesn't exist");
+    if (!subAdmin) {
+        throw new ApiError(404, "SubAdmin doesn't exist");
     }
 
-    const isPasswordValid = await admin.isPasswordCorrect(password);
+    const isPasswordValid = await subAdmin.isPasswordCorrect(password);
 
     if (!isPasswordValid) {
         throw new ApiError(401, "Incorrect Password.");
     }
 
-    const { accessToken, refreshToken } = await generateAdminAccessAndRefreshToken(admin?._id);
+    const { accessToken, refreshToken } = await generateSubAdminAccessAndRefreshToken(subAdmin?._id);
 
-    const loggedInAdmin = await getAdminDetailsById(admin?._id);
+    const loggedInSubAdmin = await getSubAdminDetailsById(subAdmin?._id);
 
     const options = {
         httpOnly: true,
@@ -131,17 +129,17 @@ export const loginAdmin = asyncHandler(async (req, res, next) => {
             new ApiResponse(
                 200,
                 {
-                    user: loggedInAdmin,
+                    user: loggedInSubAdmin,
                     accessToken,
                     refreshToken
                 },
-                "Admin logged In Successfully!"
+                "SubAdmin logged In Successfully!"
             )
         )
 })
 
-export const logoutAdmin = asyncHandler(async (req, res, next) => {
-    const admin = await Admin.findOneAndUpdate(req.user?._id,
+export const logoutSubAdmin = asyncHandler(async (req, res, next) => {
+    const subAdmin = await SubAdmin.findOneAndUpdate(req.user?._id,
         {
             $unset: { refreshToken: 1 }
         },
@@ -163,14 +161,14 @@ export const logoutAdmin = asyncHandler(async (req, res, next) => {
             new ApiResponse(
                 200,
                 {
-                    user: admin,
+                    user: subAdmin,
                 },
-                "Admin logged out successfully"
+                "SubAdmin logged out successfully"
             )
         );
 })
 
-export const refreshAdminAccessToken = asyncHandler(async (req, res) => {
+export const refreshSubAdminAccessToken = asyncHandler(async (req, res) => {
     const incomingRefreshToken = req.cookies?.refreshToken || req.body?.refreshToken;
 
     if (!incomingRefreshToken) {
@@ -180,13 +178,13 @@ export const refreshAdminAccessToken = asyncHandler(async (req, res) => {
     try {
         const decodedToken = jwt.verify(incomingRefreshToken, process.env.REFRESH_TOKEN_SECRET);
 
-        const admin = await Admin.findById(decodedToken?._id).select("-password");
+        const subAdmin = await SubAdmin.findById(decodedToken?._id).select("-password");
 
-        if (!admin) {
+        if (!subAdmin) {
             throw new ApiError(401, "Invalid Refresh Token")
         }
 
-        if (incomingRefreshToken !== admin.refreshToken) {
+        if (incomingRefreshToken !== subAdmin.refreshToken) {
             throw new ApiError(401, "Refresh Token is expired or used");
         }
 
@@ -195,7 +193,7 @@ export const refreshAdminAccessToken = asyncHandler(async (req, res) => {
             secure: true
         }
 
-        const { accessToken, refreshToken: newRefreshToken } = await generateAdminAccessAndRefreshToken(admin._id);
+        const { accessToken, refreshToken: newRefreshToken } = await generateSubAdminAccessAndRefreshToken(subAdmin._id);
 
         res
             .status(200)
@@ -213,25 +211,25 @@ export const refreshAdminAccessToken = asyncHandler(async (req, res) => {
     }
 });
 
-export const changeAdminPassword = asyncHandler(async (req, res, next) => {
-    const adminId = req.user?._id;
+export const changeSubAdminPassword = asyncHandler(async (req, res, next) => {
+    const subAdminId = req.user?._id;
 
-    const admin = await Admin.findById(adminId);
+    const subAdmin = await SubAdmin.findById(subAdminId);
 
-    if (!admin) {
-        throw new ApiError(404, "Admin not found");
+    if (!subAdmin) {
+        throw new ApiError(404, "SubAdmin not found");
     }
 
     const { currentPassword, newPassword } = req.body;
 
-    const isPasswordCorrect = await admin.isPasswordCorrect(currentPassword);
+    const isPasswordCorrect = await subAdmin.isPasswordCorrect(currentPassword);
 
     if (!isPasswordCorrect) {
         throw new ApiError(401, "Incorrect Current Password.");
     }
 
-    admin.password = newPassword;
-    await admin.save({ validateBeforeSave: false });
+    subAdmin.password = newPassword;
+    await subAdmin.save({ validateBeforeSave: false });
 
     return res
         .status(200)
@@ -245,12 +243,12 @@ export const changeAdminPassword = asyncHandler(async (req, res, next) => {
         );
 });
 
-export const updateAdminAccountDetails = asyncHandler(async (req, res, next) => {
-    const adminId = req.user?._id;
-    const admin = await getAdminDetailsById(adminId);
+export const updateSubAdminAccountDetails = asyncHandler(async (req, res, next) => {
+    const subAdminId = req.user?._id;
+    const subAdmin = await getSubAdminDetailsById(subAdminId);
 
-    if (!admin) {
-        throw new ApiError(404, "Admin not found");
+    if (!subAdmin) {
+        throw new ApiError(404, "SubAdmin not found");
     }
 
     const {
@@ -262,16 +260,16 @@ export const updateAdminAccountDetails = asyncHandler(async (req, res, next) => 
 
 
     const updateData = {
-        firstName: firstName !== undefined ? firstName : admin.firstName,
-        lastName: lastName !== undefined ? lastName : admin.lastName,
-        mobile: mobile !== undefined ? mobile : admin.mobile,
-        social: social !== undefined ? social : admin.social,
+        firstName: firstName !== undefined ? firstName : subAdmin.firstName,
+        lastName: lastName !== undefined ? lastName : subAdmin.lastName,
+        mobile: mobile !== undefined ? mobile : subAdmin.mobile,
+        social: social !== undefined ? social : subAdmin.social,
     };
 
 
 
-    const updatedAdmin = await Admin.findByIdAndUpdate(
-        adminId,
+    const updatedSubAdmin = await SubAdmin.findByIdAndUpdate(
+        subAdminId,
         { $set: updateData },
         { new: true }
     ).select("-password -refreshToken");
@@ -280,20 +278,20 @@ export const updateAdminAccountDetails = asyncHandler(async (req, res, next) => 
         new ApiResponse(
             200,
             {
-                updatedAdmin,
+                updatedSubAdmin,
             },
-            "Admin account details updated successfully"
+            "SubAdmin account details updated successfully"
         )
     );
 
 });
 
-export const updateAdminImage = asyncHandler(async (req, res, next) => {
-    const adminId = req.user?._id;
+export const updateSubAdminImage = asyncHandler(async (req, res, next) => {
+    const subAdminId = req.user?._id;
 
-    const admin = await getAdminDetailsById(adminId);
+    const subAdmin = await getSubAdminDetailsById(subAdminId);
 
-    const oldImageUrl = admin.imageUrl || "";
+    const oldImageUrl = subAdmin.imageUrl || "";
 
     const oldImageFileId = await getFileIdFromUrl(oldImageUrl);
 
@@ -303,14 +301,14 @@ export const updateAdminImage = asyncHandler(async (req, res, next) => {
         throw new ApiError(400, "Please provide a valid image");
     }
 
-    const image = await uploadImageOnImageKit(imageLocalPath, admin.abbreviation);
+    const image = await uploadImageOnImageKit(imageLocalPath, subAdmin.abbreviation);
 
     if (!image || image.error) {
         throw new ApiError(500, "Failed to upload image image");
     }
 
-    const updatedAdmin = await Admin.findByIdAndUpdate(
-        adminId,
+    const updatedSubAdmin = await SubAdmin.findByIdAndUpdate(
+        subAdminId,
         {
             $set: { imageUrl: image.url }
         },
@@ -318,7 +316,7 @@ export const updateAdminImage = asyncHandler(async (req, res, next) => {
     ).select("-password -refreshToken");
 
     // Delete old avatar if exists (pass fileId from the response)
-    if (updatedAdmin && oldImageUrl) {
+    if (updatedSubAdmin && oldImageUrl) {
         await deleteFromImageKit(oldImageFileId);
     }
 
@@ -326,9 +324,9 @@ export const updateAdminImage = asyncHandler(async (req, res, next) => {
         new ApiResponse(
             200,
             {
-                updatedAdmin,
+                updatedSubAdmin,
             },
-            "Admin image updated successfully"
+            "SubAdmin image updated successfully"
         )
     );
 });
@@ -453,50 +451,4 @@ export const createFaculty = asyncHandler(async (req, res, next) => {
             "Faculty created successfully"
         )
     );
-});
-
-export const createSubAdmin = asyncHandler(async (req, res, next) => {
-    const { firstName, lastName, email, password, personalMail } = req.body;
-
-    if (
-        [firstName, lastName, email, password, personalMail].some((field) => !field || field?.trim() === "")
-    ) {
-        throw new ApiError(400, "All fields are required")
-    }
-
-    const existedSubAdmin = await SubAdmin.findOne({ personalMail: personalMail.toLowerCase() }).lean();
-
-    if (existedSubAdmin) {
-        throw new ApiError(409, "SubAdmin with this email already exists");
-    }
-
-    const adminId = req.user?._id;
-    const admin = await getAdminDetailsById(adminId);
-
-    const subAdmin = await SubAdmin.create({
-        firstName: firstName.trim(),
-        lastName: lastName.trim(),
-        email: email.toLowerCase(),
-        personalMail,
-        password,
-        collegeName: admin.collegeName,
-        collegeRegistartionNo: admin.collegeRegistartionNo,
-        abbreviation: admin.abbreviation,
-    });
-
-    const createdSubAdmin = await getSubAdminDetailsById(subAdmin?._id);
-
-    if (!createdSubAdmin) {
-        throw new ApiError(500, "An Error occured while creating the subAdmin.");
-    }
-
-    return res.status(200)
-        .json(
-            new ApiResponse(
-                200,
-                createdSubAdmin,
-                "College SubAdmin Created Successfully."
-            )
-        );
-
 });

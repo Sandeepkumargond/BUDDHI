@@ -25,6 +25,7 @@ import superAdminRoutes from "./routes/superAdmin.route.js";
 import adminRoutes from "./routes/admin.route.js";
 import studentRoutes from "./routes/student.route.js";
 import facultyRoutes from "./routes/faculty.route.js";
+import subAdminRoutes from "./routes/subAdmin.route.js";
 
 // route declarations
 app.use("/api/v1/health", healthCheckRoutes);
@@ -32,6 +33,7 @@ app.use("/api/v1/super-admin", superAdminRoutes);
 app.use("/api/v1/admin", adminRoutes);
 app.use("/api/v1/student", studentRoutes);
 app.use("/api/v1/faculty", facultyRoutes);
+app.use("/api/v1/sub-admin", subAdminRoutes);
 
 connectDB().then(() => {
     app.listen(PORT, () => {
