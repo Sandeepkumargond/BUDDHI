@@ -3,9 +3,12 @@
 import { useState } from "react";
 import { subAdmins } from "@/lib/subadmindata";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 
 export default function CreateSubadminPage() {
   const router = useRouter();
+
+  const [uploadedPhoto, setUploadedPhoto] = useState(null);
 
   const [form, setForm] = useState({
     firstname: "",
@@ -15,6 +18,15 @@ export default function CreateSubadminPage() {
     phone: "",
     password: "",
   });
+
+  const handlePhotoUpload = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = () => setUploadedPhoto(reader.result);
+    reader.readAsDataURL(file);
+  };
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -27,8 +39,11 @@ export default function CreateSubadminPage() {
       email: form.email,
       phone: form.phone,
       department: form.department,
+
       photo:
+        uploadedPhoto ||
         "https://images.pexels.com/photos/220453/pexels-photo-220453.jpeg?auto=compress&cs=tinysrgb&w=1200",
+
       status: "active",
       dob: "",
       gender: "",
@@ -40,7 +55,7 @@ export default function CreateSubadminPage() {
       createdAt: new Date().toISOString(),
     };
 
-      subAdmins.push(newSubadmin);
+    subAdmins.push(newSubadmin);
 
     alert("Sub Admin Created!");
     router.push("/list/subadmins");
@@ -51,6 +66,24 @@ export default function CreateSubadminPage() {
       <h1 className="text-xl font-bold mb-4">Create Sub Admin</h1>
 
       <form onSubmit={handleSubmit} className="space-y-4">
+
+        {/* UPLOAD PHOTO */}
+        <div className="flex flex-col items-center mb-4">
+          <div className="w-24 h-24 rounded-full border-2 overflow-hidden mb-3">
+            <Image
+              src={uploadedPhoto || "/upload2.png"}
+              alt="Profile"
+              width={112}
+              height={112}
+              className="object-cover p-2 w-full h-full"
+            />
+          </div>
+
+          <label className="cursor-pointer bg-gray-200 px-3 py-1 rounded">
+            Upload Photo
+            <input type="file" accept="image/*" className="hidden" onChange={handlePhotoUpload} />
+          </label>
+        </div>
 
         <div className="grid grid-cols-2 gap-4">
           <input

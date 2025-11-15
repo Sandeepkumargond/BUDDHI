@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 
@@ -15,6 +15,9 @@ const avatarList = [
 
 export default function CreateStudentPage() {
   const router = useRouter();
+  const fileInputRef = useRef(null);
+
+  const [uploadedPhoto, setUploadedPhoto] = useState(null);
 
   const [form, setForm] = useState({
     enrolmentNo: "",
@@ -39,6 +42,20 @@ export default function CreateStudentPage() {
     return avatarList[index];
   };
 
+  /* -----------------------------------------
+      HANDLE IMAGE UPLOAD
+  ------------------------------------------ */
+  const handlePhotoUpload = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setUploadedPhoto(reader.result); // base64 preview
+    };
+    reader.readAsDataURL(file);
+  };
+
   const handleSubmit = (e) => {
     e.preventDefault();
 
@@ -60,6 +77,9 @@ export default function CreateStudentPage() {
       return;
     }
 
+    // Use uploaded image OR fallback
+    const finalPhoto = uploadedPhoto || generateRandomAvatar();
+
     // Create final student object
     const newStudent = {
       enrolmentNo: form.enrolmentNo,
@@ -73,7 +93,7 @@ export default function CreateStudentPage() {
       phone: form.mobile,
       class: "",
       semester: "",
-      photo: generateRandomAvatar(),
+      photo: finalPhoto,
       password: form.password,
 
       // Empty fields for now (students will fill later)
@@ -111,7 +131,6 @@ export default function CreateStudentPage() {
     localStorage.setItem("students", JSON.stringify(existing));
 
     alert("Student created successfully!");
-
     router.push("/list/students");
   };
 
@@ -123,6 +142,37 @@ export default function CreateStudentPage() {
         onSubmit={handleSubmit}
         className="bg-white p-6 shadow-md rounded-xl border grid grid-cols-1 md:grid-cols-2 gap-4"
       >
+        {/* UPLOAD PHOTO SECTION */}
+        <div className="col-span-1 md:col-span-2 flex flex-col items-center mb-3">
+          <div className="w-24 h-24 rounded-full border-2 overflow-hidden mb-3">
+            <Image
+              src={uploadedPhoto || "/upload2.png"}
+              alt="Profile"
+              width={100}
+              height={100}
+              className="object-cover p-2 w-full h-full"
+            />
+          </div>
+
+          <button
+            type="button"
+            className="bg-gray-200 hover:bg-gray-300 px-4 py-2 rounded text-sm flex items-center gap-2"
+            onClick={() => fileInputRef.current.click()}
+          >
+            <Image src="/upload.png" width={18} height={18} alt="upload" />
+            Upload Photo
+          </button>
+
+          <input
+            type="file"
+            accept="image/*"
+            ref={fileInputRef}
+            onChange={handlePhotoUpload}
+            className="hidden"
+          />
+        </div>
+
+        {/* FORM INPUTS */}
         <input
           type="text"
           name="enrolmentNo"
