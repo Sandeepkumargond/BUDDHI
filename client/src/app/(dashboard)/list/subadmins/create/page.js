@@ -86,6 +86,7 @@ export default function CreateSubadminPage() {
         </div>
 
         <div className="grid grid-cols-2 gap-4">
+          
           <input
             required
             type="text"
@@ -103,6 +104,14 @@ export default function CreateSubadminPage() {
             onChange={(e) => setForm({ ...form, lastname: e.target.value })}
           />
         </div>
+        <input
+          required
+          type="text"
+          placeholder="Sub Admin ID"
+          className="border p-2 rounded w-full"
+          value={form.phone}
+          onChange={(e) => setForm({ ...form, phone: e.target.value })}
+        />
 
         <select
           required
