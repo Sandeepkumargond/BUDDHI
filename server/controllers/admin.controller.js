@@ -7,7 +7,10 @@ import { deleteFromImageKit, getFileIdFromUrl, uploadImageOnImageKit } from "../
 import { Student } from "../models/student.model.js";
 import { getStudentDetailsById } from "./student.controller.js";
 import rollPrefixMap from "../configs/rollPrefixMap.js";
-import { generateEnrollmentNo, generateRollNo } from "../utils/getNextSequence.js";
+import { generateEnrollmentNo, generateFacultyId, generateRollNo } from "../utils/getNextSequence.js";
+import { Faculty } from "../models/faculty.model.js";
+import { deptartmentMap } from "../configs/maps.js";
+import { getFacultyById, getFacultyDetailsById } from "./faculty.controller.js";
 
 export const getAdminById = asyncHandler(async (req, res) => {
     const adminId = req.params.id;
@@ -329,9 +332,9 @@ export const updateAdminImage = asyncHandler(async (req, res, next) => {
 });
 
 export const createStudent = asyncHandler(async (req, res, next) => {
-    const { firstName, lastName, email, personalMail, program, branch, semester, mobile, registrationNumber, dateOfAdmission, password, dateOfBirth } = req.body;
+    const { firstName, lastName, email, personalMail, gender, program, branch, semester, mobile, registrationNumber, dateOfAdmission, password, dateOfBirth } = req.body;
 
-    const values = { firstName, lastName, email, personalMail, program, branch, semester, mobile, registrationNumber, dateOfAdmission, password };
+    const values = { firstName, lastName, email, gender, personalMail, program, branch, semester, mobile, registrationNumber, dateOfAdmission, password };
     for (const [k, v] of Object.entries(values)) {
         if (v === undefined) throw new ApiError(400, `${k} is required`);
     }
@@ -363,8 +366,10 @@ export const createStudent = asyncHandler(async (req, res, next) => {
         enrollmentNo,
         rollNo,
         dateOfBirth,
+        dateOfAdmission,
         personalMail,
         program,
+        gender,
         branch,
         semester,
         mobile,
@@ -391,3 +396,59 @@ export const createStudent = asyncHandler(async (req, res, next) => {
     );
 });
 
+export const createFaculty = asyncHandler(async (req, res, next) => {
+    const { firstName, lastName, email, personalMail, gender, department, mobile, joiningDate, password, dateOfBirth } = req.body;
+
+    const values = { firstName, lastName, email, personalMail, gender, department, mobile, joiningDate, password, dateOfBirth };
+    for (const [k, v] of Object.entries(values)) {
+        if (v === undefined) throw new ApiError(400, `${k} is required`);
+    }
+
+
+    const existingFaculty = await Faculty.findOne(
+        { $or: [{ email }, { personalMail }] }
+    );
+
+    if (existingFaculty) {
+        throw new ApiError(400, "Faculty with provided email, personal mail or registration number already exists");
+    }
+
+    if (!deptartmentMap[department]) {
+        throw new Error(`Invalid department mapping for ${department}`);
+    }
+
+    const joiningYear = new Date(joiningDate).getFullYear();
+    const facultyId = await generateFacultyId(department, joiningYear);
+
+    const faculty = new Faculty({
+        firstName,
+        lastName,
+        email,
+        personalMail,
+        facultyId,
+        dateOfBirth,
+        department,
+        gender,
+        joiningDate,
+        mobile,
+        password
+    });
+
+    await faculty.save();
+
+    const createdFaculty = await getFacultyDetailsById(faculty?._id);
+
+    if (!createdFaculty) {
+        throw new ApiError(500, "Failed to create faculty");
+    }
+
+    return res.status(201).json(
+        new ApiResponse(
+            201,
+            {
+                faculty: createdFaculty,
+            },
+            "Faculty created successfully"
+        )
+    );
+});

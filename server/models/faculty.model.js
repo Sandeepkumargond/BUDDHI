@@ -2,10 +2,10 @@ import mongoose, { Schema } from "mongoose";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 
-const studentSchema = new Schema(
+const facultySchema = new Schema(
     {
-        enrollmentNo: {
-            type: Number,
+        facultyId: {
+            type: String,
             unique: true,
             required: true,
             index: true,
@@ -52,14 +52,6 @@ const studentSchema = new Schema(
             type: String,
             default: null,
         },
-        semester: {
-            type: Number,
-            required: true,
-        },
-        section: {
-            type: String,
-            trim: true,
-        },
         mobile: {
             type: String,
             trim: true,
@@ -67,38 +59,6 @@ const studentSchema = new Schema(
         address: {
             type: String,
             trim: true,
-        },
-        rollNo: {
-            type: Number,
-            required: true,
-            index: true,
-        },
-        fatherName: {
-            type: String,
-            trim: true,
-        },
-        motherName: {
-            type: String,
-            trim: true,
-        },
-        fatherMobile: {
-            type: String,
-            trim: true,
-        },
-        motherMobile: {
-            type: String,
-            trim: true,
-        },
-        fatherOccupation: {
-            type: String,
-            trim: true,
-        },
-        motherOccupation: {
-            type: String,
-            trim: true,
-        },
-        annualIncome: {
-            type: Number,
         },
         bloodGroup: {
             type: String,
@@ -120,114 +80,106 @@ const studentSchema = new Schema(
         aadharNo: {
             type: Number,
         },
-        pwd: {
-            type: Boolean,
-            default: false,
-        },
-        pwdPercentage: {
-            type: Number,
-            default: 0,
-        },
-        pwdCertificateUrl: {
+        department: {
             type: String,
-            default: null,
-        },
-        program: {
-            type: String,
-            enum: ['B.Tech', 'M.Tech', 'PhD', 'MBA', 'MCA', 'Dual Degree', 'BCA'],
-        },
-        branch: {
-            type: String,
-            enum: ['CSE', 'ECE', 'ME', 'CE', 'EE', 'Architecture', 'Chemical', 'Biotech', 'IT']
-        },
-        educationalInfo: {
-            type: mongoose.Schema.Types.ObjectId,
-            ref: 'EducationalInfo',
-        },
-        isHosteller: {
-            type: Boolean,
-            default: false,
-        },
-        hostelAlloted: {
-            type: String,
-        },
-        roomNo: {
-            type: String,
-        },
-        academicFeePayment: {
-            type: mongoose.Schema.Types.ObjectId,
-            ref: 'FeePayment',
-        },
-        hostelAndMessFeePayment: {
-            type: mongoose.Schema.Types.ObjectId,
-            ref: 'FeePayment',
+            required: true,
+            trim: true,
         },
         signUrl: {
             type: String,
             default: null,
         },
-        abcId: {
+        educationalInfo: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'EducationalInfo',
+        },
+        about: {
             type: String,
-            unique: true,
+            trim: true,
         },
-        dateOfAdmission: {
-            type: Date,
-        },
-        passOutYear: {
-            type: Number,
-        },
-        isScholarshipHolder: {
-            type: Boolean,
-            default: false,
-        },
-        scholarshipDetails: {
+        workExperience: [{
             type: mongoose.Schema.Types.ObjectId,
-            ref: 'Scholarship',
-        },
-        bookIssued: [{
-            type: mongoose.Schema.Types.ObjectId,
-            ref: 'BookIssue',
+            ref: 'WorkExperience',
         }],
-        fine: [
+        memberships: [{
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'Membership',
+        }],
+        journalPapers: [{
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'JournalPaper',
+        }],
+        conferencePapers: [{
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'ConferencePaper',
+        }],
+        patents: [{
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'Patent',
+        }],
+        sponsoredProjects: [{
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'Project',
+        }],
+        consultancyProjects: [{
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'Project',
+        }],
+        workshopsAndExperiences: [{
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'WorkshopAndExperience',
+        }],
+        departmentActivities: [{
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'Activity',
+        }],
+        instituteActivities: [{
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'Activity',
+        }],
+        social: [
             {
-                type: mongoose.Schema.Types.ObjectId,
-                ref: 'Fine',
+                name: { type: String, enum: ['facebook', 'twitter', 'instagram', 'linkedin', 'youtube', 'website', 'other'] },
+                url: { type: String, trim: true }
             }
         ],
-        gradeCard: [
-            {
-                type: mongoose.Schema.Types.ObjectId,
-                ref: 'GradeCard',
-            }
-        ],
-        registrationNumber: {
+        specialization: [{
             type: String,
-            unique: true,
-        },
+            trim: true,
+        }],
+        designation: [
+            {
+                type: String,
+                trim: true,
+            }
+        ],
         refreshToken: {
             type: String,
         },
+        joiningDate: {
+            type: Date,
+        },
         role: {
             type: String,
-            enum: ['student'],
-            default: 'student',
+            enum: ['faculty'],
+            default: 'faculty',
         }
     },
     { timestamps: true }
 );
 
-studentSchema.pre("save", async function (next) {
+facultySchema.pre("save", async function (next) {
     if (!this.isModified("password")) return next();
 
     this.password = await bcrypt.hash(this.password, 10);
     next();
 });
 
-studentSchema.methods.isPasswordCorrect = async function (password) {
+facultySchema.methods.isPasswordCorrect = async function (password) {
     return await bcrypt.compare(password, this.password);
 };
 
-studentSchema.methods.generateAccessToken = function () {
+facultySchema.methods.generateAccessToken = function () {
     return jwt.sign(
         {
             _id: this._id,
@@ -240,7 +192,7 @@ studentSchema.methods.generateAccessToken = function () {
     );
 }
 
-studentSchema.methods.generateRefreshToken = function () {
+facultySchema.methods.generateRefreshToken = function () {
     return jwt.sign(
         {
             _id: this._id,
@@ -252,4 +204,4 @@ studentSchema.methods.generateRefreshToken = function () {
     );
 }
 
-export const Student = mongoose.model("Student", studentSchema);
+export const Faculty = mongoose.model("Faculty", facultySchema);
