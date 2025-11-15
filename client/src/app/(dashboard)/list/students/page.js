@@ -1,7 +1,7 @@
 // app/list/students/page.js
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import FormModal from "@/components/FormModal";
 import Pagination from "@/components/Pagination";
 import Table from "@/components/Table";
@@ -24,6 +24,22 @@ export default function StudentListPage() {
        LOCAL STATE FOR STUDENTS
   -----------------------------*/
   const [students, setStudents] = useState(studentsData);
+
+  // Load students from localStorage on component mount
+  useEffect(() => {
+    const savedStudents = localStorage.getItem("students");
+    if (savedStudents) {
+      try {
+        const parsedStudents = JSON.parse(savedStudents);
+        // Merge with existing data, avoiding duplicates based on enrolmentNo
+        const existingEnrollments = studentsData.map(s => s.enrolmentNo);
+        const newStudents = parsedStudents.filter(s => !existingEnrollments.includes(s.enrolmentNo));
+        setStudents([...studentsData, ...newStudents]);
+      } catch (error) {
+        console.error("Error loading students from localStorage:", error);
+      }
+    }
+  }, []);
 
   const [filters, setFilters] = useState({
     department: "",
