@@ -18,6 +18,7 @@ const superAdminSchema = new Schema(
             required: [true, 'Email is required'],
             lowercase: true,
             trim: true,
+            index: true,
         },
         password: {
             type: String,
@@ -44,6 +45,11 @@ const superAdminSchema = new Schema(
         ],
         refreshToken: {
             type: String,
+        },
+        role: {
+            type: String,
+            enum: ['superadmin'],
+            default: 'superadmin',
         }
     },
     { timestamps: true }

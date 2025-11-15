@@ -4,6 +4,8 @@ import ApiError from "../utils/ApiError.js";
 import jwt from "jsonwebtoken";
 import { SuperAdmin } from "../models/superAdmin.model.js";
 import { uploadImageOnImageKit, deleteFromImageKit, getFileIdFromUrl } from "../utils/ImageKit.js";
+import { Admin } from "../models/admin.model.js";
+import { getAdminDetailsById } from "./admin.controller.js";
 
 export const getSuperAdminById = asyncHandler(async (req, res, next) => {
     // console.log(req.params);
@@ -221,7 +223,7 @@ export const refreshSuperAdminAccessToken = asyncHandler(async (req, res) => {
     try {
         const decodedToken = jwt.verify(incomingRefreshToken, process.env.REFRESH_TOKEN_SECRET);
 
-        const superAdmin = await SuperAdmin.findById(decodedToken?._id);
+        const superAdmin = await SuperAdmin.findById(decodedToken?._id).select("-password");
 
         if (!superAdmin) {
             throw new ApiError(401, "Invalid Refresh Token")
@@ -375,3 +377,74 @@ export const changeSuperAdminPassword = asyncHandler(async (req, res, next) => {
             )
         );
 });
+
+export const createAdmin = asyncHandler(async (req, res, next) => {
+    const { firstName, lastName, email, password, collegeName, abbreviation, personalMail } = req.body;
+
+    if (
+        [firstName, lastName, email, password, collegeName, abbreviation, personalMail].some((field) => !field || field?.trim() === "")
+    ) {
+        throw new ApiError(400, "All fields are required")
+    }
+
+    const existedAdmin = await Admin.findOne({ personalMail: personalMail.toLowerCase() }).lean();
+
+    if (existedAdmin) {
+        throw new ApiError(409, "Admin with this email already exists");
+    }
+
+    const year = new Date().getFullYear();
+
+    const collegeRegistartionNo = `${abbreviation.trim().toUpperCase()}_${year}`;
+
+    const admin = await Admin.create({
+        firstName: firstName.trim(),
+        lastName: lastName.trim(),
+        email: email.toLowerCase(),
+        personalMail,
+        password,
+        collegeName: collegeName.trim(),
+        collegeRegistartionNo,
+        abbreviation
+    });
+
+    const createdAdmin = await getAdminDetailsById(admin?._id);
+
+    if (!createAdmin) {
+        throw new ApiError(500, "An Error occured while creating the admin.");
+    }
+
+    return res.status(200)
+        .json(
+            new ApiResponse(
+                200,
+                createdAdmin,
+                "College Admin Created Successfully."
+            )
+        );
+
+});
+
+export const deleteAdmin = asyncHandler(async (req, res, next) => {
+    const { adminId, email } = req.body;
+
+    if (!adminId && !email) {
+        throw new ApiError(400, "AdminId or Email Id is required");
+    }
+
+    const admin = await Admin.findOneAndDelete({
+        $or: [{ email }, { id: adminId }]
+    }).select("-password");
+
+    if (!admin) {
+        throw new ApiError(404, "Admin not found")
+    }
+
+    return res.status(200)
+        .json(
+            new ApiResponse(200,
+                admin,
+                "Admin Deleted Successfully"
+            )
+        )
+})
