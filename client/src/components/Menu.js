@@ -16,7 +16,7 @@ const menusByRole = {
     { label: "View & Print Registration", href: "/list/registration/print_view" }
   ]
 },
-    { icon: "/home.png", label: "Hostel", href: "/hostel" },
+    { icon: "/home.png", label: "Hostel", href: "/student/hostel" },
     { 
       icon: "/home.png", 
       label: "Fee Payment", 
@@ -26,11 +26,11 @@ const menusByRole = {
         { label: "View and Print Receipt", href: "/list/fee/view_print" }
       ]
     },
-    { icon: "/home.png", label: "Admit Card", href: "/admit-card" },
-    { icon: "/home.png", label: "Grade Card", href: "/grade-card" },
-    { icon: "/attendance.png", label: "Attendance", href: "/attendance" },
-    { icon: "/home.png", label: "Feedback", href: "/feedback" },
-    { icon: "/setting.png", label: "Settings", href: "/settings" },
+    { icon: "/home.png", label: "Admit Card", href: "/student/admit-card" },
+    { icon: "/home.png", label: "Grade Card", href: "/student/grade-card" },
+    { icon: "/attendance.png", label: "Attendance", href: "/student/attendance" },
+    { icon: "/home.png", label: "Feedback", href: "/student/feedback" },
+    { icon: "/setting.png", label: "Settings", href: "/student/settings" },
   ],
 
   faculty: [
