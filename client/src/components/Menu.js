@@ -14,6 +14,7 @@ const menusByRole = {
     { icon: "/home.png", label: "Feedback", href: "/feedback" },
     { icon: "/setting.png", label: "Settings", href: "/settings" },
   ],
+
   faculty: [
     { icon: "/home.png", label: "Dashboard", href: "/faculty" },
     { icon: "/attendance.png", label: "Attendance", href: "/attendance" },
@@ -21,21 +22,24 @@ const menusByRole = {
     { icon: "/home.png", label: "Study Materials", href: "/study-materials" },
     { icon: "/home.png", label: "Class Notices", href: "/class-notices" },
   ],
+
   admin: [
     { icon: "/home.png", label: "Dashboard", href: "/admin" },
     { icon: "/home.png", label: "Faculty", href: "/list/faculty" },
     { icon: "/student.png", label: "Students", href: "/list/students" },
     { icon: "/home.png", label: "Finance", href: "/list/finance" },
-    { icon: "/home.png", label: "Add Subadmin", href: "/add/subadmin" },
+    { icon: "/home.png", label: "Sub Admins", href: "/list/subadmins" },
     { icon: "/home.png", label: "Departments", href: "/list/departments" },
     { icon: "/home.png", label: "Add Notices", href: "/list/add-notice" },
     { icon: "/setting.png", label: "Settings", href: "/settings" },
 
   ],
+
   subadmin: [
     { icon: "/home.png", label: "Add Students", href: "/list/students" },
     { icon: "/student.png", label: "View & Edit Students", href: "/subadmin/students" },
   ],
+
   superadmin: [
     { icon: "/home.png", label: "Dashboard", href: "/superadmin" },
     { icon: "/home.png", label: "View College Requests", href: "/superadmin/college-requests" },

@@ -808,3 +808,323 @@ export const calendarEvents = [
     end: new Date(2025, 10, 13, 14, 45),
   },
 ];
+
+
+// ===========================
+//     FINANCE DATA MODELS
+// ===========================
+
+// Fee Categories
+export const feeCategories = [
+  { id: 1, name: "Tuition Fee", code: "TUITION", isActive: true },
+  { id: 2, name: "Library Fee", code: "LIBRARY", isActive: true },
+  { id: 3, name: "Laboratory Fee", code: "LAB", isActive: true },
+  { id: 4, name: "Sports Fee", code: "SPORTS", isActive: true },
+  { id: 5, name: "Development Fee", code: "DEVELOPMENT", isActive: true },
+  { id: 6, name: "Examination Fee", code: "EXAM", isActive: true },
+  { id: 7, name: "Hostel Fee", code: "HOSTEL", isActive: true },
+  { id: 8, name: "Transportation Fee", code: "TRANSPORT", isActive: true },
+];
+
+// Fee Structure by Department and Semester
+export const feeStructures = [
+  // CSE Department
+  {
+    id: 1,
+    departmentCode: "CSE",
+    semester: 1,
+    academicYear: "2024-25",
+    fees: [
+      { categoryId: 1, amount: 45000 }, // Tuition
+      { categoryId: 2, amount: 2000 },  // Library
+      { categoryId: 3, amount: 5000 },  // Lab
+      { categoryId: 4, amount: 1500 },  // Sports
+      { categoryId: 5, amount: 3000 },  // Development
+      { categoryId: 6, amount: 2500 },  // Exam
+    ],
+    totalAmount: 59000,
+    isActive: true,
+  },
+  {
+    id: 2,
+    departmentCode: "ECE",
+    semester: 1,
+    academicYear: "2024-25",
+    fees: [
+      { categoryId: 1, amount: 42000 },
+      { categoryId: 2, amount: 2000 },
+      { categoryId: 3, amount: 4500 },
+      { categoryId: 4, amount: 1500 },
+      { categoryId: 5, amount: 3000 },
+      { categoryId: 6, amount: 2500 },
+    ],
+    totalAmount: 55500,
+    isActive: true,
+  },
+  {
+    id: 3,
+    departmentCode: "ME",
+    semester: 1,
+    academicYear: "2024-25",
+    fees: [
+      { categoryId: 1, amount: 40000 },
+      { categoryId: 2, amount: 2000 },
+      { categoryId: 3, amount: 4000 },
+      { categoryId: 4, amount: 1500 },
+      { categoryId: 5, amount: 3000 },
+      { categoryId: 6, amount: 2500 },
+    ],
+    totalAmount: 53000,
+    isActive: true,
+  },
+];
+
+// Student Fee Records
+export const studentFeeRecords = [
+  {
+    id: 1,
+    studentEnrollment: "2025110001",
+    studentName: "Arjun Mehta",
+    department: "CSE",
+    semester: 4,
+    academicYear: "2024-25",
+    feeStructureId: 1,
+    totalAmount: 59000,
+    paidAmount: 59000,
+    pendingAmount: 0,
+    status: "Paid",
+    dueDate: "2024-08-15",
+    paymentDate: "2024-08-10",
+    paymentMethod: "Online",
+    transactionId: "TXN001234567",
+    receipts: ["RCP001", "RCP002"],
+  },
+  {
+    id: 2,
+    studentEnrollment: "2025110002",
+    studentName: "Neha Singh",
+    department: "CSE",
+    semester: 3,
+    academicYear: "2024-25",
+    feeStructureId: 1,
+    totalAmount: 59000,
+    paidAmount: 30000,
+    pendingAmount: 29000,
+    status: "Partial",
+    dueDate: "2024-08-15",
+    paymentDate: "2024-07-20",
+    paymentMethod: "Cash",
+    transactionId: "TXN001234568",
+    receipts: ["RCP003"],
+  },
+  {
+    id: 3,
+    studentEnrollment: "2025110003",
+    studentName: "Rohit Verma",
+    department: "CSE",
+    semester: 2,
+    academicYear: "2024-25",
+    feeStructureId: 1,
+    totalAmount: 59000,
+    paidAmount: 0,
+    pendingAmount: 59000,
+    status: "Pending",
+    dueDate: "2024-08-15",
+    paymentDate: null,
+    paymentMethod: null,
+    transactionId: null,
+    receipts: [],
+  },
+  {
+    id: 4,
+    studentEnrollment: "2025110006",
+    studentName: "Shruti Sharma",
+    department: "ECE",
+    semester: 4,
+    academicYear: "2024-25",
+    feeStructureId: 2,
+    totalAmount: 55500,
+    paidAmount: 55500,
+    pendingAmount: 0,
+    status: "Paid",
+    dueDate: "2024-08-15",
+    paymentDate: "2024-08-12",
+    paymentMethod: "Online",
+    transactionId: "TXN001234569",
+    receipts: ["RCP004"],
+  },
+  {
+    id: 5,
+    studentEnrollment: "2025110011",
+    studentName: "Mohit Rana",
+    department: "MECH",
+    semester: 3,
+    academicYear: "2024-25",
+    feeStructureId: 3,
+    totalAmount: 53000,
+    paidAmount: 25000,
+    pendingAmount: 28000,
+    status: "Partial",
+    dueDate: "2024-08-15",
+    paymentDate: "2024-08-05",
+    paymentMethod: "Bank Transfer",
+    transactionId: "TXN001234570",
+    receipts: ["RCP005"],
+  },
+];
+
+// Expense Categories
+export const expenseCategories = [
+  { id: 1, name: "Faculty Salaries", code: "FACULTY_SALARY", type: "recurring" },
+  { id: 2, name: "Staff Salaries", code: "STAFF_SALARY", type: "recurring" },
+  { id: 3, name: "Utilities", code: "UTILITIES", type: "recurring" },
+  { id: 4, name: "Maintenance", code: "MAINTENANCE", type: "variable" },
+  { id: 5, name: "Equipment Purchase", code: "EQUIPMENT", type: "one-time" },
+  { id: 6, name: "Library Books", code: "LIBRARY_BOOKS", type: "variable" },
+  { id: 7, name: "Office Supplies", code: "OFFICE_SUPPLIES", type: "variable" },
+  { id: 8, name: "Marketing", code: "MARKETING", type: "variable" },
+  { id: 9, name: "Events & Activities", code: "EVENTS", type: "variable" },
+  { id: 10, name: "Insurance", code: "INSURANCE", type: "recurring" },
+];
+
+// Expense Records
+export const expenseRecords = [
+  {
+    id: 1,
+    description: "Faculty Salaries - October 2024",
+    categoryId: 1,
+    amount: 850000,
+    date: "2024-10-31",
+    paymentMethod: "Bank Transfer",
+    approvedBy: "Dr. Amit Verma",
+    status: "Paid",
+    invoiceNumber: "INV-2024-001",
+    vendor: "Internal",
+  },
+  {
+    id: 2,
+    description: "Laboratory Equipment - Chemistry Department",
+    categoryId: 5,
+    amount: 125000,
+    date: "2024-10-28",
+    paymentMethod: "Cheque",
+    approvedBy: "Dr. Amit Verma",
+    status: "Paid",
+    invoiceNumber: "INV-2024-002",
+    vendor: "Scientific Instruments Ltd.",
+  },
+  {
+    id: 3,
+    description: "Electricity Bill - October 2024",
+    categoryId: 3,
+    amount: 45000,
+    date: "2024-10-25",
+    paymentMethod: "Online",
+    approvedBy: "Finance Officer",
+    status: "Paid",
+    invoiceNumber: "INV-2024-003",
+    vendor: "State Electricity Board",
+  },
+  {
+    id: 4,
+    description: "Library Books Purchase",
+    categoryId: 6,
+    amount: 35000,
+    date: "2024-10-20",
+    paymentMethod: "Bank Transfer",
+    approvedBy: "Dr. Amit Verma",
+    status: "Pending",
+    invoiceNumber: "INV-2024-004",
+    vendor: "Academic Publishers",
+  },
+  {
+    id: 5,
+    description: "Annual College Fest",
+    categoryId: 9,
+    amount: 80000,
+    date: "2024-10-15",
+    paymentMethod: "Cash",
+    approvedBy: "Dr. Amit Verma",
+    status: "Paid",
+    invoiceNumber: "INV-2024-005",
+    vendor: "Event Management Co.",
+  },
+];
+
+// Budget Planning
+export const budgetPlanning = [
+  {
+    id: 1,
+    categoryId: 1,
+    plannedAmount: 10200000, // Annual faculty salaries
+    spentAmount: 8500000,
+    remainingAmount: 1700000,
+    budgetPeriod: "2024-25",
+    variance: -200000, // Over budget
+  },
+  {
+    id: 2,
+    categoryId: 2,
+    plannedAmount: 3600000, // Annual staff salaries
+    spentAmount: 3000000,
+    remainingAmount: 600000,
+    budgetPeriod: "2024-25",
+    variance: 0,
+  },
+  {
+    id: 3,
+    categoryId: 3,
+    plannedAmount: 540000, // Annual utilities
+    spentAmount: 450000,
+    remainingAmount: 90000,
+    budgetPeriod: "2024-25",
+    variance: 90000, // Under budget
+  },
+  {
+    id: 4,
+    categoryId: 5,
+    plannedAmount: 1500000, // Equipment
+    spentAmount: 1250000,
+    remainingAmount: 250000,
+    budgetPeriod: "2024-25",
+    variance: 250000,
+  },
+];
+
+// Financial Summary Data
+export const financialSummary = {
+  totalRevenue: 15750000, // From fee collections
+  totalExpenses: 13200000,
+  netIncome: 2550000,
+  totalPendingFees: 1240000,
+  totalStudents: 2550,
+  averageFeePerStudent: 55000,
+  collectionRate: 92.1, // Percentage
+  monthlyRevenue: [
+    { month: "Apr", amount: 2100000 },
+    { month: "May", amount: 1950000 },
+    { month: "Jun", amount: 2200000 },
+    { month: "Jul", amount: 2350000 },
+    { month: "Aug", amount: 2150000 },
+    { month: "Sep", amount: 1800000 },
+    { month: "Oct", amount: 1950000 },
+    { month: "Nov", amount: 1250000 },
+  ],
+  monthlyExpenses: [
+    { month: "Apr", amount: 1100000 },
+    { month: "May", amount: 1050000 },
+    { month: "Jun", amount: 1200000 },
+    { month: "Jul", amount: 1150000 },
+    { month: "Aug", amount: 1300000 },
+    { month: "Sep", amount: 1000000 },
+    { month: "Oct", amount: 1400000 },
+    { month: "Nov", amount: 1000000 },
+  ],
+  departmentWiseRevenue: [
+    { department: "CSE", revenue: 6490000, students: 110 },
+    { department: "ECE", revenue: 4995000, students: 90 },
+    { department: "ME", revenue: 2120000, students: 40 },
+    { department: "CE", revenue: 1590000, students: 30 },
+    { department: "EE", revenue: 555000, students: 10 },
+  ],
+};

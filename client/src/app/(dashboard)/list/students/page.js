@@ -20,19 +20,44 @@ const columns = [
 ];
 
 export default function StudentListPage() {
+  /* ----------------------------
+       LOCAL STATE FOR STUDENTS
+  -----------------------------*/
+  const [students, setStudents] = useState(studentsData);
+
   const [filters, setFilters] = useState({
     department: "",
     semester: "",
     class: "",
   });
 
+  const [searchTerm, setSearchTerm] = useState("");
   const [sortOpen, setSortOpen] = useState(false);
+
+  /* -----------------------------
+        DELETE HANDLER
+  ------------------------------*/
+  const handleDelete = (enrolmentNo) => {
+    const ok = window.confirm("Are you sure you want to delete this student?");
+    if (!ok) return;
+
+    setStudents((prev) =>
+      prev.filter((s) => String(s.enrolmentNo) !== String(enrolmentNo))
+    );
+  };
+
+  /* ------------------------------------
+    SEARCH HANDLER
+  -------------------------------------*/
+  const handleSearch = (term) => {
+    setSearchTerm(term);
+  };
 
   /* ------------------------------------
     FILTERED LIST
   -------------------------------------*/
   const filtered = useMemo(() => {
-    return studentsData
+    return students
       .filter((s) =>
         filters.department ? String(s.department) === String(filters.department) : true
       )
@@ -41,8 +66,22 @@ export default function StudentListPage() {
       )
       .filter((s) =>
         filters.class ? String(s.class) === String(filters.class) : true
-      );
-  }, [filters]);
+      )
+      .filter((s) => {
+        if (!searchTerm) return true;
+        const term = searchTerm.toLowerCase();
+        return (
+          s.name.toLowerCase().includes(term) ||
+          s.email.toLowerCase().includes(term) ||
+          String(s.rollNo).toLowerCase().includes(term) ||
+          String(s.enrolmentNo).toLowerCase().includes(term) ||
+          s.phone.includes(term) ||
+          s.department.toLowerCase().includes(term) ||
+          String(s.semester).includes(term) ||
+          s.class.toLowerCase().includes(term)
+        );
+      });
+  }, [filters, students, searchTerm]);
 
   /* ------------------------------------
     SORTED LIST
@@ -88,14 +127,21 @@ export default function StudentListPage() {
 
       <td>
         <div className="flex items-center gap-2">
+          {/* VIEW BUTTON */}
           <Link href={`/list/students/${item.enrolmentNo}`}>
             <button className="w-7 h-7 bg-[#C3EBFA] rounded-full flex items-center justify-center">
               <Image src="/view.png" width={16} height={16} alt="view" />
             </button>
           </Link>
 
+          {/* DELETE BUTTON */}
           {(role === "admin" || role === "subadmin") && (
-            <FormModal table="student" type="delete" id={item.enrolmentNo} />
+            <button
+              onClick={() => handleDelete(item.enrolmentNo)}
+              className="w-7 h-7 bg-gray-200 hover:bg-gray-300 rounded-full flex items-center justify-center"
+            >
+              <Image src="/delete.png" width={16} height={16} alt="delete" />
+            </button>
           )}
         </div>
       </td>
@@ -104,85 +150,85 @@ export default function StudentListPage() {
 
   return (
     <div className="bg-white p-4 rounded-md flex-1 m-4">
+
       {/* TOP BAR */}
-<div className="flex items-center justify-between mb-4">
-  <h1 className="hidden md:block text-lg font-semibold">All Students</h1>
+      <div className="flex items-center justify-between mb-4">
+        <h1 className="hidden md:block text-lg font-semibold">All Students</h1>
 
-  <div className="flex items-center gap-4">
+        <div className="flex items-center gap-4">
+          <TableSearch onSearch={handleSearch} />
 
-    <TableSearch />
+          {/* INLINE FILTERS */}
+          <select
+            className="border p-2 rounded text-sm"
+            value={filters.department}
+            onChange={(e) => setFilters((prev) => ({ ...prev, department: e.target.value }))}
+          >
+            <option value="">All Dept</option>
+            <option value="CSE">CSE</option>
+            <option value="ECE">ECE</option>
+            <option value="MECH">MECH</option>
+          </select>
 
-    {/* ----------- INLINE FILTERS ------------- */}
-    <select
-      className="border p-2 rounded text-sm"
-      value={filters.department}
-      onChange={(e) =>
-        setFilters((prev) => ({ ...prev, department: e.target.value }))
-      }
-    >
-      <option value="">All Dept</option>
-      <option value="CSE">CSE</option>
-      <option value="ECE">ECE</option>
-      <option value="MECH">MECH</option>
-    </select>
+          <select
+            className="border p-2 rounded text-sm"
+            value={filters.semester}
+            onChange={(e) => setFilters((prev) => ({ ...prev, semester: e.target.value }))}
+          >
+            <option value="">All Sem</option>
+            {[1, 2, 3, 4].map((s) => (
+              <option key={s} value={s}>{s}</option>
+            ))}
+          </select>
 
-    <select
-      className="border p-2 rounded text-sm"
-      value={filters.semester}
-      onChange={(e) =>
-        setFilters((prev) => ({ ...prev, semester: e.target.value }))
-      }
-    >
-      <option value="">All Sem</option>
-      {[1, 2, 3, 4].map((s) => (
-        <option key={s} value={s}>{s}</option>
-      ))}
-    </select>
+          <select
+            className="border p-2 rounded text-sm"
+            value={filters.class}
+            onChange={(e) => setFilters((prev) => ({ ...prev, class: e.target.value }))}
+          >
+            <option value="">All Class</option>
+            <option value="A">A</option>
+            <option value="B">B</option>
+            <option value="C">C</option>
+          </select>
 
-    <select
-      className="border p-2 rounded text-sm"
-      value={filters.class}
-      onChange={(e) =>
-        setFilters((prev) => ({ ...prev, class: e.target.value }))
-      }
-    >
-      <option value="">All Class</option>
-      <option value="A">A</option>
-      <option value="B">B</option>
-      <option value="C">C</option>
-    </select>
+          {/* RESET FILTERS */}
+          <button
+            onClick={() => {
+              setFilters({ department: "", semester: "", class: "" });
+              setSearchTerm("");
+            }}
+            className="px-3 py-2 text-sm rounded bg-gray-200 hover:bg-gray-300"
+          >
+            Reset
+          </button>
 
-    {/* RESET FILTERS BUTTON */}
-    <button
-      onClick={() =>
-        setFilters({ department: "", semester: "", class: "" })
-      }
-      className="px-3 py-2 text-sm rounded bg-gray-200 hover:bg-gray-300"
-    >
-      Reset
+          {/* SORT BUTTON */}
+          <button
+            onClick={() => setSortOpen(true)}
+            className="w-8 h-8 rounded-full bg-[#FAE27C] flex items-center justify-center"
+          >
+            <Image src="/sort.png" width={14} height={14} alt="sort" />
+          </button>
+
+          {(role === "admin" || role === "subadmin") && (
+  <Link href="/list/students/create">
+    <button className="w-8 h-8 rounded-full bg-[#C3EBFA] flex items-center justify-center">
+      <Image src="/create.png" width={16} height={16} alt="add" />
     </button>
+  </Link>
+)}
 
-    {/* SORT BUTTON */}
-    <button
-      onClick={() => setSortOpen(true)}
-      className="w-8 h-8 rounded-full bg-[#FAE27C] flex items-center justify-center"
-    >
-      <Image src="/sort.png" width={14} height={14} alt="sort" />
-    </button>
+        </div>
+      </div>
 
-    {(role === "admin" || role === "subadmin") && (
-      <FormModal table="student" type="create" />
-    )}
-  </div>
-</div>
-
-
-      {/* SORT MODAL (unchanged) */}
+      {/* SORT MODAL */}
       {sortOpen && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <div className="bg-white w-80 p-6 rounded relative">
             <h2 className="text-lg font-semibold mb-4">Sort Students</h2>
 
+            {/* Name */}
             <button
               className="p-2 border rounded w-full mb-2"
               onClick={() => {
@@ -203,6 +249,7 @@ export default function StudentListPage() {
               Name (Z → A)
             </button>
 
+            {/* Roll No */}
             <button
               className="p-2 border rounded w-full mb-2"
               onClick={() => {
@@ -221,6 +268,27 @@ export default function StudentListPage() {
               }}
             >
               Roll No (Desc)
+            </button>
+
+            {/* NEW — Enrollment No */}
+            <button
+              className="p-2 border rounded w-full mb-2"
+              onClick={() => {
+                setSortConfig({ key: "enrolmentNo", order: "asc" });
+                setSortOpen(false);
+              }}
+            >
+              Enrollment No (Asc)
+            </button>
+
+            <button
+              className="p-2 border rounded w-full mb-3"
+              onClick={() => {
+                setSortConfig({ key: "enrolmentNo", order: "desc" });
+                setSortOpen(false);
+              }}
+            >
+              Enrollment No (Desc)
             </button>
 
             <button

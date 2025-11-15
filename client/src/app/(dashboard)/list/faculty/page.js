@@ -49,17 +49,38 @@ const columns = [
 const facultyListPage = () => {
   const [data, setData] = useState([...facultysData])
   const [selectedDept, setSelectedDept] = useState("")
+  const [searchTerm, setSearchTerm] = useState("")
 
   const handleDepartmentChange = (e) => {
     const code = e.target.value
     setSelectedDept(code)
+    filterData(searchTerm, code)
+  }
 
-    if (!code) {
-      setData([...facultysData])
-      return
+  const handleSearch = (term) => {
+    setSearchTerm(term)
+    filterData(term, selectedDept)
+  }
+
+  const filterData = (searchTerm, departmentCode) => {
+    let filtered = [...facultysData]
+
+    // Filter by department
+    if (departmentCode) {
+      filtered = filtered.filter((f) => String(f.department) === String(departmentCode))
     }
 
-    const filtered = [...facultysData].filter((f) => String(f.department) === String(code))
+    // Filter by search term
+    if (searchTerm) {
+      filtered = filtered.filter((f) => 
+        f.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        f.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        f.facultyId.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        f.phone.includes(searchTerm) ||
+        f.department.toLowerCase().includes(searchTerm.toLowerCase())
+      )
+    }
+
     setData(filtered)
   }
   const renderRow = (item) => (
@@ -121,7 +142,7 @@ const facultyListPage = () => {
           </select>
         </div>
         <div className="flex flex-col md:flex-row items-center gap-4 w-full md:w-auto">
-          <TableSearch />
+          <TableSearch onSearch={handleSearch} />
           <div className="flex items-center gap-4 self-end">
             <button className="w-8 h-8 flex items-center justify-center rounded-full bg-[#FAE27C]">
               <Image src="/filter.png" alt="" width={14} height={14} />
