@@ -36,8 +36,9 @@ const menusByRole = {
   ],
 
   subadmin: [
-    { icon: "/home.png", label: "Add Students", href: "/list/students" },
-    { icon: "/student.png", label: "View & Edit Students", href: "/subadmin/students" },
+    { icon: "/home.png", label: "Dashboard", href: "/subadmin" },
+    { icon: "/home.png", label: "Add Students", href: "/list/students/create" },
+    { icon: "/student.png", label: "View & Edit Students", href: "/list/students" },
   ],
 
   superadmin: [
