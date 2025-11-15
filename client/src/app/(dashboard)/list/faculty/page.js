@@ -1,8 +1,12 @@
+"use client"
+
+import { useState } from "react"
 import FormModal from "@/components/FormModal";
 import Pagination from "@/components/Pagination";
 import Table from "@/components/Table";
 import TableSearch from "@/components/TableSearch";
 import { role, facultysData } from "@/lib/data";
+import { departmentsData } from "@/lib/roushaniData.js";
 import Image from "next/image";
 import Link from "next/link";
 
@@ -43,6 +47,21 @@ const columns = [
 ];
 
 const facultyListPage = () => {
+  const [data, setData] = useState([...facultysData])
+  const [selectedDept, setSelectedDept] = useState("")
+
+  const handleDepartmentChange = (e) => {
+    const code = e.target.value
+    setSelectedDept(code)
+
+    if (!code) {
+      setData([...facultysData])
+      return
+    }
+
+    const filtered = [...facultysData].filter((f) => String(f.department) === String(code))
+    setData(filtered)
+  }
   const renderRow = (item) => (
     <tr
       key={item.id}
@@ -60,7 +79,7 @@ const facultyListPage = () => {
           <h3 className="font-semibold">{item.name}</h3>
           <p className="text-xs text-gray-500">{item.email}</p>
         </div>
-      </td>
+      </td> 
       <td className="hidden md:table-cell">{item.facultyId}</td>
       <td className="hidden md:table-cell">{item.department}</td>
       <td className="hidden md:table-cell">{item.email}</td>
@@ -85,7 +104,22 @@ const facultyListPage = () => {
     <div className="bg-white p-4 rounded-md flex-1 m-4 mt-0">
       {/* TOP */}
       <div className="flex items-center justify-between">
-        <h1 className="hidden md:block text-lg font-semibold">All Faculty</h1>
+        <div className="hidden md:flex items-center gap-3">
+          <h1 className="text-lg font-semibold">All Faculty</h1>
+          <select
+            value={selectedDept}
+            onChange={handleDepartmentChange}
+            className="text-sm border rounded px-2 py-1 bg-white"
+            aria-label="Filter by department"
+          >
+            <option value="">All Departments</option>
+            {departmentsData.map((d) => (
+              <option key={d.id} value={d.code}>
+                {d.code} - {d.name}
+              </option>
+            ))}
+          </select>
+        </div>
         <div className="flex flex-col md:flex-row items-center gap-4 w-full md:w-auto">
           <TableSearch />
           <div className="flex items-center gap-4 self-end">
@@ -103,7 +137,7 @@ const facultyListPage = () => {
       </div>
 
       {/* LIST */}
-      <Table columns={columns} renderRow={renderRow} data={facultysData} />
+      <Table columns={columns} renderRow={renderRow} data={data} />
 
       {/* PAGINATION */}
       <Pagination />

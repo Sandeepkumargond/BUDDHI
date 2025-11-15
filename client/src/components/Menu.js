@@ -20,17 +20,17 @@ const menusByRole = {
     { icon: "/home.png", label: "Marks", href: "/marks" },
     { icon: "/home.png", label: "Study Materials", href: "/study-materials" },
     { icon: "/home.png", label: "Class Notices", href: "/class-notices" },
-    { icon: "/setting.png", label: "Settings", href: "/settings" },
   ],
   admin: [
     { icon: "/home.png", label: "Dashboard", href: "/admin" },
     { icon: "/home.png", label: "Faculty", href: "/list/faculty" },
     { icon: "/student.png", label: "Students", href: "/list/students" },
-    { icon: "/home.png", label: "Finance", href: "/finance" },
+    { icon: "/home.png", label: "Finance", href: "/list/finance" },
     { icon: "/home.png", label: "Add Subadmin", href: "/add/subadmin" },
     { icon: "/home.png", label: "Departments", href: "/list/departments" },
-    { icon: "/home.png", label: "Grade Card", href: "/grade-card" },
     { icon: "/home.png", label: "Add Notices", href: "/list/add-notice" },
+    { icon: "/setting.png", label: "Settings", href: "/settings" },
+
   ],
   subadmin: [
     { icon: "/home.png", label: "Add Students", href: "/list/students" },
