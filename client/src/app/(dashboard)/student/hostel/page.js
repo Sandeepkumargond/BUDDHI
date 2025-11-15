@@ -6,8 +6,42 @@ import { useState } from "react";
 
 export default function HostelPage() {
   const student = studentHostelData[0]; // TEMP → replace with auth user later
-  const [showForm, setShowForm] = useState(false);
+  
   const [complaint, setComplaint] = useState("");
+
+  const [showForm, setShowForm] = useState(false);
+
+const downloadReceipt = () => {
+  const receiptContent = `
+    <div style="font-family: Arial; padding: 20px;">
+      <h2 style="text-align:center;">Hostel Fee Receipt</h2>
+      <hr />
+      <h3>Student Details</h3>
+      <p><strong>Name:</strong> ${student.name}</p>
+      <p><strong>Roll No:</strong> ${student.rollNo}</p>
+      <p><strong>Enrollment No:</strong> ${student.enrolmentNo}</p>
+
+      <h3>Hostel Details</h3>
+      <p><strong>Hostel:</strong> ${student.hostel.hostelName}</p>
+      <p><strong>Room No:</strong> ${student.hostel.roomNumber}</p>
+
+      <h3>Payment Details</h3>
+      <p><strong>Hostel Fee:</strong> ${student.hostel.hostelFee}</p>
+      <p><strong>Payment Status:</strong> ${student.hostel.paymentStatus}</p>
+      <p><strong>Last Payment Date:</strong> ${student.hostel.lastPaymentDate}</p>
+
+      <br><br>
+      <p style="text-align:right;">Authorized Signature</p>
+    </div>
+  `;
+
+  const newWindow = window.open("", "_blank");
+  newWindow.document.write(receiptContent);
+  newWindow.document.close();
+
+  newWindow.print();
+};
+
 
   const addComplaint = () => {
     if (!complaint.trim()) return;
@@ -92,8 +126,16 @@ export default function HostelPage() {
         <Card title="Fee & Payment" color="#CFCEFF">
           <div className="grid grid-cols-2 gap-4">
             <p><strong>Hostel Fee:</strong> {student.hostel.hostelFee}</p>
-            <p><strong>Payment Status:</strong> {student.hostel.paymentStatus}</p>
-            <p><strong>Last Payment Date:</strong> {student.hostel.lastPaymentDate}</p>
+<p><strong>Payment Status:</strong> {student.hostel.paymentStatus}</p>
+<p><strong>Last Payment Date:</strong> {student.hostel.lastPaymentDate}</p>
+
+<button
+  onClick={downloadReceipt}
+  className="mt-4 bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700"
+>
+  Download Fee Receipt (PDF)
+</button>
+
           </div>
         </Card>
 
