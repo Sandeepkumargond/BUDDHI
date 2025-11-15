@@ -1,7 +1,7 @@
 // ===========================
 //        USER ROLE
 // ===========================
-export let role = "admin"; // admin | subadmin | superadmin | student
+export let role = "student"; // admin | subadmin | superadmin | student
 
 export const facultysData = [
   {
