@@ -242,3 +242,115 @@ export const coursesData = [
   { id: 40, departmentId: 8, name: "Digital Signal Processing", code: "EC303", credits: 4 }
 ];
 
+
+
+// --------------- Registration Data----------- for student portal
+// ---------------------------
+// STUDENT PROFILE DETAILS
+// ---------------------------
+export const studentProfileData = {
+  name: "Simaran Kaur",
+  roll: "230C312",
+  department: "Computer Science & Engineering",
+  photo: "https://randomuser.me/api/portraits/women/68.jpg", // dummy image
+};
+
+// ---------------------------
+// REGISTERED SEMESTER LIST
+// ---------------------------
+export const registeredSemesters = [
+  { id: 1, label: "Semester 1", value: "1" },
+  { id: 2, label: "Semester 2", value: "2" },
+  { id: 3, label: "Semester 3", value: "3" },
+  { id: 4, label: "Semester 4", value: "4" },
+  { id: 5, label: "Semester 5", value: "5" },
+];
+
+// ---------------------------
+// REGISTRATION STATUS
+// ---------------------------
+// status: Registered | Pending | Not Registered
+export const semesterStatus = {
+  "1": "Registered",
+  "2": "Registered",
+  "3": "Pending",
+  "4": "Not Registered",
+  "5": "Not Registered",
+};
+
+// ---------------------------
+// SEMESTER–WISE COURSES
+// ---------------------------
+export const semesterCourses = {
+  "1": [
+    { id: 1, code: "CSE101", name: "Introduction to Programming", credits: 4 },
+    { id: 2, code: "MTH101", name: "Engineering Mathematics I", credits: 3 },
+  ],
+  "2": [
+    { id: 3, code: "CSE102", name: "Data Structures", credits: 4 },
+    { id: 4, code: "PHY102", name: "Physics II", credits: 3 },
+  ],
+  "3": [
+    { id: 5, code: "CSE201", name: "Algorithms", credits: 4 },
+    { id: 6, code: "CSE202", name: "Computer Networks", credits: 3 },
+  ],
+  "4": [],
+  "5": [],
+};
+
+export const instituteInfo = {
+  name: "Buddhi Institute of Technology",
+  logo: "/home.png", // dummy logo URL
+  address: "Gandhi Nagar, Patna, Bihar – 800001",
+};
+
+
+// ----------------------------
+// DUMMY REGISTRATION RECORDS
+// ----------------------------
+export const registrationRecords = [
+  {
+    id: 1,
+    studentEnrollment: "CSE2023A001",
+    studentName: "Aarav Mishra",
+    department: "Computer Science & Engineering",
+    semester: 3,
+    academicYear: "2024-25",
+    date: "12 Feb 2025",
+    status: "Completed",
+    instituteLogo:
+     "/logo.png",
+
+    registeredCourses: [
+      { code: "CSE201", name: "Data Structures", credits: 4 },
+      { code: "CSE202", name: "Operating Systems", credits: 4 },
+      { code: "CSE203", name: "Computer Networks", credits: 3 },
+      { code: "CSE204", name: "Discrete Mathematics", credits: 3 },
+    ],
+
+    totalCredits: 14,
+    photo: "https://randomuser.me/api/portraits/men/32.jpg",
+  },
+
+  {
+    id: 2,
+    studentEnrollment: "CSE2023A001",
+    studentName: "Aarav Mishra",
+    department: "Computer Science & Engineering",
+    semester: 2,
+    academicYear: "2023-24",
+    date: "10 Aug 2024",
+    status: "Completed",
+    instituteLogo:
+      "/logo.png",
+
+    registeredCourses: [
+      { code: "CSE101", name: "Programming in C", credits: 4 },
+      { code: "CSE102", name: "Digital Logic", credits: 4 },
+      { code: "MTH101", name: "Engineering Mathematics", credits: 3 },
+    ],
+
+    totalCredits: 11,
+    photo: "https://randomuser.me/api/portraits/men/32.jpg",
+  },
+];

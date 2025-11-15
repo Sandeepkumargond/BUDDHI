@@ -7,7 +7,15 @@ import { useState } from "react";
 const menusByRole = {
   student: [
     { icon: "/home.png", label: "Dashboard", href: "/student" },
-    { icon: "/home.png", label: "Registration", href: "/registration" },
+   {
+  icon: "/home.png",
+  label: "Registration",
+  isDropdown: true,
+  subItems: [
+    { label: "Registration Form", href: "/list/registration" },
+    { label: "View & Print Registration", href: "/list/registration/print_view" }
+  ]
+},
     { icon: "/home.png", label: "Hostel", href: "/hostel" },
     { 
       icon: "/home.png", 
