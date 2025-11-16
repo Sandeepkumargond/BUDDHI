@@ -61,8 +61,9 @@ const menusByRole = {
 
   superadmin: [
     { icon: "/home.png", label: "Dashboard", href: "/superadmin" },
-    { icon: "/home.png", label: "View College Requests", href: "/superadmin/college-requests" },
-    { icon: "/home.png", label: "View Registered Colleges", href: "/superadmin/registered-colleges" },
+    { icon: "/home.png", label: "View Requests", href: "/superadmin/requests" },
+    { icon: "/home.png", label: "View All Colleges", href: "/superadmin/colleges" },
+    { icon: "/home.png", label: "Manage Super Admins", href: "/superadmin/manage-superadmins" },
   ]
 };
 
