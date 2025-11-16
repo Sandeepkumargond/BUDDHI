@@ -422,3 +422,46 @@ export const currentSemesterSubjects = [
   }
 ];
 
+// Audience List
+export const noticeAudienceOptions = [
+  { label: "All", value: "all" },
+  { label: "Students", value: "students" },
+  { label: "Faculty", value: "faculty" },
+  { label: "Staff", value: "staff" },
+  { label: "Department", value: "department" },
+];
+
+// Priority List
+export const noticePriorityLevels = [
+  { label: "Low", value: "low" },
+  { label: "Normal", value: "normal" },
+  { label: "High", value: "high" },
+];
+
+// Sample saved notices
+export const sampleNotices = [
+  {
+    id: 1,
+    title: "Mid-Sem Exam Schedule",
+    date: "2025-02-10",
+    audience: "students",
+    priority: "high",
+    content: "Mid semester exams start from March 2. Download the schedule.",
+    attachment: null,
+  },
+];
+
+// Faculty – Class Notice Data Options
+export const classNoticeDepartments = ["CSE", "ECE", "EEE", "ME", "CE"];
+
+export const classNoticeSections = ["A", "B", "C"];
+
+export const classNoticeSubjects = [
+  "Mathematics",
+  "Data Structures",
+  "Operating Systems",
+  "DBMS",
+  "Computer Networks",
+];
+
+

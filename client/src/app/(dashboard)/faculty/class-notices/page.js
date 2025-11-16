@@ -1,7 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import Image from "next/image";
+import {
+  classNoticeDepartments,
+  classNoticeSections,
+  classNoticeSubjects,
+} from "@/lib/roushaniData";
 
 export default function FacultyClassNoticePage() {
   const [department, setDepartment] = useState("");
@@ -12,11 +16,6 @@ export default function FacultyClassNoticePage() {
   const [attachment, setAttachment] = useState(null);
   const [attachmentName, setAttachmentName] = useState("");
   const [errors, setErrors] = useState({});
-
-  // ---------- DUMMY DATA ----------
-  const departments = ["CSE", "ECE", "EEE", "ME", "CE"];
-  const sections = ["A", "B", "C"];
-  const subjects = ["Maths", "DBMS", "OS", "DSA", "Networks"];
 
   const validate = () => {
     const e = {};
@@ -29,16 +28,21 @@ export default function FacultyClassNoticePage() {
     return Object.keys(e).length === 0;
   };
 
-  const handleSubmit = (ev) => {
-    ev.preventDefault();
+  const handleSubmit = (e) => {
+    e.preventDefault();
     if (!validate()) return;
 
     alert("Class Notice Published Successfully!");
+
     console.log({
-      department, section, subject, title, content, attachment,
+      department,
+      section,
+      subject,
+      title,
+      content,
+      attachment,
     });
 
-    // Reset after submission
     setDepartment("");
     setSection("");
     setSubject("");
@@ -50,54 +54,57 @@ export default function FacultyClassNoticePage() {
 
   return (
     <div className="p-6 m-4 bg-white rounded-xl border border-gray-100 shadow-sm">
-
       {/* HEADER */}
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-2xl font-semibold text-gray-700">Class Notice</h1>
-          <p className="text-sm text-gray-500 mt-1">
-            Create and publish notices for your class.
-          </p>
-        </div>
-
+      <div className="mb-6">
+        <h1 className="text-2xl font-semibold text-gray-700">Class Notice</h1>
+        <p className="text-sm text-gray-500 mt-1">
+          Create and publish notices for your class.
+        </p>
       </div>
 
-      {/* FORM CONTAINER */}
+      {/* FORM WRAPPER */}
       <div className="max-w-4xl mx-auto bg-[#F5F9FF] border border-[#DCE7FF] p-6 rounded-xl shadow-sm">
         <form className="space-y-6" onSubmit={handleSubmit}>
-
           {/* Department + Section */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* Department */}
             <div>
-              <label className="text-sm font-medium text-gray-700">Department</label>
+              <label className="text-sm text-gray-700 font-medium">
+                Department
+              </label>
               <select
                 value={department}
                 onChange={(e) => setDepartment(e.target.value)}
-                className={`w-full mt-2 p-2.5 bg-white rounded-md border 
-                  ${errors.department ? "border-red-400" : "border-gray-300"}`}
+                className={`w-full mt-2 p-2.5 bg-white rounded-md border ${
+                  errors.department ? "border-red-400" : "border-gray-300"
+                }`}
               >
                 <option value="">Select Department</option>
-                {departments.map((d) => (
+                {classNoticeDepartments.map((d) => (
                   <option key={d}>{d}</option>
                 ))}
               </select>
               {errors.department && (
-                <p className="text-xs text-red-600 mt-1">{errors.department}</p>
+                <p className="text-xs text-red-600 mt-1">
+                  {errors.department}
+                </p>
               )}
             </div>
 
             {/* Section */}
             <div>
-              <label className="text-sm font-medium text-gray-700">Section</label>
+              <label className="text-sm text-gray-700 font-medium">
+                Section
+              </label>
               <select
                 value={section}
                 onChange={(e) => setSection(e.target.value)}
-                className={`w-full mt-2 p-2.5 bg-white rounded-md border 
-                  ${errors.section ? "border-red-400" : "border-gray-300"}`}
+                className={`w-full mt-2 p-2.5 bg-white rounded-md border ${
+                  errors.section ? "border-red-400" : "border-gray-300"
+                }`}
               >
                 <option value="">Select Section</option>
-                {sections.map((s) => (
+                {classNoticeSections.map((s) => (
                   <option key={s}>{s}</option>
                 ))}
               </select>
@@ -109,15 +116,16 @@ export default function FacultyClassNoticePage() {
 
           {/* Subject */}
           <div>
-            <label className="text-sm font-medium text-gray-700">Subject</label>
+            <label className="text-sm text-gray-700 font-medium">Subject</label>
             <select
               value={subject}
               onChange={(e) => setSubject(e.target.value)}
-              className={`w-full mt-2 p-2.5 bg-white rounded-md border 
-                ${errors.subject ? "border-red-400" : "border-gray-300"}`}
+              className={`w-full mt-2 p-2.5 bg-white rounded-md border ${
+                errors.subject ? "border-red-400" : "border-gray-300"
+              }`}
             >
               <option value="">Select Subject</option>
-              {subjects.map((s) => (
+              {classNoticeSubjects.map((s) => (
                 <option key={s}>{s}</option>
               ))}
             </select>
@@ -126,32 +134,39 @@ export default function FacultyClassNoticePage() {
             )}
           </div>
 
-          {/* Notice Title */}
+          {/* Title */}
           <div>
-            <label className="text-sm font-medium text-gray-700">Notice Title</label>
+            <label className="text-sm text-gray-700 font-medium">
+              Notice Title
+            </label>
             <input
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="Enter notice title"
-              className={`w-full mt-2 p-2.5 rounded-md bg-white border 
-                ${errors.title ? "border-red-400" : "border-gray-300"}`}
+              className={`w-full mt-2 p-2.5 rounded-md bg-white border ${
+                errors.title ? "border-red-400" : "border-gray-300"
+              }`}
             />
             {errors.title && (
               <p className="text-xs text-red-600 mt-1">{errors.title}</p>
             )}
           </div>
 
-          {/* Content */}
+          {/* Message */}
           <div>
-            <label className="text-sm font-medium text-gray-700">Notice Message</label>
+            <label className="text-sm text-gray-700 font-medium">
+              Notice Message
+            </label>
             <textarea
               value={content}
               onChange={(e) => setContent(e.target.value)}
               rows={5}
               placeholder="Write notice message..."
-              className={`w-full mt-2 p-3 rounded-md bg-white border 
-                ${errors.content ? "border-red-400" : "border-gray-300"}`}
-            ></textarea>
+              className={`w-full mt-2 p-3 rounded-md bg-white border ${
+                errors.content ? "border-red-400" : "border-gray-300"
+              }`}
+            />
+
             {errors.content && (
               <p className="text-xs text-red-600 mt-1">{errors.content}</p>
             )}
@@ -159,7 +174,10 @@ export default function FacultyClassNoticePage() {
 
           {/* Attachment */}
           <div>
-            <label className="text-sm font-medium text-gray-700">Attachment (optional)</label>
+            <label className="text-sm text-gray-700 font-medium">
+              Attachment (optional)
+            </label>
+
             <label className="flex items-center gap-3 mt-2 px-4 py-3 bg-white border border-gray-300 rounded-md cursor-pointer hover:bg-gray-50">
               <input
                 type="file"

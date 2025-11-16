@@ -2,11 +2,15 @@
 
 import { useState } from "react";
 import Image from "next/image";
+import {
+  noticeAudienceOptions,
+  noticePriorityLevels,
+} from "@/lib/roushaniData";
 
 export default function AddNoticePage() {
   const [title, setTitle] = useState("");
   const [date, setDate] = useState("");
-  const [audience, setAudience] = useState("all");
+  const [audience, setAudience] = useState(noticeAudienceOptions[0].value);
   const [priority, setPriority] = useState("normal");
   const [content, setContent] = useState("");
   const [attachment, setAttachment] = useState(null);
@@ -27,11 +31,12 @@ export default function AddNoticePage() {
     if (!validate()) return;
 
     alert("Notice published!");
+
+    // Later: save notice to database
   };
 
   return (
     <div className="p-6 m-4 bg-white rounded-xl border border-gray-100 shadow-sm">
-
       {/* PAGE HEADER */}
       <div className="flex items-center justify-between mb-6">
         <div>
@@ -40,10 +45,9 @@ export default function AddNoticePage() {
             Publish notice for students, faculty or staff.
           </p>
         </div>
-       
       </div>
 
-      {/* FORM WRAPPER (LIMIT WIDTH) */}
+      {/* FORM WRAPPER */}
       <div className="max-w-4xl mx-auto">
         <form
           onSubmit={handleSubmit}
@@ -56,8 +60,9 @@ export default function AddNoticePage() {
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="Enter notice title"
-              className={`w-full mt-2 p-2.5 rounded-md bg-white border 
-                ${errors.title ? "border-red-400" : "border-gray-300"}`}
+              className={`w-full mt-2 p-2.5 rounded-md bg-white border ${
+                errors.title ? "border-red-400" : "border-gray-300"
+              }`}
             />
             {errors.title && (
               <p className="text-xs text-red-600 mt-1">{errors.title}</p>
@@ -66,20 +71,23 @@ export default function AddNoticePage() {
 
           {/* DATE & AUDIENCE */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* DATE */}
             <div>
               <label className="text-sm text-gray-700 font-medium">Date</label>
               <input
                 type="date"
                 value={date}
                 onChange={(e) => setDate(e.target.value)}
-                className={`w-full mt-2 p-2.5 rounded-md bg-white border 
-                  ${errors.date ? "border-red-400" : "border-gray-300"}`}
+                className={`w-full mt-2 p-2.5 rounded-md bg-white border ${
+                  errors.date ? "border-red-400" : "border-gray-300"
+                }`}
               />
               {errors.date && (
                 <p className="text-xs text-red-600 mt-1">{errors.date}</p>
               )}
             </div>
 
+            {/* AUDIENCE FROM DUMMY DATA */}
             <div>
               <label className="text-sm text-gray-700 font-medium">Audience</label>
               <select
@@ -87,36 +95,35 @@ export default function AddNoticePage() {
                 onChange={(e) => setAudience(e.target.value)}
                 className="w-full mt-2 p-2.5 rounded-md bg-white border border-gray-300"
               >
-                <option value="all">All</option>
-                <option value="students">Students</option>
-                <option value="faculty">Faculty</option>
-                <option value="staff">Staff</option>
-                <option value="department">Department</option>
+                {noticeAudienceOptions.map((opt) => (
+                  <option key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </option>
+                ))}
               </select>
             </div>
           </div>
 
-          {/* PRIORITY */}
+          {/* PRIORITY (DUMMY) */}
           <div>
             <label className="text-sm text-gray-700 font-medium">Priority</label>
             <div className="flex gap-3 mt-2">
-              {["low", "normal", "high"].map((p) => (
+              {noticePriorityLevels.map((p) => (
                 <button
-                  key={p}
+                  key={p.value}
                   type="button"
-                  onClick={() => setPriority(p)}
-                  className={`px-4 py-2 rounded-md text-sm border capitalize
-                    ${
-                      priority === p
-                        ? p === "low"
-                          ? "bg-green-100 border-green-400"
-                          : p === "normal"
-                          ? "bg-yellow-100 border-yellow-400"
-                          : "bg-red-100 border-red-400"
-                        : "bg-white border-gray-300"
-                    }`}
+                  onClick={() => setPriority(p.value)}
+                  className={`px-4 py-2 rounded-md text-sm border capitalize ${
+                    priority === p.value
+                      ? p.value === "low"
+                        ? "bg-green-100 border-green-400"
+                        : p.value === "normal"
+                        ? "bg-yellow-100 border-yellow-400"
+                        : "bg-red-100 border-red-400"
+                      : "bg-white border-gray-300"
+                  }`}
                 >
-                  {p}
+                  {p.label}
                 </button>
               ))}
             </div>
@@ -130,8 +137,9 @@ export default function AddNoticePage() {
               onChange={(e) => setContent(e.target.value)}
               rows={6}
               placeholder="Write notice details..."
-              className={`w-full mt-2 p-3 rounded-md bg-white border 
-                ${errors.content ? "border-red-400" : "border-gray-300"}`}
+              className={`w-full mt-2 p-3 rounded-md bg-white border ${
+                errors.content ? "border-red-400" : "border-gray-300"
+              }`}
             />
             {errors.content && (
               <p className="text-xs text-red-600 mt-1">{errors.content}</p>
@@ -140,10 +148,7 @@ export default function AddNoticePage() {
 
           {/* ATTACHMENT */}
           <div>
-            <label className="text-sm text-gray-700 font-medium">
-              Attachment (optional)
-            </label>
-
+            <label className="text-sm text-gray-700 font-medium">Attachment</label>
             <label className="flex items-center gap-3 mt-2 px-4 py-3 bg-white border border-gray-300 rounded-md cursor-pointer hover:bg-gray-50">
               <input
                 type="file"
