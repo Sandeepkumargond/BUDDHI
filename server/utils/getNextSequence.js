@@ -54,3 +54,34 @@ export async function generateRollNo(prefix, year = new Date().getFullYear(), pa
 
     return { raw: result.seq, formatted: `${yr}${seq}` };
 }
+
+
+/**
+ * Generate the next faculty ID for a department (optionally scoped by year).
+ * Uses an atomic counter in the Counter collection to guarantee unique,
+ * incrementing IDs per department per year.
+ *
+ * @param {string} departmentCode - short department code (e.g. 'CSE')
+ * @param {number|string} [year=new Date().getFullYear()] - year scope for the ID
+ * @param {number} [pad=3] - number of digits to pad the sequential part
+ * @returns {string} formatted faculty id like '2025_CSE_001'
+ */
+export async function generateFacultyId(departmentCode, year = new Date().getFullYear(), pad = 3) {
+    if (!departmentCode) {
+        throw new Error("departmentCode is required to generate faculty ID");
+    }
+
+    const yr = String(year)
+
+    const counterKey = `faculty_${departmentCode}_${yr}`;
+    
+    const result = await Counter.findOneAndUpdate(
+        { _id: counterKey },
+        { $inc: { seq: 1 } },
+        { new: true, upsert: true }
+    ).lean();
+
+    const seq = String(result.seq).padStart(pad, "0");
+
+    return `${yr}_${departmentCode}_${seq}`;
+}

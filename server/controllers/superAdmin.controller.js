@@ -410,7 +410,7 @@ export const createAdmin = asyncHandler(async (req, res, next) => {
 
     const createdAdmin = await getAdminDetailsById(admin?._id);
 
-    if (!createAdmin) {
+    if (!createdAdmin) {
         throw new ApiError(500, "An Error occured while creating the admin.");
     }
 
