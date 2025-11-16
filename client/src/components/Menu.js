@@ -1,8 +1,8 @@
-"use client"
-import { role } from "@/lib/data";
+"use client";
 import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
+import { useAuth } from "@/context/AuthContext";
 
 const menusByRole = {
   student: [
@@ -69,6 +69,7 @@ const menusByRole = {
 
 const Menu = () => {
   const [openDropdowns, setOpenDropdowns] = useState({});
+  const { role } = useAuth();
   
   const currentRole = (role ?? "").toString().toLowerCase();
   const normalizedRole =
