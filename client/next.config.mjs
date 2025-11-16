@@ -19,6 +19,14 @@ const nextConfig = {
         port: "",
         pathname: "/**",
       },
+
+      // IMAGEKIT (profile images)
+      {
+        protocol: "https",
+        hostname: "ik.imagekit.io",
+        port: "",
+        pathname: "/**",
+      },
     ],
   },
 };
