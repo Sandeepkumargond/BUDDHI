@@ -12,8 +12,8 @@ export default function ProtectedRoute({ children, allowedRoles = [] }) {
   useEffect(() => {
     if (!loading) {
       if (!isAuthenticated) {
-        console.log('User not authenticated, redirecting to sign-in');
-        router.push('/sign-in');
+        console.log('User not authenticated, redirecting to login');
+        router.push('/login');
         return;
       }
 
