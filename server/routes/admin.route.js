@@ -1,5 +1,7 @@
 import { Router } from "express";
 import { loginAdmin, logoutAdmin, refreshAdminAccessToken, changeAdminPassword, updateAdminAccountDetails, updateAdminImage, createStudent, createFaculty, createSubAdmin, deleteStudent, deleteFaculty, deleteSubAdmin } from "../controllers/admin.controller.js";
+import { adminGetFeePaymentById, adminGetReceiptRedirect, adminListFeePayments } from "../controllers/feePayment.controller.js";
+import { validateAdminFeePaymentQuery } from "../middlewares/feePayment.middleware.js";
 import { authenticateAdmin } from "../middlewares/admin.middleware.js";
 import { upload } from "../middlewares/multer.middleware.js";
 
@@ -58,6 +60,23 @@ router.route('/delete-faculty').delete(
 router.route('/delete-sub-admin').delete(
     authenticateAdmin,
     deleteSubAdmin
+)
+
+// Fee payment admin queries
+router.route('/fee-payments').get(
+    authenticateAdmin,
+    validateAdminFeePaymentQuery,
+    adminListFeePayments
+)
+
+router.route('/fee-payment/:id').get(
+    authenticateAdmin,
+    adminGetFeePaymentById
+)
+
+router.route('/fee-payment/:id/receipt').get(
+    authenticateAdmin,
+    adminGetReceiptRedirect
 )
 
 export default router;

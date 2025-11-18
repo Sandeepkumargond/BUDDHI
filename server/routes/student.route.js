@@ -1,6 +1,8 @@
 import { Router } from "express";
 import { authenticateStudent } from "../middlewares/student.middleware.js";
 import { availableMail, changeStudentPassword, getStudentById, loginStudent, logoutStudent, refreshStudentAccessToken, updateStudentAccountDetails, updateStudentImage } from "../controllers/student.controller.js";
+import { createFeePayment, listMyFeePayments, getMyFeePaymentReceipt } from "../controllers/feePayment.controller.js";
+import { validateCreateFeePayment } from "../middlewares/feePayment.middleware.js";
 import { upload } from "../middlewares/multer.middleware.js";
 
 const router = Router();
@@ -34,6 +36,24 @@ router.route('/update-image').patch(
 
 router.route('/available-mail').post(
     availableMail
+);
+
+// Fee Payments (student-auth only)
+router.route('/fee-payment').post(
+    authenticateStudent,
+    upload.single("image"),
+    validateCreateFeePayment,
+    createFeePayment
+);
+
+router.route('/fee-payment').get(
+    authenticateStudent,
+    listMyFeePayments
+);
+
+router.route('/fee-payment/:id/receipt').get(
+    authenticateStudent,
+    getMyFeePaymentReceipt
 );
 
 export default router;
