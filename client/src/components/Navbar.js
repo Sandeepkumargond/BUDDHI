@@ -32,11 +32,11 @@ const Navbar = () => {
   const handleLogout = async () => {
     try {
       await logout();
-      router.push('/sign-in');
+      router.push('/login');
     } catch (error) {
       console.error('Logout failed:', error);
       // Force redirect even if logout fails
-      router.push('/sign-in');
+      router.push('/login');
     }
   };
 

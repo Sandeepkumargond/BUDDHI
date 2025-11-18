@@ -122,6 +122,36 @@ class ApiService {
     });
   }
 
+  // Fee payments (student)
+  async listMyFeePayments() {
+    return this.request('/student/fee-payment', { method: 'GET' });
+  }
+
+  async getMyFeeReceipt(id) {
+    if (!id) throw new Error('Payment id is required');
+    return this.request(`/student/fee-payment/${id}/receipt`, { method: 'GET' });
+  }
+
+  // Fee structure
+  async getMyFeeStructure(session) {
+    const qs = session ? `?session=${encodeURIComponent(session)}` : '';
+    return this.request(`/student/fee-structure${qs}`, { method: 'GET' });
+  }
+
+  async getMyFeeStructures() {
+    return this.request('/student/fee-structures', { method: 'GET' });
+  }
+
+  async adminCreateFeeStructure(payload) {
+    return this.request('/admin/fee-structure', { method: 'POST', body: payload });
+  }
+
+  async adminListFeeStructures(params = {}) {
+    const query = new URLSearchParams(params).toString();
+    const qs = query ? `?${query}` : '';
+    return this.request(`/admin/fee-structures${qs}`, { method: 'GET' });
+  }
+
   async getProfile(role) {
     const roleEndpoints = {
       'superadmin': '/super-admin/profile',
