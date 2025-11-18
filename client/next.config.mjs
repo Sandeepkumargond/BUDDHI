@@ -4,7 +4,7 @@ const nextConfig = {
 
   images: {
     remotePatterns: [
-      // PEXELS (teachers, calendar, sample photos)
+      // PEXELS (facultys, calendar, sample photos)
       {
         protocol: "https",
         hostname: "images.pexels.com",
@@ -16,6 +16,14 @@ const nextConfig = {
       {
         protocol: "https",
         hostname: "randomuser.me",
+        port: "",
+        pathname: "/**",
+      },
+
+      // IMAGEKIT (profile images)
+      {
+        protocol: "https",
+        hostname: "ik.imagekit.io",
         port: "",
         pathname: "/**",
       },
