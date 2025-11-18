@@ -46,7 +46,6 @@ export default function StudyMaterialHome() {
         <div className="text-sm text-gray-500 mb-2 font-medium">
           Quick Filters
         </div>
-        {/* You can add subject, type, semester filters here later */}
       </div>
 
       {/* MATERIAL LIST */}
