@@ -464,4 +464,227 @@ export const classNoticeSubjects = [
   "Computer Networks",
 ];
 
+// ============================================
+// MARKS DATA FOR FACULTY
+// ============================================
+
+// Students for Marks Management
+export const marksStudentsData = [
+  // CSE Semester 4 Section A
+  {
+    _id: "std001",
+    enrollmentNo: 2301001,
+    firstName: "Rohan",
+    lastName: "Kumar",
+    rollNo: 1,
+    email: "rohan.kumar@student.edu",
+    semester: 4,
+    section: "A",
+    branch: "CSE",
+  },
+  {
+    _id: "std002",
+    enrollmentNo: 2301002,
+    firstName: "Ananya",
+    lastName: "Gupta",
+    rollNo: 2,
+    email: "ananya.gupta@student.edu",
+    semester: 4,
+    section: "A",
+    branch: "CSE",
+  },
+  {
+    _id: "std003",
+    enrollmentNo: 2301003,
+    firstName: "Priya",
+    lastName: "Singh",
+    rollNo: 3,
+    email: "priya.singh@student.edu",
+    semester: 4,
+    section: "A",
+    branch: "CSE",
+  },
+  {
+    _id: "std004",
+    enrollmentNo: 2301004,
+    firstName: "Rahul",
+    lastName: "Sharma",
+    rollNo: 4,
+    email: "rahul.sharma@student.edu",
+    semester: 4,
+    section: "A",
+    branch: "CSE",
+  },
+  {
+    _id: "std005",
+    enrollmentNo: 2301005,
+    firstName: "Neha",
+    lastName: "Patel",
+    rollNo: 5,
+    email: "neha.patel@student.edu",
+    semester: 4,
+    section: "A",
+    branch: "CSE",
+  },
+  {
+    _id: "std006",
+    enrollmentNo: 2301006,
+    firstName: "Akshay",
+    lastName: "Verma",
+    rollNo: 6,
+    email: "akshay.verma@student.edu",
+    semester: 4,
+    section: "A",
+    branch: "CSE",
+  },
+  // CSE Semester 4 Section B
+  {
+    _id: "std007",
+    enrollmentNo: 2301007,
+    firstName: "Divya",
+    lastName: "Reddy",
+    rollNo: 7,
+    email: "divya.reddy@student.edu",
+    semester: 4,
+    section: "B",
+    branch: "CSE",
+  },
+  {
+    _id: "std008",
+    enrollmentNo: 2301008,
+    firstName: "Arjun",
+    lastName: "Malik",
+    rollNo: 8,
+    email: "arjun.malik@student.edu",
+    semester: 4,
+    section: "B",
+    branch: "CSE",
+  },
+  {
+    _id: "std009",
+    enrollmentNo: 2301009,
+    firstName: "Simran",
+    lastName: "Kaur",
+    rollNo: 9,
+    email: "simran.kaur@student.edu",
+    semester: 4,
+    section: "B",
+    branch: "CSE",
+  },
+  {
+    _id: "std010",
+    enrollmentNo: 2301010,
+    firstName: "Vivek",
+    lastName: "Kumar",
+    rollNo: 10,
+    email: "vivek.kumar@student.edu",
+    semester: 4,
+    section: "B",
+    branch: "CSE",
+  },
+];
+
+// Marks Data - Existing marks for students (Internal + External)
+export const marksDataTable = [
+  {
+    _id: "mark001",
+    studentId: "std001",
+    subject: "Data Structures",
+    semester: 4,
+    section: "A",
+    branch: "CSE",
+    internalMarks: 35,
+    externalMarks: 50,
+    grade: "A",
+    remarks: "Excellent performance",
+    academicYear: "2024-25",
+  },
+  {
+    _id: "mark002",
+    studentId: "std002",
+    subject: "Data Structures",
+    semester: 4,
+    section: "A",
+    branch: "CSE",
+    internalMarks: 38,
+    externalMarks: 54,
+    grade: "A+",
+    remarks: "Outstanding work",
+    academicYear: "2024-25",
+  },
+  {
+    _id: "mark003",
+    studentId: "std003",
+    subject: "Data Structures",
+    semester: 4,
+    section: "A",
+    branch: "CSE",
+    internalMarks: 32,
+    externalMarks: 46,
+    grade: "B+",
+    remarks: "Good performance",
+    academicYear: "2024-25",
+  },
+  {
+    _id: "mark004",
+    studentId: "std004",
+    subject: "Data Structures",
+    semester: 4,
+    section: "A",
+    branch: "CSE",
+    internalMarks: 36,
+    externalMarks: 52,
+    grade: "A",
+    remarks: "Very good",
+    academicYear: "2024-25",
+  },
+  {
+    _id: "mark005",
+    studentId: "std005",
+    subject: "Data Structures",
+    semester: 4,
+    section: "A",
+    branch: "CSE",
+    internalMarks: 30,
+    externalMarks: 45,
+    grade: "B",
+    remarks: "Satisfactory",
+    academicYear: "2024-25",
+  },
+  {
+    _id: "mark006",
+    studentId: "std006",
+    subject: "Data Structures",
+    semester: 4,
+    section: "A",
+    branch: "CSE",
+    internalMarks: 39,
+    externalMarks: 56,
+    grade: "A+",
+    remarks: "Exceptional",
+    academicYear: "2024-25",
+  },
+];
+
+// Departments for filter dropdown
+export const marksFilterDepartments = ["CSE", "ECE", "EEE", "ME", "CE"];
+
+// Semesters for filter dropdown
+export const marksFilterSemesters = [1, 2, 3, 4, 5, 6, 7, 8];
+
+// Sections for filter dropdown
+export const marksFilterSections = ["A", "B", "C", "D"];
+
+// Subjects for filter dropdown
+export const marksFilterSubjects = [
+  "Data Structures",
+  "Algorithms",
+  "Operating Systems",
+  "Database Management",
+  "Web Development",
+  "Computer Networks",
+  "Software Engineering",
+  "Cloud Computing",
+];
+
 
