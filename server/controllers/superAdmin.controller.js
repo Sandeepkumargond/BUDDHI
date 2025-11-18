@@ -127,7 +127,7 @@ export const registerSuperAdmin = asyncHandler(async (req, res, next) => {
 
 export const loginSuperAdmin = asyncHandler(async (req, res, next) => {
     let { username, email, password } = req.body;
-    // console.log(`username: ${username}, email: ${email}`)
+    console.log(`username: ${username}, email: ${email}`)
 
     if (!password) {
         throw new ApiError(400, "Password is required");
@@ -448,3 +448,18 @@ export const deleteAdmin = asyncHandler(async (req, res, next) => {
             )
         )
 })
+
+export const getAllAdmins = asyncHandler(async (req, res, next) => {
+    // console.log("Fetching all admins");
+    const admins = await Admin.find().select("-password -refreshToken -socials");
+
+    return res.status(200).json(
+        new ApiResponse(
+            200,
+            {
+                admins,
+            },
+            "Admins fetched successfully"
+        )
+    );
+});

@@ -1,116 +1,13 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Image from "next/image";
+import { apiService } from "@/lib/api";
 
 const AllCollegesPage = () => {
-  // Mock data for colleges running on the platform
-  const [colleges, setColleges] = useState([
-    {
-      id: 1,
-      collegeName: "ABC Engineering College",
-      collegeType: "Engineering",
-      adminName: "Dr. Rajesh Kumar",
-      email: "admin@abcengg.edu.in",
-      phone: "+91 9876543210",
-      location: "Mumbai, Maharashtra",
-      address: "123 Engineering Road, Andheri West, Mumbai, Maharashtra 400058",
-      establishedYear: 2005,
-      affiliation: "University of Mumbai",
-      recognitionType: "AICTE Approved",
-      totalStudents: 2500,
-      totalFaculty: 150,
-      website: "https://www.abcengg.edu.in",
-      status: "active",
-      joinedDate: "2024-01-15",
-      lastActive: "2024-11-16",
-      courses: "B.Tech Computer Science, Electronics, Mechanical, Civil Engineering",
-      infrastructure: "Modern labs, library, hostels, sports facilities"
-    },
-    {
-      id: 2,
-      collegeName: "XYZ Medical College",
-      collegeType: "Medical",
-      adminName: "Dr. Priya Sharma",
-      email: "admin@xyzmed.edu.in",
-      phone: "+91 9876543211",
-      location: "Delhi, NCR",
-      address: "456 Medical Avenue, Connaught Place, New Delhi, Delhi 110001",
-      establishedYear: 1998,
-      affiliation: "Delhi University",
-      recognitionType: "MCI Approved",
-      totalStudents: 1200,
-      totalFaculty: 200,
-      website: "https://www.xyzmed.edu.in",
-      status: "active",
-      joinedDate: "2024-02-10",
-      lastActive: "2024-11-15",
-      courses: "MBBS, MD, MS, Nursing, Pharmacy",
-      infrastructure: "Teaching hospital, research labs, modern equipment"
-    },
-    {
-      id: 3,
-      collegeName: "PQR Arts College",
-      collegeType: "Arts",
-      adminName: "Prof. Amit Patel",
-      email: "admin@pqrarts.edu.in",
-      phone: "+91 9876543212",
-      location: "Pune, Maharashtra",
-      address: "789 Arts Street, Koregaon Park, Pune, Maharashtra 411001",
-      establishedYear: 2010,
-      affiliation: "Pune University",
-      recognitionType: "UGC Recognized",
-      totalStudents: 800,
-      totalFaculty: 80,
-      website: "https://www.pqrarts.edu.in",
-      status: "active",
-      joinedDate: "2024-03-05",
-      lastActive: "2024-11-14",
-      courses: "BA, MA in English, History, Psychology, Fine Arts",
-      infrastructure: "Library, auditorium, art studios, computer lab"
-    },
-    {
-      id: 4,
-      collegeName: "LMN Commerce College",
-      collegeType: "Commerce",
-      adminName: "Dr. Sunita Verma",
-      email: "admin@lmncommerce.edu.in",
-      phone: "+91 9876543213",
-      location: "Bangalore, Karnataka",
-      address: "321 Commerce Plaza, MG Road, Bangalore, Karnataka 560001",
-      establishedYear: 2008,
-      affiliation: "Bangalore University",
-      recognitionType: "UGC Recognized",
-      totalStudents: 1500,
-      totalFaculty: 120,
-      website: "https://www.lmncommerce.edu.in",
-      status: "inactive",
-      joinedDate: "2024-01-20",
-      lastActive: "2024-10-25",
-      courses: "B.Com, M.Com, BBA, MBA, CA Foundation",
-      infrastructure: "Computer labs, seminar halls, placement cell"
-    },
-    {
-      id: 5,
-      collegeName: "RST Law College",
-      collegeType: "Law",
-      adminName: "Justice Retired A.K. Singh",
-      email: "admin@rstlaw.edu.in",
-      phone: "+91 9876543214",
-      location: "Chennai, Tamil Nadu",
-      address: "567 Law Avenue, T. Nagar, Chennai, Tamil Nadu 600017",
-      establishedYear: 2012,
-      affiliation: "University of Madras",
-      recognitionType: "BCI Approved",
-      totalStudents: 600,
-      totalFaculty: 45,
-      website: "https://www.rstlaw.edu.in",
-      status: "active",
-      joinedDate: "2024-04-12",
-      lastActive: "2024-11-16",
-      courses: "LLB, LLM, BA LLB, BBA LLB",
-      infrastructure: "Moot court, law library, seminar rooms"
-    }
-  ]);
+  // fetched colleges (mapped from admins) running on the platform
+  const [colleges, setColleges] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
 
   const [selectedCollege, setSelectedCollege] = useState(null);
   const [filterStatus, setFilterStatus] = useState("all");
@@ -170,6 +67,56 @@ const AllCollegesPage = () => {
   const activeColleges = colleges.filter(c => c.status === "active").length;
   const inactiveColleges = colleges.filter(c => c.status === "inactive").length;
   const totalStudents = colleges.reduce((sum, c) => sum + (c.totalStudents || 0), 0);
+
+  // Fetch admins from backend and map them to colleges
+  useEffect(() => {
+    let mounted = true;
+
+    const fetchAdmins = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const data = await apiService.request('/super-admin/get-admins');
+        const admins = data?.data?.admins || [];
+
+        // Map admins to the college object shape used by this component
+        const mapped = admins.map((a) => ({
+          id: a._id,
+          collegeName: a.collegeName || 'Unknown College',
+          collegeType: a.collegeType || 'Unknown',
+          adminName: `${a.firstName || ''} ${a.lastName || ''}`.trim() || a.personalMail || a.email,
+          email: a.personalMail || a.email,
+          phone: a.mobile || '',
+          location: a.location || '',
+          address: a.address || '',
+          establishedYear: a.establishedYear || '',
+          affiliation: a.affiliation || '',
+          recognitionType: a.recognitionType || '',
+          totalStudents: a.totalStudents || 0,
+          totalFaculty: a.totalFaculty || 0,
+          website: a.website || '',
+          status: a.status || 'active',
+          joinedDate: a.createdAt ? new Date(a.createdAt).toISOString().split('T')[0] : '',
+          lastActive: a.updatedAt ? new Date(a.updatedAt).toISOString().split('T')[0] : '',
+          courses: a.courses || '',
+          infrastructure: a.infrastructure || ''
+        }));
+
+        if (mounted) setColleges(mapped);
+      } catch (err) {
+        console.error('Failed to fetch admins:', err);
+        if (mounted) setError(err.message || 'Failed to fetch colleges');
+      } finally {
+        if (mounted) setLoading(false);
+      }
+    };
+
+    fetchAdmins();
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   return (
     <div className="p-4">
@@ -329,7 +276,7 @@ const AllCollegesPage = () => {
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center">
                       <div className="shrink-0 h-12 w-12">
-                        <div className="h-12 w-12 rounded-lg bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
+                        <div className="h-12 w-12 rounded-lg bg-linear-to-br from-blue-500 to-purple-600 flex items-center justify-center">
                           <span className="text-lg font-bold text-white">
                             {college.collegeName.split(' ').map(n => n[0]).join('').substring(0, 2)}
                           </span>

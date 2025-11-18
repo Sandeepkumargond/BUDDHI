@@ -15,7 +15,7 @@ export default function AccessDenied() {
   };
 
   const handleGoBack = () => {
-    const userDashboard = dashboardRoutes[role] || '/sign-in';
+    const userDashboard = dashboardRoutes[role] || '/login';
     router.push(userDashboard);
   };
 
