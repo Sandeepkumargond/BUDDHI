@@ -11,6 +11,7 @@ import {
   feeCategories,
   expenseCategories 
 } from "@/lib/data"
+import { apiService } from "@/lib/api"
 
 const FinancePage = () => {
   const [activeTab, setActiveTab] = useState("overview")
@@ -33,6 +34,10 @@ const FinancePage = () => {
     academicYear: "2024-25",
     fees: []
   })
+  const [feeCategory, setFeeCategory] = useState("general")
+  const [publishNow, setPublishNow] = useState(true)
+  const [submitting, setSubmitting] = useState(false)
+  const [submitMsg, setSubmitMsg] = useState("")
   
   const [expenseForm, setExpenseForm] = useState({
     description: "",
@@ -90,18 +95,44 @@ const FinancePage = () => {
   }
 
   // Form handlers
-  const handleAddFeeStructure = (e) => {
+  const handleAddFeeStructure = async (e) => {
     e.preventDefault()
-    const newFeeStructure = {
-      id: Date.now(),
-      ...feeStructureForm,
-      totalAmount: feeStructureForm.fees.reduce((sum, fee) => sum + fee.amount, 0),
-      isActive: true
+    setSubmitting(true)
+    setSubmitMsg("")
+    try {
+      const heads = (feeStructureForm.fees || [])
+        .filter(f => typeof f.amount === 'number' && f.amount > 0)
+        .map(f => {
+          const cat = feeCategories.find(c => c.id === f.categoryId)
+          return { name: cat?.name || `Category ${f.categoryId}`, amount: Number(f.amount) }
+        })
+
+      if (!feeStructureForm.departmentCode) throw new Error("Department is required")
+      if (!feeStructureForm.academicYear) throw new Error("Academic year is required")
+      if (heads.length === 0) throw new Error("Please enter at least one fee head amount")
+
+      const payload = {
+        branch: feeStructureForm.departmentCode,
+        semester: Number(feeStructureForm.semester),
+        session: feeStructureForm.academicYear,
+        category: feeCategory,
+        published: publishNow,
+        feeHeads: heads,
+      }
+
+      const res = await apiService.adminCreateFeeStructure(payload)
+      const msg = res?.message || "Fee structure added"
+      setSubmitMsg(msg)
+      alert(msg)
+      // Reset minimal state
+      setFeeStructureForm({ departmentCode: "", semester: 1, academicYear: feeStructureForm.academicYear, fees: [] })
+      setShowFeeStructureModal(false)
+    } catch (err) {
+      setSubmitMsg(err?.message || "Failed to add structure")
+      alert(err?.message || "Failed to add structure")
+    } finally {
+      setSubmitting(false)
     }
-    console.log("New Fee Structure:", newFeeStructure)
-    alert("Fee structure added successfully!")
-    setShowFeeStructureModal(false)
-    setFeeStructureForm({ departmentCode: "", semester: 1, academicYear: "2024-25", fees: [] })
   }
 
   const handleAddExpense = (e) => {
@@ -716,6 +747,20 @@ const FinancePage = () => {
                   <option value="2026-27">2026-27</option>
                 </select>
               </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">Category</label>
+                <select 
+                  value={feeCategory}
+                  onChange={(e) => setFeeCategory(e.target.value)}
+                  className="w-full border rounded px-3 py-2"
+                  required
+                >
+                  <option value="general">General</option>
+                  <option value="sc">SC</option>
+                  <option value="st">ST</option>
+                  <option value="obc">OBC</option>
+                </select>
+              </div>
               <div className="space-y-2">
                 <label className="block text-sm font-medium">Fee Categories</label>
                 {feeCategories.filter(cat => cat.isActive).map(category => (
@@ -739,6 +784,10 @@ const FinancePage = () => {
                   </div>
                 ))}
               </div>
+              <div className="flex items-center gap-2">
+                <input id="publishNow" type="checkbox" checked={publishNow} onChange={(e) => setPublishNow(e.target.checked)} />
+                <label htmlFor="publishNow" className="text-sm">Publish now</label>
+              </div>
               <div className="flex space-x-2 pt-4">
                 <button 
                   type="button"
@@ -749,11 +798,13 @@ const FinancePage = () => {
                 </button>
                 <button 
                   type="submit"
-                  className="flex-1 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+                  disabled={submitting}
+                  className="flex-1 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 disabled:opacity-50"
                 >
-                  Add Structure
+                  {submitting ? 'Saving…' : 'Add Structure'}
                 </button>
               </div>
+              {submitMsg && <div className="text-xs text-gray-500">{submitMsg}</div>}
             </form>
           </div>
         </div>

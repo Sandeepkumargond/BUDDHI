@@ -1,5 +1,6 @@
 import mongoose from "mongoose";
 import dotenv from "dotenv";
+import { FeePayment } from "../models/feePayment.model.js";
 
 dotenv.config();
 
@@ -7,6 +8,52 @@ const connectDB = async () => {
     try {
         await mongoose.connect(process.env.MONGODB_URI);
         console.log("MongoDB connected successfully");
+
+        // One-time index migration to avoid duplicate null transactionId
+        try {
+            const coll = mongoose.connection.collection('feepayments');
+            const indexes = await coll.indexes();
+            // Drop any legacy transactionId indexes without partial filter or unique
+            for (const idx of indexes) {
+                const isTxnIdx = idx?.key && Object.keys(idx.key).length === 1 && idx.key.transactionId === 1;
+                const isLegacy = isTxnIdx && (!idx.partialFilterExpression || idx.unique !== true);
+                if (isLegacy) {
+                    try {
+                        await coll.dropIndex(idx.name);
+                        console.log(`Dropped legacy txn index: ${idx.name}`);
+                    } catch (e) {
+                        if (e.codeName !== 'IndexNotFound') {
+                            console.warn(`Could not drop legacy txn index ${idx.name}:`, e.message);
+                        }
+                    }
+                }
+            }
+            // Ensure the correct partial unique txn index exists with explicit name
+            await coll.createIndex(
+                { transactionId: 1 },
+                {
+                    name: 'transactionId_1_payment_unique',
+                    unique: true,
+                    partialFilterExpression: { docType: 'payment', transactionId: { $type: 'string' } }
+                }
+            );
+            // Drop legacy unique structure scope index if present
+            const legacyStructIdx = indexes.find(i => i.name === 'branch_1_semester_1_session_1_category_1' && i.unique);
+            if (legacyStructIdx) {
+                try {
+                    await coll.dropIndex('branch_1_semester_1_session_1_category_1');
+                    console.log('Dropped legacy unique structure scope index');
+                } catch (e) {
+                    if (e.codeName !== 'IndexNotFound') {
+                        console.warn('Could not drop legacy structure scope index:', e.message);
+                    }
+                }
+            }
+            await FeePayment.syncIndexes();
+            console.log('FeePayment indexes synced');
+        } catch (e) {
+            console.warn('Index sync warning:', e.message);
+        }
     } catch (error) {
         console.error("MongoDB connection failed:", error.message);
         process.exit(1);

@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { loginAdmin, logoutAdmin, refreshAdminAccessToken, changeAdminPassword, updateAdminAccountDetails, updateAdminImage, createStudent, createFaculty, createSubAdmin, deleteStudent, deleteFaculty, deleteSubAdmin } from "../controllers/admin.controller.js";
-import { adminGetFeePaymentById, adminGetReceiptRedirect, adminListFeePayments } from "../controllers/feePayment.controller.js";
-import { validateAdminFeePaymentQuery } from "../middlewares/feePayment.middleware.js";
+import { adminGetFeePaymentById, adminGetReceiptRedirect, adminListFeePayments, adminCreateFeeStructure, adminGetFeeStructureById, adminListFeeStructures, adminPublishFeeStructure } from "../controllers/feePayment.controller.js";
+import { validateAdminFeePaymentQuery, validateCreateFeeStructure } from "../middlewares/feePayment.middleware.js";
 import { authenticateAdmin } from "../middlewares/admin.middleware.js";
 import { upload } from "../middlewares/multer.middleware.js";
 
@@ -77,6 +77,28 @@ router.route('/fee-payment/:id').get(
 router.route('/fee-payment/:id/receipt').get(
     authenticateAdmin,
     adminGetReceiptRedirect
+)
+
+// Fee structures (admin)
+router.route('/fee-structure').post(
+    authenticateAdmin,
+    validateCreateFeeStructure,
+    adminCreateFeeStructure
+)
+
+router.route('/fee-structures').get(
+    authenticateAdmin,
+    adminListFeeStructures
+)
+
+router.route('/fee-structure/:id').get(
+    authenticateAdmin,
+    adminGetFeeStructureById
+)
+
+router.route('/fee-structure/:id/publish').patch(
+    authenticateAdmin,
+    adminPublishFeeStructure
 )
 
 export default router;

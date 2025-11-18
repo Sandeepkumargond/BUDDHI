@@ -123,3 +123,32 @@ export const validateAdminFeePaymentQuery = asyncHandler(async (req, res, next) 
   req.sortObj = sortObj;
   next();
 });
+
+export const validateCreateFeeStructure = asyncHandler(async (req, res, next) => {
+  const b = req.body || {};
+
+  const program = b.program ? String(b.program).trim() : undefined;
+  const branch = String(b.branch).trim();
+  const semester = Number(b.semester);
+  const session = String(b.session).trim();
+  const category = String(b.category).toLowerCase().trim();
+  const published = String(b.published) === 'true' || b.published === true;
+
+  if (!branch) throw new ApiError(400, 'branch is required');
+  if (!Number.isFinite(semester) || semester < 1) throw new ApiError(400, 'semester must be a positive number');
+  if (!session) throw new ApiError(400, 'session is required');
+  if (!category || !['sc', 'st', 'obc', 'general'].includes(category)) throw new ApiError(400, 'category must be one of sc, st, obc, general');
+
+  const feeHeads = Array.isArray(b.feeHeads) ? b.feeHeads : [];
+  if (feeHeads.length === 0) throw new ApiError(400, 'feeHeads must be a non-empty array');
+  const normalizedHeads = feeHeads.map((h, i) => {
+    const name = String(h?.name || '').trim();
+    const amount = Number(h?.amount);
+    if (!name) throw new ApiError(400, `feeHeads[${i}].name is required`);
+    if (!Number.isFinite(amount) || amount < 0) throw new ApiError(400, `feeHeads[${i}].amount must be non-negative number`);
+    return { name, amount };
+  });
+
+  req.body = { program, branch, semester, session, category, feeHeads: normalizedHeads, published };
+  next();
+});

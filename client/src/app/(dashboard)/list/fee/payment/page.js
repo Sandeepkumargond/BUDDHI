@@ -3,21 +3,21 @@
 import { useState, useEffect } from "react";
 import Image from "next/image";
 import { useSearchParams } from "next/navigation";
-import { 
-  currentStudentLogin, 
-  semesterRegistrations, 
-  currentSemesterFees, 
-  paymentHistory 
-} from "@/lib/data";
+import { useAuth } from "@/context/AuthContext";
+import { apiService } from "@/lib/api";
 
 const FeePaymentPage = () => {
   const searchParams = useSearchParams();
   const view = searchParams.get('view');
   
+  const { user, role } = useAuth();
   const [studentData, setStudentData] = useState(null);
   const [registrationData, setRegistrationData] = useState(null);
   const [feeData, setFeeData] = useState(null);
+  const [payments, setPayments] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [structures, setStructures] = useState([]);
+  const [selectedStructureId, setSelectedStructureId] = useState(null);
   const [paymentMode, setPaymentMode] = useState("");
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [paymentInProgress, setPaymentInProgress] = useState(false);
@@ -31,22 +31,151 @@ const FeePaymentPage = () => {
       setShowReceiptView(true);
     }
     
-    // Simulate loading student data
-    setTimeout(() => {
-      const currentStudent = currentStudentLogin;
-      const registration = semesterRegistrations.find(
-        r => r.studentEnrollment === currentStudent.enrollment
-      );
-      const fees = currentSemesterFees.find(
-        f => f.studentEnrollment === currentStudent.enrollment
-      );
+    const computeAcademicYear = (admissionDate, semester) => {
+      if (!admissionDate || !semester) return null;
+      try {
+        const adm = new Date(admissionDate);
+        if (isNaN(adm.getTime())) return null;
+        // Assuming 2 semesters per academic year
+        const offsetYears = Math.floor((Number(semester) - 1) / 2);
+        const startYear = adm.getFullYear() + offsetYears;
+        return `${startYear}-${startYear + 1}`;
+      } catch {
+        return null;
+      }
+    };
 
-      setStudentData(currentStudent);
-      setRegistrationData(registration);
-      setFeeData(fees);
-      setLoading(false);
-    }, 1000);
-  }, [view]);
+    const load = async () => {
+      try {
+        // Use authenticated user context for student identity
+        if (role === 'student' && user) {
+          setStudentData({
+            name: `${user.firstName || ''} ${user.lastName || ''}`.trim(),
+            enrollment: user.enrollmentNo || user.registrationNumber || '—',
+            department: user.branch || '—',
+            program: user.program || '—',
+            semester: user.semester || null,
+            photo: user.imageUrl || null,
+            isHosteller: user.isHosteller || false,
+            hostelAlloted: user.hostelAlloted || null,
+            roomNo: user.roomNo || null,
+            academicYear: computeAcademicYear(user.dateOfAdmission, user.semester) || '—'
+          });
+        }
+
+        // Fetch student's fee payments from backend
+        const res = await apiService.listMyFeePayments();
+        const items = Array.isArray(res?.data) ? res.data : [];
+        setPayments(items);
+
+        // Fetch applicable published fee structure (latest preferred, kept for header if no selection yet)
+        try {
+          const sres = await apiService.getMyFeeStructure();
+          const structure = sres?.data?.structure;
+          const total = Number(sres?.data?.total || 0);
+          if (structure && Array.isArray(structure.feeHeads)) {
+            // compute paid amount for this session
+            const paidAmount = items
+              .filter(p => String(p.session) === String(structure.session) && String(p.transactionStatus).toLowerCase() === 'success')
+              .reduce((sum, p) => sum + Number(p.amount || 0), 0);
+            const pendingAmount = Math.max(total - paidAmount, 0);
+            const paymentStatus = pendingAmount === 0 ? 'Paid' : (paidAmount > 0 ? 'Partial' : 'Pending');
+
+            const reg = {
+              semester: structure.semester ?? user?.semester ?? '—',
+              academicYear: structure.session,
+              isHosteler: user?.isHosteller || false,
+              hostelBlock: user?.hostelAlloted || '—',
+              roomNumber: user?.roomNo || '—',
+              registrationStatus: 'Completed',
+              registrationDate: new Date().toISOString().slice(0,10),
+              subjects: [],
+            };
+
+            const fd = {
+              semester: structure.semester ?? user?.semester ?? '—',
+              academicYear: structure.session,
+              heads: structure.feeHeads.map(h => ({ name: h.name, amount: Number(h.amount || 0) })),
+              fees: { total },
+              dueDate: '—',
+              lateFeeApplicable: false,
+              lateFeeAmount: 0,
+              paidAmount,
+              pendingAmount,
+              paymentStatus,
+            };
+
+            // Only set if no selection exists yet
+            setRegistrationData(prev => prev ?? reg);
+            setFeeData(prev => prev ?? fd);
+            setSelectedStructureId(prev => prev ?? (structure._id || null));
+          } else {
+            setFeeData(null);
+          }
+        } catch (e) {
+          // No structure available is fine; keep feeData null
+          setFeeData(null);
+        }
+
+        // Fetch all published fee structures for this branch
+        try {
+          const listRes = await apiService.getMyFeeStructures();
+          const listItemsRaw = Array.isArray(listRes?.data?.items) ? listRes.data.items : [];
+          // Decorate with status/paid/pending using payments
+          const listItems = listItemsRaw.map((it) => {
+            const s = it.structure;
+            const total = Number(it.total || 0);
+            const paidAmount = items
+              .filter(p => String(p.session) === String(s.session) && String(p.transactionStatus).toLowerCase() === 'success')
+              .reduce((sum, p) => sum + Number(p.amount || 0), 0);
+            const pendingAmount = Math.max(total - paidAmount, 0);
+            const paymentStatus = pendingAmount === 0 ? 'Paid' : (paidAmount > 0 ? 'Partial' : 'Pending');
+            return { ...it, paidAmount, pendingAmount, paymentStatus };
+          });
+          setStructures(listItems);
+          // If nothing selected yet, pick the first new item
+          if (!selectedStructureId && listItems.length > 0) {
+            const sel = listItems[0];
+            setSelectedStructureId(sel.structure._id || null);
+            // set header feeData to this selection if not already set from single applicable
+            if (!feeData) {
+              const heads = (sel.structure.feeHeads || []).map(h => ({ name: h.name, amount: Number(h.amount || 0) }));
+              setRegistrationData(prev => prev ?? {
+                semester: sel.structure.semester ?? user?.semester ?? '—',
+                academicYear: sel.structure.session,
+                isHosteler: user?.isHosteller || false,
+                hostelBlock: user?.hostelAlloted || '—',
+                roomNumber: user?.roomNo || '—',
+                registrationStatus: 'Completed',
+                registrationDate: new Date().toISOString().slice(0,10),
+                subjects: [],
+              });
+              setFeeData({
+                semester: sel.structure.semester ?? user?.semester ?? '—',
+                academicYear: sel.structure.session,
+                heads,
+                fees: { total: Number(sel.total || 0) },
+                dueDate: '—',
+                lateFeeApplicable: false,
+                lateFeeAmount: 0,
+                paidAmount: sel.paidAmount,
+                pendingAmount: sel.pendingAmount,
+                paymentStatus: sel.paymentStatus,
+              });
+            }
+          }
+        } catch (e) {
+          setStructures([]);
+        }
+      } catch (e) {
+        console.error('Failed loading fee payments:', e?.message || e);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    load();
+  }, [view, role, user]);
 
   const handlePayment = async () => {
     if (!paymentMode) {
@@ -176,11 +305,9 @@ const FeePaymentPage = () => {
     );
   }
 
-  // Receipt View Component
+  // Receipt View Component (uses backend payments)
   if (showReceiptView) {
-    const paidPayments = paymentHistory.filter(p => 
-      p.studentEnrollment === studentData?.enrollment && p.status === 'Completed'
-    );
+    const paidPayments = payments.filter(p => String(p.transactionStatus).toLowerCase() === 'success');
 
     return (
       <div className="flex-1 p-4">
@@ -204,46 +331,57 @@ const FeePaymentPage = () => {
               </div>
             ) : (
               <div className="space-y-4">
-                {paidPayments.map((payment, index) => (
-                  <div key={index} className="border border-gray-200 rounded-lg p-4">
+                {paidPayments.map((payment) => (
+                  <div key={payment._id} className="border border-gray-200 rounded-lg p-4">
                     <div className="flex items-center justify-between mb-4">
                       <div>
-                        <h3 className="font-semibold text-lg">Receipt #{payment.receiptNumber}</h3>
-                        <p className="text-gray-600">Payment Date: {payment.paymentDate}</p>
+                        <h3 className="font-semibold text-lg">Receipt #{payment.id}</h3>
+                        <p className="text-gray-600">Payment Date: {new Date(payment.transactionDate).toLocaleDateString()}</p>
                       </div>
                       <div className="text-right">
                         <p className="text-2xl font-bold text-green-600">₹{payment.amount}</p>
-                        <p className="text-sm text-gray-600">{payment.paymentMethod}</p>
+                        <p className="text-sm text-gray-600">{payment.paymentMode?.toUpperCase()}</p>
                       </div>
                     </div>
                     
                     <div className="grid grid-cols-2 gap-4 mb-4 text-sm">
                       <div>
                         <p><strong>Student:</strong> {payment.studentName}</p>
-                        <p><strong>Enrollment:</strong> {payment.studentEnrollment}</p>
+                        <p><strong>Enrollment:</strong> {payment.enrollmentNo}</p>
                       </div>
                       <div>
-                        <p><strong>Semester:</strong> {payment.semester}</p>
+                        <p><strong>Session:</strong> {payment.session}</p>
                         <p><strong>Transaction ID:</strong> {payment.transactionId}</p>
                       </div>
                     </div>
 
                     <div className="flex space-x-3">
                       <button
-                        onClick={() => {
-                          const receiptData = {
-                            receiptNumber: payment.receiptNumber,
-                            studentName: payment.studentName,
-                            enrollment: payment.studentEnrollment,
-                            amount: payment.amount,
-                            paymentDate: payment.paymentDate,
-                            paymentMethod: payment.paymentMethod,
-                            transactionId: payment.transactionId,
-                            semester: payment.semester,
-                            academicYear: payment.academicYear,
-                          };
-                          setReceiptData(receiptData);
-                          downloadReceipt();
+                        onClick={async () => {
+                          try {
+                            const res = await apiService.getMyFeeReceipt(payment._id);
+                            const r = res?.data;
+                            if (!r) return;
+                            const receipt = {
+                              receiptNumber: r.receiptNo,
+                              studentName: r.student?.name,
+                              enrollment: r.student?.enrollmentNo,
+                              amount: r.amount,
+                              paymentDate: new Date(r.transaction?.date).toLocaleDateString(),
+                              paymentMethod: (r.paymentMode || '').toUpperCase(),
+                              transactionId: r.transaction?.id,
+                              semester: r.student?.semester ?? '-',
+                              academicYear: r.session,
+                              feeBreakdown: {
+                                tuitionFee: 0, libraryFee: 0, labFee: 0, sportsFee: 0, developmentFee: 0, examFee: 0, hostelFee: 0, messFee: 0
+                              },
+                              lateFee: 0,
+                            };
+                            setReceiptData(receipt);
+                            downloadReceipt();
+                          } catch (e) {
+                            console.error('Failed to fetch receipt:', e?.message || e);
+                          }
                         }}
                         className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 text-sm"
                       >
@@ -266,8 +404,9 @@ const FeePaymentPage = () => {
     );
   }
 
-  // Check if registration is not completed
-  if (!registrationData?.registrationStatus || registrationData.registrationStatus !== "Completed") {
+  // Show registration warning only if registration data exists and is not completed
+  // If we had registration status previously via dummy data, keep logic guarded.
+  if (registrationData && registrationData.registrationStatus !== "Completed") {
     return (
       <div className="flex-1 p-4">
         <div className="max-w-4xl mx-auto">
@@ -414,8 +553,8 @@ const FeePaymentPage = () => {
 
           {/* Right Section - Fee Details & Payment */}
           <div className="lg:col-span-2 space-y-6">
-            
             {/* Fee Summary */}
+            {feeData ? (
             <div className="bg-white rounded-lg shadow-sm border p-6">
               <div className="flex items-center justify-between mb-6">
                 <h2 className="text-lg font-semibold">Fee Details - Semester {feeData?.semester}</h2>
@@ -429,55 +568,18 @@ const FeePaymentPage = () => {
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <h3 className="font-semibold mb-3">Academic Fees</h3>
+                <div className="md:col-span-2">
+                  <h3 className="font-semibold mb-3">Fee Heads</h3>
                   <div className="space-y-2 text-sm">
-                    <div className="flex justify-between">
-                      <span>Tuition Fee:</span>
-                      <span>₹{feeData?.fees.tuitionFee.toLocaleString()}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span>Library Fee:</span>
-                      <span>₹{feeData?.fees.libraryFee.toLocaleString()}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span>Laboratory Fee:</span>
-                      <span>₹{feeData?.fees.labFee.toLocaleString()}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span>Sports Fee:</span>
-                      <span>₹{feeData?.fees.sportsFee.toLocaleString()}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span>Development Fee:</span>
-                      <span>₹{feeData?.fees.developmentFee.toLocaleString()}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span>Examination Fee:</span>
-                      <span>₹{feeData?.fees.examFee.toLocaleString()}</span>
-                    </div>
-                  </div>
-                </div>
-
-                <div>
-                  <h3 className="font-semibold mb-3">Additional Fees</h3>
-                  <div className="space-y-2 text-sm">
-                    {feeData?.fees.hostelFee > 0 && (
-                      <div className="flex justify-between">
-                        <span>Hostel Fee:</span>
-                        <span>₹{feeData?.fees.hostelFee.toLocaleString()}</span>
+                    {feeData?.heads?.map((h, idx) => (
+                      <div key={idx} className="flex justify-between">
+                        <span>{h.name}</span>
+                        <span>₹{Number(h.amount).toLocaleString()}</span>
                       </div>
-                    )}
-                    {feeData?.fees.messFee > 0 && (
-                      <div className="flex justify-between">
-                        <span>Mess Fee:</span>
-                        <span>₹{feeData?.fees.messFee.toLocaleString()}</span>
-                      </div>
-                    )}
-
+                    ))}
                     {feeData?.lateFeeApplicable && (
                       <div className="flex justify-between text-red-600">
-                        <span>Late Fee:</span>
+                        <span>Late Fee</span>
                         <span>₹{feeData?.lateFeeAmount.toLocaleString()}</span>
                       </div>
                     )}
@@ -529,24 +631,108 @@ const FeePaymentPage = () => {
                 </div>
               )}
             </div>
+            ) : (
+              <div className="bg-white rounded-lg shadow-sm border p-6">
+                <h2 className="text-lg font-semibold mb-2">Fee Details</h2>
+                <p className="text-gray-600">Fee breakdown is not available yet. You can still view your payment history and download receipts below.</p>
+              </div>
+            )}
 
-            {/* Payment History */}
-            {paymentHistory.some(p => p.studentEnrollment === studentData?.enrollment) && (
+            {/* All Published Fee Structures for Your Branch */}
+            {structures.length > 0 && (
+              <div className="bg-white rounded-lg shadow-sm border p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-lg font-semibold">All Published Fee Structures (Your Branch)</h2>
+                  <span className="text-sm text-gray-500">{structures.length} items</span>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {structures.map(({ structure: s, total, score, paidAmount, pendingAmount, paymentStatus }, idx) => (
+                    <div key={s._id || idx} className={`border rounded p-4 ${selectedStructureId === (s._id || null) ? 'ring-2 ring-blue-500' : ''}`}>
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="font-semibold">{s.session} • Sem {s.semester} • {String(s.category).toUpperCase()}</div>
+                        <div className="text-sm text-gray-500">{new Date(s.createdAt).toLocaleDateString()}</div>
+                      </div>
+                      <div className="flex items-center justify-between mb-2 text-sm">
+                        <div className="text-gray-600">Total: <span className="font-semibold">₹{Number(total).toLocaleString()}</span></div>
+                        <div className={`px-2 py-0.5 rounded-full text-xs ${paymentStatus === 'Paid' ? 'bg-green-100 text-green-700' : paymentStatus === 'Partial' ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700'}`}>{paymentStatus}</div>
+                      </div>
+                      <div className="flex items-center justify-between text-xs text-gray-600 mb-2">
+                        <span>Paid: ₹{Number(paidAmount).toLocaleString()}</span>
+                        <span>Pending: ₹{Number(pendingAmount).toLocaleString()}</span>
+                      </div>
+                      <div className="max-h-28 overflow-auto text-sm">
+                        {Array.isArray(s.feeHeads) && s.feeHeads.map((h, i) => (
+                          <div key={i} className="flex justify-between">
+                            <span>{h.name}</span>
+                            <span>₹{Number(h.amount).toLocaleString()}</span>
+                          </div>
+                        ))}
+                      </div>
+                      <div className="mt-3 flex items-center gap-2">
+                        <button
+                          onClick={() => {
+                            setSelectedStructureId(s._id || null);
+                            const heads = (s.feeHeads || []).map(h => ({ name: h.name, amount: Number(h.amount || 0) }));
+                            setRegistrationData({
+                              semester: s.semester ?? user?.semester ?? '—',
+                              academicYear: s.session,
+                              isHosteler: user?.isHosteller || false,
+                              hostelBlock: user?.hostelAlloted || '—',
+                              roomNumber: user?.roomNo || '—',
+                              registrationStatus: 'Completed',
+                              registrationDate: new Date().toISOString().slice(0,10),
+                              subjects: [],
+                            });
+                            setFeeData({
+                              semester: s.semester ?? user?.semester ?? '—',
+                              academicYear: s.session,
+                              heads,
+                              fees: { total: Number(total || 0) },
+                              dueDate: '—',
+                              lateFeeApplicable: false,
+                              lateFeeAmount: 0,
+                              paidAmount: Number(paidAmount || 0),
+                              pendingAmount: Number(pendingAmount || 0),
+                              paymentStatus,
+                            });
+                          }}
+                          className="px-3 py-1.5 bg-blue-600 text-white rounded hover:bg-blue-700 text-sm"
+                        >
+                          Use this structure
+                        </button>
+                        {paymentStatus !== 'Paid' && (
+                          <button
+                            onClick={() => {
+                              setSelectedStructureId(s._id || null);
+                              setShowPaymentModal(true);
+                            }}
+                            className="px-3 py-1.5 bg-green-600 text-white rounded hover:bg-green-700 text-sm"
+                          >
+                            Pay now
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Payment History (backend) */}
+            {payments.length > 0 && (
               <div className="bg-white rounded-lg shadow-sm border p-6">
                 <h2 className="text-lg font-semibold mb-4">Payment History</h2>
                 <div className="space-y-3">
-                  {paymentHistory
-                    .filter(p => p.studentEnrollment === studentData?.enrollment)
-                    .map((payment, index) => (
-                    <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                  {payments.map((payment) => (
+                    <div key={payment._id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                       <div>
                         <p className="font-medium">₹{payment.amount.toLocaleString()}</p>
-                        <p className="text-sm text-gray-600">{payment.paymentDate} • {payment.paymentMethod}</p>
-                        <p className="text-xs text-gray-500">Receipt: {payment.receiptNumber}</p>
+                        <p className="text-sm text-gray-600">{new Date(payment.transactionDate).toLocaleDateString()} • {payment.paymentMode?.toUpperCase()}</p>
+                        <p className="text-xs text-gray-500">Receipt: {payment.id}</p>
                       </div>
                       <div className="text-right">
                         <div className="bg-green-100 text-green-800 px-2 py-1 rounded text-xs">
-                          {payment.status}
+                          {String(payment.transactionStatus).toUpperCase()}
                         </div>
                         <p className="text-xs text-gray-500 mt-1">{payment.transactionId}</p>
                       </div>
@@ -559,7 +745,7 @@ const FeePaymentPage = () => {
         </div>
 
         {/* Payment Modal */}
-        {showPaymentModal && (
+        {feeData && showPaymentModal && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
             <div className="bg-white rounded-lg max-w-md w-full p-6">
               <div className="flex items-center justify-between mb-6">
