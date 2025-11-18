@@ -3,8 +3,8 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import FileUploader from "../_components/FileUploader";
-import { loadMaterials, saveMaterials } from "@/lib/studyMaterialData";
+import FileUploader from "../../_components/FileUploader.js";
+import { loadMaterials, saveMaterials } from "@/lib/studyMaterialData.js";
 
 export default function EditMaterial() {
   const router = useRouter();
