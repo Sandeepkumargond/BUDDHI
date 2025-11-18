@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { loginAdmin, logoutAdmin, refreshAdminAccessToken, changeAdminPassword, updateAdminAccountDetails, updateAdminImage, createStudent, createFaculty, createSubAdmin } from "../controllers/admin.controller.js";
+import { loginAdmin, logoutAdmin, refreshAdminAccessToken, changeAdminPassword, updateAdminAccountDetails, updateAdminImage, createStudent, createFaculty, createSubAdmin, deleteStudent, deleteFaculty, deleteSubAdmin } from "../controllers/admin.controller.js";
 import { authenticateAdmin } from "../middlewares/admin.middleware.js";
 import { upload } from "../middlewares/multer.middleware.js";
 
@@ -43,6 +43,21 @@ router.route('/create-faculty').post(
 router.route('/create-subAdmin').post(
     authenticateAdmin,
     createSubAdmin
+)
+
+router.route('/delete-student').delete(
+    authenticateAdmin,
+    deleteStudent
+)
+
+router.route('/delete-faculty').delete(
+    authenticateAdmin,
+    deleteFaculty
+)
+
+router.route('/delete-sub-admin').delete(
+    authenticateAdmin,
+    deleteSubAdmin
 )
 
 export default router;
