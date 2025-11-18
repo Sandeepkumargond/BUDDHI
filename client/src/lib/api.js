@@ -75,6 +75,26 @@ class ApiService {
     });
   }
 
+  // Refresh access token using refresh token cookie
+  async refreshAccessToken(role) {
+    const roleEndpoints = {
+      'superadmin': '/super-admin/refresh-access-token',
+      'admin': '/admin/refresh-access-token',
+      'subadmin': '/sub-admin/refresh-access-token',
+      'student': '/student/refresh-access-token',
+      'faculty': '/faculty/refresh-access-token'
+    };
+
+    const endpoint = roleEndpoints[role];
+    if (!endpoint) {
+      throw new Error('Invalid role');
+    }
+
+    return this.request(endpoint, {
+      method: 'POST',
+    });
+  }
+
   // Create superadmin for testing
   async createSuperAdmin(userData) {
     return this.request('/super-admin/register', {
@@ -118,6 +138,21 @@ class ApiService {
 
     console.log('Getting profile for role:', role, 'endpoint:', endpoint);
     return this.request(endpoint);
+  }
+
+  // Generic: get user by id based on role
+  async getById(role, id) {
+    const roleBases = {
+      'superadmin': '/super-admin',
+      'admin': '/admin',
+      'subadmin': '/sub-admin',
+      'student': '/student',
+      'faculty': '/faculty'
+    };
+
+    const base = roleBases[role];
+    if (!base) throw new Error(`Invalid role: ${role}`);
+    return this.request(`${base}/${id}`);
   }
 }
 

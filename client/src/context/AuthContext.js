@@ -18,15 +18,62 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
-  useEffect(() => {
-    // For now, just check if we have a saved role without fetching profile
-    // This prevents the ObjectId error on startup
-    const savedRole = localStorage.getItem('userRole');
-    if (savedRole) {
-      setRole(savedRole);
-      // Don't automatically fetch profile - wait for explicit login
+  // Lightweight JWT decoder (no verification, just payload parse)
+  const decodeJwt = (token) => {
+    try {
+      const payload = token.split('.')[1];
+      const decoded = JSON.parse(atob(payload.replace(/-/g, '+').replace(/_/g, '/')));
+      return decoded;
+    } catch (e) {
+      return null;
     }
-    setLoading(false);
+  };
+
+  useEffect(() => {
+    const bootstrap = async () => {
+      const savedRole = localStorage.getItem('userRole');
+      if (!savedRole) {
+        setLoading(false);
+        return;
+      }
+
+      try {
+        // Try to refresh access token using refresh cookie
+        const refreshRes = await apiService.refreshAccessToken(savedRole);
+        const tokens = refreshRes?.data || {};
+
+        setRole(savedRole);
+
+        // Try to get user id from access token and fetch user by id
+        const accessToken = tokens.accessToken;
+        const decoded = accessToken ? decodeJwt(accessToken) : null;
+        const userId = decoded?._id;
+        if (userId) {
+          try {
+            const profileRes = await apiService.getById(savedRole, userId);
+            const userData = profileRes.data?.user || profileRes.data?.superAdmin || profileRes.data?.admin || profileRes.data?.subAdmin || profileRes.data?.student || profileRes.data?.faculty || profileRes.data;
+            if (userData) setUser(userData);
+          } catch (e) {
+            // If fetching by id fails, still keep user null but stay authenticated
+            console.warn('Profile fetch by id failed:', e?.message || e);
+          }
+        }
+
+        // Mark authenticated after attempting to fetch user
+        setIsAuthenticated(true);
+      } catch (err) {
+        // Refresh failed; clear auth
+        console.error('Session bootstrap refresh failed:', err);
+        localStorage.removeItem('userRole');
+        setUser(null);
+        setRole(null);
+        setIsAuthenticated(false);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    bootstrap();
   }, []);
 
   const checkAuthStatus = async () => {
