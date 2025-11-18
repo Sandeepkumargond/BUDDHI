@@ -1,11 +1,13 @@
 "use client";
 import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
+import AccessDenied from './AccessDenied';
 
 export default function ProtectedRoute({ children, allowedRoles = [] }) {
   const { user, role, loading, isAuthenticated } = useAuth();
   const router = useRouter();
+  const [showAccessDenied, setShowAccessDenied] = useState(false);
 
   useEffect(() => {
     if (!loading) {
@@ -17,15 +19,8 @@ export default function ProtectedRoute({ children, allowedRoles = [] }) {
 
       if (allowedRoles.length > 0 && !allowedRoles.includes(role)) {
         console.log('User role not allowed:', role, 'allowed:', allowedRoles);
-        // Redirect to appropriate dashboard based on user's role
-        const dashboardRoutes = {
-          'superadmin': '/superadmin',
-          'admin': '/admin', 
-          'subadmin': '/subadmin',
-          'student': '/student',
-          'faculty': '/faculty'
-        };
-        router.push(dashboardRoutes[role] || '/sign-in');
+        // Show access denied page instead of redirecting
+        setShowAccessDenied(true);
         return;
       }
     }
@@ -43,8 +38,8 @@ export default function ProtectedRoute({ children, allowedRoles = [] }) {
     return null;
   }
 
-  if (allowedRoles.length > 0 && !allowedRoles.includes(role)) {
-    return null;
+  if (showAccessDenied || (allowedRoles.length > 0 && !allowedRoles.includes(role))) {
+    return <AccessDenied />;
   }
 
   return children;

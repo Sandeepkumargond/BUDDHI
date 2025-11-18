@@ -38,7 +38,7 @@ const menusByRole = {
     { icon: "/attendance.png", label: "Attendance", href: "/attendance" },
     { icon: "/home.png", label: "Marks", href: "/marks" },
     { icon: "/home.png", label: "Study Materials", href: "/study-materials" },
-    { icon: "/home.png", label: "Class Notices", href: "/class-notices" },
+    { icon: "/home.png", label: "Class Notices", href: "/faculty/class-notices" },
   ],
 
   admin: [

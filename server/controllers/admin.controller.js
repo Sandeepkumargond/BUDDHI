@@ -500,3 +500,112 @@ export const createSubAdmin = asyncHandler(async (req, res, next) => {
         );
 
 });
+
+export const deleteStudent = asyncHandler(async (req, res, next) => {
+    const { studentId, email, enrollmentNo, rollNo, registrationNumber } = req.body || {};
+
+    const filters = [];
+    if (studentId) filters.push({ _id: studentId });
+    if (email) filters.push({ email });
+    if (enrollmentNo) filters.push({ enrollmentNo });
+    if (rollNo) filters.push({ rollNo });
+    if (registrationNumber) filters.push({ registrationNumber });
+
+    if (!filters.length) {
+        throw new ApiError(400, "Provide at least one identifier: studentId, email, enrollmentNo, rollNo, or registrationNumber");
+    }
+
+    // Fetch to capture any assets before deletion
+    const studentToDelete = await Student.findOne({ $or: filters }).select("-password");
+
+    if (!studentToDelete) {
+        throw new ApiError(404, "Student not found");
+    }
+
+    // Perform deletion
+    const deletedStudent = await Student.findOneAndDelete({ $or: filters }).select("-password");
+
+    // Best-effort cleanup of avatar image if stored on ImageKit
+    try {
+        if (deletedStudent?.imageUrl) {
+            const fileId = await getFileIdFromUrl(deletedStudent.imageUrl);
+            if (fileId) await deleteFromImageKit(fileId);
+        }
+    } catch (err) {
+        // Non-fatal: log context if a logger exists in the codebase
+    }
+
+    return res.status(200).json(
+        new ApiResponse(
+            200,
+            deletedStudent,
+            "Student deleted successfully"
+        )
+    );
+});
+
+export const deleteFaculty = asyncHandler(async (req, res, next) => {
+    const { facultyId, email, id } = req.body || {};
+
+    const filters = [];
+    if (id) filters.push({ _id: id });
+    if (email) filters.push({ email });
+    if (facultyId) filters.push({ facultyId });
+
+    if (!filters.length) {
+        throw new ApiError(400, "Provide at least one identifier: id, email, or facultyId");
+    }
+
+    const facultyToDelete = await Faculty.findOne({ $or: filters }).select("-password");
+    if (!facultyToDelete) {
+        throw new ApiError(404, "Faculty not found");
+    }
+
+    const deletedFaculty = await Faculty.findOneAndDelete({ $or: filters }).select("-password");
+
+    try {
+        if (deletedFaculty?.imageUrl) {
+            const fileId = await getFileIdFromUrl(deletedFaculty.imageUrl);
+            if (fileId) await deleteFromImageKit(fileId);
+        }
+    } catch (err) {
+        // ignore image cleanup errors
+    }
+
+    return res.status(200).json(
+        new ApiResponse(200, deletedFaculty, "Faculty deleted successfully")
+    );
+});
+
+export const deleteSubAdmin = asyncHandler(async (req, res, next) => {
+    const { subAdminId, email, id } = req.body || {};
+
+    const filters = [];
+    if (subAdminId) filters.push({ _id: subAdminId });
+    if (id) filters.push({ _id: id });
+    if (email) filters.push({ email });
+
+    if (!filters.length) {
+        throw new ApiError(400, "Provide at least one identifier: subAdminId, id, or email");
+    }
+
+    const subAdminToDelete = await SubAdmin.findOne({ $or: filters }).select("-password");
+    if (!subAdminToDelete) {
+        throw new ApiError(404, "SubAdmin not found");
+    }
+
+    const deletedSubAdmin = await SubAdmin.findOneAndDelete({ $or: filters }).select("-password");
+
+    try {
+        if (deletedSubAdmin?.imageUrl) {
+            const fileId = await getFileIdFromUrl(deletedSubAdmin.imageUrl);
+            if (fileId) await deleteFromImageKit(fileId);
+        }
+    } catch (err) {
+        // ignore image cleanup errors
+    }
+
+    return res.status(200).json(
+        new ApiResponse(200, deletedSubAdmin, "SubAdmin deleted successfully")
+    );
+});
