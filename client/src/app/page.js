@@ -61,11 +61,13 @@ const Homepage = () => {
 
                 </div>
 
-                <div className="hidden text-sm text-white lg:flex">
-                    {/*<Button variant="outline" className =" mr-2 bg-black" >
-                        Request to Register
-
-                    </Button>8*/}
+                <div className="hidden lg:flex">
+                    <Link
+                      href="/login"
+                      className="rounded-md bg-white px-4 py-2 text-sm font-medium text-black hover:bg-neutral-200"
+                    >
+                      Log In
+                    </Link>
                 </div>
 
                 <div className="flex-col justify-end text-white md:flex lg:hidden">
@@ -91,10 +93,13 @@ const Homepage = () => {
                     ))}
                 </ul>
 
-                <div className="flex items-center justify-center pb-8 text-white lg:hidden">
-                    <Button variant="outline" className =" mr-2 bg-black" >
-                        Request to Register 
-                    </Button>
+                <div className="flex items-center justify-center pb-8 lg:hidden">
+                    <Link
+                      href="/login"
+                      className="rounded-md bg-white px-4 py-2 text-sm font-medium text-black hover:bg-neutral-200"
+                    >
+                      Log In
+                    </Link>
                 </div>
             </div>
         )}
