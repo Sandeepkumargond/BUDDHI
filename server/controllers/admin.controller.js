@@ -611,7 +611,9 @@ export const deleteSubAdmin = asyncHandler(async (req, res, next) => {
 });
 
 export const getAllFaculty = asyncHandler(async (req, res, next) => {
-    const facultyList = await Faculty.find().select("-password -refreshToken");
+    const { department } = req.query || {};
+    const filter = department ? { department } : {};
+    const facultyList = await Faculty.find(filter).select("-password -refreshToken");
 
     return res.status(200).json(
         new ApiResponse(
@@ -620,6 +622,23 @@ export const getAllFaculty = asyncHandler(async (req, res, next) => {
                 faculty: facultyList,
             },
             "Faculty list fetched successfully"
+        )
+    );
+});
+
+export const adminListStudents = asyncHandler(async (req, res) => {
+    const { branch, semester, program } = req.query || {};
+    const filters = {};
+    if (branch) filters.branch = branch;
+    if (semester) filters.semester = semester;
+    if (program) filters.program = program;
+
+    const students = await Student.find(filters).select("-password -refreshToken");
+    return res.status(200).json(
+        new ApiResponse(
+            200,
+            { students },
+            "Students fetched successfully"
         )
     );
 });

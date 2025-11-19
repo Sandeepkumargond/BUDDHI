@@ -54,6 +54,49 @@ const connectDB = async () => {
         } catch (e) {
             console.warn('Index sync warning:', e.message);
         }
+
+        // Ensure courses collection does not enforce unique (departmentId, code)
+        try {
+            const courseColl = mongoose.connection.collection('courses');
+            const courseIndexes = await courseColl.indexes();
+            for (const idx of courseIndexes) {
+                const keys = idx?.key || {};
+                const isDeptCodeIdx = keys.departmentId === 1 && keys.code === 1 && Object.keys(keys).length === 2;
+                if (isDeptCodeIdx && idx.unique) {
+                    try {
+                        await courseColl.dropIndex(idx.name);
+                        console.log(`Dropped unique index on courses: ${idx.name}`);
+                    } catch (e) {
+                        if (e.codeName !== 'IndexNotFound') {
+                            console.warn(`Could not drop courses index ${idx.name}:`, e.message);
+                        }
+                    }
+                }
+            }
+            // Recreate a non-unique index for performance
+            await courseColl.createIndex({ departmentId: 1, code: 1 }, { name: 'departmentId_1_code_1' });
+            console.log('Courses indexes ensured');
+        } catch (e) {
+            console.warn('Courses index sync warning:', e.message);
+        }
+
+        // Seed departments if missing
+        try {
+            const Department = (await import('../models/department.model.js')).Department;
+            const seeds = [
+                { code: 'CSE', name: 'Computer Science & Engineering', established: 1995 },
+                { code: 'EE', name: 'Electrical Engineering', established: 1988 },
+                { code: 'ME', name: 'Mechanical Engineering', established: 1975 },
+                { code: 'CE', name: 'Civil Engineering', established: 1965 },
+                { code: 'ECE', name: 'Electronics & Communication Engineering', established: 1992 },
+            ];
+            for (const s of seeds) {
+                await Department.updateOne({ code: s.code }, { $setOnInsert: s }, { upsert: true });
+            }
+            console.log('Department seeds ensured');
+        } catch (e) {
+            console.warn('Department seeding warning:', e.message);
+        }
     } catch (error) {
         console.error("MongoDB connection failed:", error.message);
         process.exit(1);

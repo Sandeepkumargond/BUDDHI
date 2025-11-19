@@ -4,6 +4,9 @@ import { adminGetFeePaymentById, adminGetReceiptRedirect, adminListFeePayments, 
 import { validateAdminFeePaymentQuery, validateCreateFeeStructure } from "../middlewares/feePayment.middleware.js";
 import { authenticateAdmin } from "../middlewares/admin.middleware.js";
 import { upload } from "../middlewares/multer.middleware.js";
+import { adminCreateCourse, adminListDepartmentCourses, adminDeleteCourse } from "../controllers/course.controller.js";
+import { adminGetDepartmentByCode, adminUpdateDepartmentHod, adminListDepartments } from "../controllers/department.controller.js";
+import { adminListStudents } from "../controllers/admin.controller.js";
 
 const router = Router();
 
@@ -101,5 +104,43 @@ router.route('/fee-structure/:id/publish').patch(
     adminPublishFeeStructure
 )
 router.route('/get-all-faculty').get(getAllFaculty);
+
+// Courses (admin)
+router.route('/courses').post(
+    authenticateAdmin,
+    adminCreateCourse
+);
+
+router.route('/departments/:departmentId/courses').get(
+    authenticateAdmin,
+    adminListDepartmentCourses
+);
+
+router.route('/courses/:id').delete(
+    authenticateAdmin,
+    adminDeleteCourse
+);
+
+// Departments (admin)
+router.route('/departments').get(
+    authenticateAdmin,
+    adminListDepartments
+);
+
+router.route('/departments/:code').get(
+    authenticateAdmin,
+    adminGetDepartmentByCode
+);
+
+router.route('/departments/:code/hod').patch(
+    authenticateAdmin,
+    adminUpdateDepartmentHod
+);
+
+// Students (admin)
+router.route('/students').get(
+    authenticateAdmin,
+    adminListStudents
+);
 
 export default router;
