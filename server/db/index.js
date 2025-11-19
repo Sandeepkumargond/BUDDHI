@@ -5,9 +5,31 @@ import { FeePayment } from "../models/feePayment.model.js";
 dotenv.config();
 
 const connectDB = async () => {
+    const uri = process.env.MONGODB_URI;
+    const directUri = process.env.MONGODB_URI_DIRECT; // optional non-SRV fallback
+    const options = {
+        serverSelectionTimeoutMS: 15000,
+        family: 4,
+    };
+
+    const tryConnect = async (connectionString, label) => {
+        await mongoose.connect(connectionString, options);
+        console.log(`MongoDB connected successfully (${label})`);
+    };
+
     try {
-        await mongoose.connect(process.env.MONGODB_URI);
-        console.log("MongoDB connected successfully");
+        try {
+            await tryConnect(uri, 'primary');
+        } catch (primaryErr) {
+            const msg = String(primaryErr?.message || primaryErr);
+            const looksLikeSrvDns = msg.includes('querySrv') || msg.includes('_mongodb._tcp');
+            if (looksLikeSrvDns && directUri) {
+                console.warn('SRV DNS failed, attempting direct connection string...');
+                await tryConnect(directUri, 'direct');
+            } else {
+                throw primaryErr;
+            }
+        }
 
         // One-time index migration to avoid duplicate null transactionId
         try {
@@ -50,12 +72,53 @@ const connectDB = async () => {
                 }
             }
             await FeePayment.syncIndexes();
-            console.log('FeePayment indexes synced');
         } catch (e) {
             console.warn('Index sync warning:', e.message);
         }
+
+        // Ensure courses collection does not enforce unique (departmentId, code)
+        try {
+            const courseColl = mongoose.connection.collection('courses');
+            const courseIndexes = await courseColl.indexes();
+            for (const idx of courseIndexes) {
+                const keys = idx?.key || {};
+                const isDeptCodeIdx = keys.departmentId === 1 && keys.code === 1 && Object.keys(keys).length === 2;
+                if (isDeptCodeIdx && idx.unique) {
+                    try {
+                        await courseColl.dropIndex(idx.name);
+                        console.log(`Dropped unique index on courses: ${idx.name}`);
+                    } catch (e) {
+                        if (e.codeName !== 'IndexNotFound') {
+                            console.warn(`Could not drop courses index ${idx.name}:`, e.message);
+                        }
+                    }
+                }
+            }
+            // Recreate a non-unique index for performance
+            await courseColl.createIndex({ departmentId: 1, code: 1 }, { name: 'departmentId_1_code_1' });
+        } catch (e) {
+            console.warn('Courses index sync warning:', e.message);
+        }
+
+        // Seed departments if missing
+        try {
+            const Department = (await import('../models/department.model.js')).Department;
+            const seeds = [
+                { code: 'CSE', name: 'Computer Science & Engineering', established: 1995 },
+                { code: 'EE', name: 'Electrical Engineering', established: 1988 },
+                { code: 'ME', name: 'Mechanical Engineering', established: 1975 },
+                { code: 'CE', name: 'Civil Engineering', established: 1965 },
+                { code: 'ECE', name: 'Electronics & Communication Engineering', established: 1992 },
+            ];
+            for (const s of seeds) {
+                await Department.updateOne({ code: s.code }, { $setOnInsert: s }, { upsert: true });
+            }
+        } catch (e) {
+            console.warn('Department seeding warning:', e.message);
+        }
     } catch (error) {
         console.error("MongoDB connection failed:", error.message);
+        console.error("Hint: If you're behind a DNS/firewall that blocks SRV lookups, set MONGODB_URI_DIRECT to a non-SRV connection string (mongodb://host:27017/db). Also ensure network access to the cluster.");
         process.exit(1);
     }
 };

@@ -34,7 +34,7 @@ const forms = {
   ),
 };
 
-const FormModal = ({ table, type, data, id }) => {
+const FormModal = ({ table, type, data, id, departmentId, onCreate }) => {
   const size = type === "create" ? "w-8 h-8" : "w-7 h-7";
   const bgColor =
     type === "create"
@@ -56,7 +56,7 @@ const FormModal = ({ table, type, data, id }) => {
         </button>
       </form>
     ) : type === "create" || type === "update" ? (
-      forms[table](type, data)
+      forms[table](type, data, { departmentId, onCreate })
     ) : (
       "Form not found!"
     );

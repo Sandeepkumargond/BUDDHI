@@ -12,7 +12,7 @@ const menusByRole = {
   label: "Registration",
   isDropdown: true,
   subItems: [
-    { label: "Registration Form", href: "/list/registration" },
+    { label: "Semester Registration", href: "/student/registration" },
     { label: "View & Print Registration", href: "/list/registration/print_view" }
   ]
 },
@@ -48,6 +48,16 @@ const menusByRole = {
     { icon: "/home.png", label: "Finance", href: "/list/finance" },
     { icon: "/home.png", label: "Sub Admins", href: "/list/subadmins" },
     { icon: "/home.png", label: "Departments", href: "/list/departments" },
+    {
+      icon: "/home.png",
+      label: "Registration",
+      isDropdown: true,
+      subItems: [
+        { label: "Create Form", href: "/admin/registration" },
+        { label: "View Forms", href: "/admin/registration/forms" },
+        { label: "All Registrations", href: "/admin/registration/registrations" }
+      ]
+    },
     { icon: "/home.png", label: "Add Notices", href: "/list/add-notice" },
     { icon: "/setting.png", label: "Settings", href: "/settings" },
 

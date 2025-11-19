@@ -1,9 +1,13 @@
 import { Router } from "express";
-import { loginAdmin, logoutAdmin, refreshAdminAccessToken, changeAdminPassword, updateAdminAccountDetails, updateAdminImage, createStudent, createFaculty, createSubAdmin, deleteStudent, deleteFaculty, deleteSubAdmin, getAllFaculty } from "../controllers/admin.controller.js";
-import { adminGetFeePaymentById, adminGetReceiptRedirect, adminListFeePayments, adminCreateFeeStructure, adminListFeeStructures, adminGetFeeStructureById, adminPublishFeeStructure } from "../controllers/feePayment.controller.js";
+import { loginAdmin, logoutAdmin, refreshAdminAccessToken, changeAdminPassword, updateAdminAccountDetails, updateAdminImage, createStudent, createFaculty, createSubAdmin, deleteStudent, deleteFaculty, deleteSubAdmin, getAllFaculty, getAdminById } from "../controllers/admin.controller.js";
+import { adminGetFeePaymentById, adminGetReceiptRedirect, adminListFeePayments, adminCreateFeeStructure, adminGetFeeStructureById, adminListFeeStructures, adminPublishFeeStructure } from "../controllers/feePayment.controller.js";
 import { validateAdminFeePaymentQuery, validateCreateFeeStructure } from "../middlewares/feePayment.middleware.js";
 import { authenticateAdmin } from "../middlewares/admin.middleware.js";
 import { upload } from "../middlewares/multer.middleware.js";
+import { adminCreateCourse, adminListDepartmentCourses, adminDeleteCourse, adminListDepartmentCoursesByCode } from "../controllers/course.controller.js";
+import { adminCreateRegistrationForm, adminListRegistrationForms, adminPublishRegistrationForm, adminListFormSubmissions, adminListAllRegistrations, adminDeleteRegistrationForm } from "../controllers/registration.controller.js";
+import { adminGetDepartmentByCode, adminUpdateDepartmentHod, adminListDepartments } from "../controllers/department.controller.js";
+import { adminListStudents } from "../controllers/admin.controller.js";
 
 const router = Router();
 
@@ -101,5 +105,83 @@ router.route('/fee-structure/:id/publish').patch(
     adminPublishFeeStructure
 )
 router.route('/get-all-faculty').get(getAllFaculty);
+
+// Courses (admin)
+router.route('/courses').post(
+    authenticateAdmin,
+    adminCreateCourse
+);
+
+router.route('/departments/:departmentId/courses').get(
+    authenticateAdmin,
+    adminListDepartmentCourses
+);
+
+// Courses by department code (e.g., CSE), optional semester via query param
+router.route('/departments/:code/courses-by-code').get(
+    authenticateAdmin,
+    adminListDepartmentCoursesByCode
+);
+
+router.route('/courses/:id').delete(
+    authenticateAdmin,
+    adminDeleteCourse
+);
+
+// Departments (admin)
+router.route('/departments').get(
+    authenticateAdmin,
+    adminListDepartments
+);
+
+router.route('/departments/:code').get(
+    authenticateAdmin,
+    adminGetDepartmentByCode
+);
+
+router.route('/departments/:code/hod').patch(
+    authenticateAdmin,
+    adminUpdateDepartmentHod
+);
+
+// Students (admin)
+router.route('/students').get(
+    authenticateAdmin,
+    adminListStudents
+);
+
+// Registration Forms (admin)
+router.route('/registration-forms').post(
+    authenticateAdmin,
+    adminCreateRegistrationForm
+);
+
+router.route('/registration-forms').get(
+    authenticateAdmin,
+    adminListRegistrationForms
+);
+
+router.route('/registration-forms/:id/publish').patch(
+    authenticateAdmin,
+    adminPublishRegistrationForm
+);
+
+router.route('/registration-forms/:id').delete(
+    authenticateAdmin,
+    adminDeleteRegistrationForm
+);
+
+router.route('/registration-forms/:id/submissions').get(
+    authenticateAdmin,
+    adminListFormSubmissions
+);
+
+router.route('/registrations').get(
+    authenticateAdmin,
+    adminListAllRegistrations
+);
+
+// Keep generic id route last
+router.route('/:id').get(getAdminById);
 
 export default router;

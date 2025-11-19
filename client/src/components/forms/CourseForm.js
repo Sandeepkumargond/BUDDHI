@@ -3,12 +3,19 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
+import { toast } from "react-hot-toast";
+import { apiService } from "@/lib/api";
 
 // Validation schema
 const schema = z.object({
   name: z.string().min(3, "Course name is required"),
   code: z.string().min(2, "Course code is required"),
-  credits: z.string().min(1, "Credits are required"),
+  credits: z.union([z.string(), z.number()]).refine((v) => Number(v) >= 0, {
+    message: "Credits must be a positive number",
+  }),
+  semester: z.union([z.string(), z.number()]).refine((v) => Number(v) >= 1, {
+    message: "Semester is required",
+  }),
 });
 
 const CourseForm = ({ type, data, departmentId, onCreate }) => {
@@ -23,23 +30,28 @@ const CourseForm = ({ type, data, departmentId, onCreate }) => {
       name: data?.name || "",
       code: data?.code || "",
       credits: data?.credits || "",
+      semester: data?.semester || "",
     },
   });
 
-  const onSubmit = (formData) => {
-    const coursePayload = {
-      id: Date.now(), // dummy unique id
+  const onSubmit = async (formData) => {
+    const payload = {
       departmentId,
-      ...formData,
+      name: formData.name,
+      code: formData.code,
+      credits: Number(formData.credits),
+      semester: Number(formData.semester),
     };
 
-    console.log("📘 New Course Added:", coursePayload);
-
-    // Return data to parent (DepartmentDetails)
-    if (onCreate) onCreate(coursePayload);
-
-    reset();
-    alert("Course added (check console)");
+    try {
+      const res = await apiService.adminCreateCourse(payload);
+      const created = res?.data?.course || res?.course || null;
+      if (onCreate && created) onCreate(created);
+      toast.success("Course added successfully");
+      reset();
+    } catch (e) {
+      toast.error(e.message || "Failed to create course");
+    }
   };
 
   return (
@@ -92,6 +104,20 @@ const CourseForm = ({ type, data, departmentId, onCreate }) => {
           />
           {errors.credits && (
             <p className="text-xs text-red-500">{errors.credits.message}</p>
+          )}
+        </div>
+
+        {/* Semester */}
+        <div className="flex flex-col gap-2 w-full md:w-[22%]">
+          <label className="text-xs text-gray-600">Semester</label>
+          <input
+            {...register("semester")}
+            className="p-2 ring-1 ring-gray-300 bg-[#F8FBFF] rounded-md text-sm"
+            type="number"
+            placeholder="1"
+          />
+          {errors.semester && (
+            <p className="text-xs text-red-500">{errors.semester.message}</p>
           )}
         </div>
       </div>

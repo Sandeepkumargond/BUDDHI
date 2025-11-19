@@ -4,6 +4,7 @@ import { availableMail, changeStudentPassword, getStudentById, loginStudent, log
 import { createFeePayment, listMyFeePayments, getMyFeePaymentReceipt, getMyApplicableFeeStructure, getMyApplicableFeeStructures } from "../controllers/feePayment.controller.js";
 import { validateCreateFeePayment } from "../middlewares/feePayment.middleware.js";
 import { upload } from "../middlewares/multer.middleware.js";
+import { studentGetRegistrationForm, studentListMyRegistrationForms, studentListMyRegistrations, studentSubmitRegistration } from "../controllers/registration.controller.js";
 
 const router = Router();
 
@@ -64,6 +65,27 @@ router.route('/fee-structures').get(
     authenticateStudent,
     getMyApplicableFeeStructures
 )
+
+// Registration Forms (student)
+router.route('/registration-forms').get(
+    authenticateStudent,
+    studentListMyRegistrationForms
+);
+
+router.route('/registration-forms/:id').get(
+    authenticateStudent,
+    studentGetRegistrationForm
+);
+
+router.route('/registration-forms/:id/submit').post(
+    authenticateStudent,
+    studentSubmitRegistration
+);
+
+router.route('/registrations').get(
+    authenticateStudent,
+    studentListMyRegistrations
+);
 
 // Keep generic id route last (no regex due to router lib constraints)
 router.route('/:id').get(getStudentById);
