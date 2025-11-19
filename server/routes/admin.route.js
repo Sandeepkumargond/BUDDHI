@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { loginAdmin, logoutAdmin, refreshAdminAccessToken, changeAdminPassword, updateAdminAccountDetails, updateAdminImage, createStudent, createFaculty, createSubAdmin, deleteStudent, deleteFaculty, deleteSubAdmin, getAllFaculty } from "../controllers/admin.controller.js";
-import { adminGetFeePaymentById, adminGetReceiptRedirect, adminListFeePayments } from "../controllers/feePayment.controller.js";
-import { validateAdminFeePaymentQuery } from "../middlewares/feePayment.middleware.js";
+import { adminGetFeePaymentById, adminGetReceiptRedirect, adminListFeePayments, adminCreateFeeStructure, adminListFeeStructures, adminGetFeeStructureById, adminPublishFeeStructure } from "../controllers/feePayment.controller.js";
+import { validateAdminFeePaymentQuery, validateCreateFeeStructure } from "../middlewares/feePayment.middleware.js";
 import { authenticateAdmin } from "../middlewares/admin.middleware.js";
 import { upload } from "../middlewares/multer.middleware.js";
 
