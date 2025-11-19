@@ -8,7 +8,6 @@ import Link from "next/link"
 import React from 'react'
 
 
-
 const Homepage = () => {
    const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
 
