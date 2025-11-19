@@ -72,7 +72,6 @@ const connectDB = async () => {
                 }
             }
             await FeePayment.syncIndexes();
-            console.log('FeePayment indexes synced');
         } catch (e) {
             console.warn('Index sync warning:', e.message);
         }
@@ -97,7 +96,6 @@ const connectDB = async () => {
             }
             // Recreate a non-unique index for performance
             await courseColl.createIndex({ departmentId: 1, code: 1 }, { name: 'departmentId_1_code_1' });
-            console.log('Courses indexes ensured');
         } catch (e) {
             console.warn('Courses index sync warning:', e.message);
         }
@@ -115,7 +113,6 @@ const connectDB = async () => {
             for (const s of seeds) {
                 await Department.updateOne({ code: s.code }, { $setOnInsert: s }, { upsert: true });
             }
-            console.log('Department seeds ensured');
         } catch (e) {
             console.warn('Department seeding warning:', e.message);
         }

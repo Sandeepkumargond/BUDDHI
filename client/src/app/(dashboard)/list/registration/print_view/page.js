@@ -1,60 +1,86 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
-import { registrationRecords } from "@/lib/roushaniData";
+import { useAuth } from "@/context/AuthContext";
+import { apiService } from "@/lib/api";
 
 export default function ViewPrintRegistration() {
-  const student = registrationRecords[0]; // logged-in student (dummy)
-
-  const semesters = [
-    ...new Set(registrationRecords.map((r) => r.semester)),
-  ].sort();
-
+  const { user, loading: authLoading, isAuthenticated, role } = useAuth();
+  const [registrations, setRegistrations] = useState([]);
+  const [payments, setPayments] = useState([]);
   const [selectedSemester, setSelectedSemester] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState("");
 
-  const selectedRecord = registrationRecords.find(
-    (r) => String(r.semester) === String(selectedSemester)
-  );
+  const fullName = useMemo(() => {
+    if (!user) return "";
+    return `${user.firstName || ""} ${user.lastName || ""}`.trim();
+  }, [user]);
 
-  /* -------------------------------
-        PRINT FUNCTION
-  --------------------------------*/
-  const handlePrint = () => {
-    if (!selectedRecord) return;
+  const semesters = useMemo(() => {
+    const list = Array.from(
+      new Set(
+        (registrations || []).map((r) => String(r.form?.semester || r.semester))
+      )
+    ).sort((a, b) => Number(a) - Number(b));
+    return list;
+  }, [registrations]);
 
-    const html = generateHTML(selectedRecord);
-    const win = window.open("", "_blank");
-    win.document.write(html);
-    win.document.close();
-    win.focus();
+  const selectedRecord = useMemo(() => {
+    return registrations.find(
+      (r) => String(r.form?.semester || r.semester) === String(selectedSemester)
+    );
+  }, [registrations, selectedSemester]);
+
+  const getTotalCredits = (record) =>
+    (record?.attachedCourses || []).reduce((sum, c) => sum + (Number(c.credits) || 0), 0);
+
+  const getPaymentStatusForSession = (session) => {
+    const any = payments.find(
+      (p) => p.session === session && (p.transactionStatus?.toLowerCase?.() === "success")
+    );
+    return any ? "paid" : "pending";
   };
 
-  /* -------------------------------
-        DOWNLOAD FUNCTION
-  --------------------------------*/
-  const handleDownload = () => {
-    if (!selectedRecord) return;
-
-    const html = generateHTML(selectedRecord);
-    const blob = new Blob([html], { type: "text/html" });
-    const url = URL.createObjectURL(blob);
-
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `Registration_Form_Sem${selectedRecord.semester}.html`;
-    a.click();
-
-    URL.revokeObjectURL(url);
+  const loadData = async () => {
+    setLoading(true);
+    setMessage("");
+    try {
+      const [regRes, payRes] = await Promise.all([
+        apiService.studentListMyRegistrations(),
+        apiService.listMyFeePayments()
+      ]);
+      const regs = regRes?.data?.registrations || [];
+      const payData = payRes?.data;
+      const payList = Array.isArray(payData) ? payData : (payData?.payments || []);
+      setRegistrations(regs);
+      setPayments(Array.isArray(payList) ? payList : []);
+      if (!regs.length) setMessage("No registrations found.");
+    } catch (e) {
+      setMessage(e?.message || "Failed to load registrations");
+    } finally {
+      setLoading(false);
+    }
   };
 
-  /* -------------------------------
-       TEMPLATE FOR PRINT / DOWNLOAD
-  --------------------------------*/
-  const generateHTML = (record) => `
+  useEffect(() => {
+    if (!authLoading && isAuthenticated && (role?.toLowerCase?.() === 'student')) {
+      loadData();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [authLoading, isAuthenticated, role]);
+
+  const generateHTML = (record) => {
+    const session = record.form?.session || record.session;
+    const semester = record.form?.semester || record.semester;
+    const courses = record.attachedCourses || [];
+    const totalCredits = getTotalCredits(record);
+    const paymentStatus = getPaymentStatusForSession(session);
+    return `
     <html>
       <head>
-        <title>Registration Form - Semester ${record.semester}</title>
+        <title>Registration Form - Semester ${semester}</title>
         <style>
           body { font-family: Arial; padding: 20px; }
           .header { text-align: center; padding-bottom: 20px; margin-bottom: 20px; }
@@ -62,24 +88,22 @@ export default function ViewPrintRegistration() {
           th, td { border: 1px solid #ccc; padding: 8px; }
           th { background: #f0f0f0; }
           .footer { margin-top: 30px; text-align:center; font-size:12px; color:#555; }
-          .logo { width: 90px; margin-bottom: 10px; }
         </style>
       </head>
       <body>
         <div class="header">
-          <img src="${record.instituteLogo}" class="logo" />
           <h1>BUDDHI INSTITUTE OF TECHNOLOGY</h1>
           <h3>Semester Registration Form</h3>
         </div>
 
         <h3>Student Information</h3>
         <table>
-          <tr><td><b>Name:</b></td><td>${record.studentName}</td></tr>
-          <tr><td><b>Enrollment:</b></td><td>${record.studentEnrollment}</td></tr>
-          <tr><td><b>Department:</b></td><td>${record.department}</td></tr>
-          <tr><td><b>Semester:</b></td><td>${record.semester}</td></tr>
-          <tr><td><b>Academic Year:</b></td><td>${record.academicYear}</td></tr>
-          <tr><td><b>Date:</b></td><td>${record.date}</td></tr>
+          <tr><td><b>Name:</b></td><td>${fullName}</td></tr>
+          <tr><td><b>Enrollment:</b></td><td>${user?.enrollmentNo ?? '-'}</td></tr>
+          <tr><td><b>Department:</b></td><td>${user?.branch || '-'}</td></tr>
+          <tr><td><b>Semester:</b></td><td>${semester}</td></tr>
+          <tr><td><b>Academic Year:</b></td><td>${session}</td></tr>
+          <tr><td><b>Payment:</b></td><td>${paymentStatus}</td></tr>
         </table>
 
         <h3>Registered Courses</h3>
@@ -88,13 +112,8 @@ export default function ViewPrintRegistration() {
             <tr><th>Course Code</th><th>Course Name</th><th>Credits</th></tr>
           </thead>
           <tbody>
-            ${record.registeredCourses
-              .map(
-                (c) =>
-                  `<tr><td>${c.code}</td><td>${c.name}</td><td>${c.credits}</td></tr>`
-              )
-              .join("")}
-            <tr><td colspan="2"><b>Total Credits</b></td><td><b>${record.totalCredits}</b></td></tr>
+            ${courses.map((c) => `<tr><td>${c.code}</td><td>${c.name}</td><td>${c.credits}</td></tr>`).join("")}
+            <tr><td colspan="2"><b>Total Credits</b></td><td><b>${totalCredits}</b></td></tr>
           </tbody>
         </table>
 
@@ -102,26 +121,38 @@ export default function ViewPrintRegistration() {
           This is a system-generated registration form. No signature required.
         </div>
       </body>
-    </html>
-  `;
+    </html>`;
+  };
+
+  const handlePrint = () => {
+    if (!selectedRecord) return;
+    const html = generateHTML(selectedRecord);
+    const win = window.open("", "_blank");
+    win.document.write(html);
+    win.document.close();
+    win.focus();
+  };
+
+  const handleDownload = () => {
+    if (!selectedRecord) return;
+    const html = generateHTML(selectedRecord);
+    const blob = new Blob([html], { type: "text/html" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    const semester = selectedRecord.form?.semester || selectedRecord.semester;
+    a.href = url;
+    a.download = `Registration_Form_Sem${semester}.html`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
 
   return (
     <div className="p-6 m-4 bg-white rounded-xl border border-gray-100 shadow-sm">
+      <h1 className="text-2xl font-semibold text-gray-700 mb-2">View & Print Registration Form</h1>
+      <p className="text-gray-500 text-sm mb-6">Select a semester to preview your registration details.</p>
 
-      {/* PAGE HEADER */}
-      <h1 className="text-2xl font-semibold text-gray-700 mb-2">
-        View & Print Registration Form
-      </h1>
-      <p className="text-gray-500 text-sm mb-6">
-        Select a semester to preview your registration details.
-      </p>
-
-      {/* SELECT SEMESTER BOX */}
       <div className="p-4 rounded-xl bg-[#F5F9FF] border border-[#DCE7FF] shadow-sm mb-6">
-        <label className="text-sm font-medium text-gray-600 mb-1 block">
-          Select Semester
-        </label>
-
+        <label className="text-sm font-medium text-gray-600 mb-1 block">Select Semester</label>
         <select
           value={selectedSemester}
           onChange={(e) => setSelectedSemester(e.target.value)}
@@ -129,57 +160,44 @@ export default function ViewPrintRegistration() {
         >
           <option value="">-- Choose Semester --</option>
           {semesters.map((sem) => (
-            <option key={sem} value={sem}>
-              Semester {sem}
-            </option>
+            <option key={sem} value={sem}>Semester {sem}</option>
           ))}
         </select>
       </div>
 
-      {/* REGISTRATION CARD */}
       {selectedRecord && (
         <div className="bg-white border border-gray-100 rounded-xl shadow-md p-6">
-
-          {/* HEADER WITH LOGO */}
           <div className="flex items-center gap-4 mb-6">
             <Image
-              src={selectedRecord.instituteLogo}
+              src={user?.imageUrl || "/avatar.png"}
               width={85}
               height={85}
-              alt="Institute Logo"
-              className="rounded-lg bg-white p-1 border"
+              alt={fullName}
+              className="rounded-full bg-white p-1 border object-cover"
             />
             <div>
-              <h2 className="text-xl font-semibold text-gray-800">
-                Buddhi Institute of Technology
-              </h2>
+              <h2 className="text-xl font-semibold text-gray-800">Buddhi Institute of Technology</h2>
               <p className="text-gray-600 text-sm">Semester Registration Form</p>
             </div>
           </div>
 
-          {/* STUDENT INFO CARD */}
           <div className="flex gap-4 bg-[#F5F9FF] border border-[#DCE7FF] p-4 rounded-xl shadow-sm mb-6">
-            <Image
-              src={selectedRecord.photo}
-              width={70}
-              height={70}
-              className="rounded-full"
-              alt="Student"
-            />
+            <Image src={user?.imageUrl || "/avatar.png"} width={70} height={70} className="rounded-full object-cover" alt="Student" />
             <div>
-              <p className="font-semibold text-lg text-gray-800">
-                {selectedRecord.studentName}
-              </p>
-              <p className="text-gray-600 text-sm">{selectedRecord.studentEnrollment}</p>
-              <p className="text-gray-600 text-sm">{selectedRecord.department}</p>
+              <p className="font-semibold text-lg text-gray-800">{fullName}</p>
+              <p className="text-gray-600 text-sm">Enrollment: {user?.enrollmentNo ?? '-'}</p>
+              <p className="text-gray-600 text-sm">Branch: {user?.branch || '-'}</p>
+            </div>
+            <div className="ml-auto text-right">
+              <div className="text-sm text-gray-700">Session: {selectedRecord.form?.session || selectedRecord.session}</div>
+              <div className="text-sm text-gray-700">Semester: {selectedRecord.form?.semester || selectedRecord.semester}</div>
+              <div className={`text-xs mt-1 inline-block px-2 py-1 rounded-md border ${getPaymentStatusForSession(selectedRecord.form?.session || selectedRecord.session) === 'paid' ? 'bg-green-50 text-green-700 border-green-200' : 'bg-yellow-50 text-yellow-700 border-yellow-200'}`}>
+                Payment: {getPaymentStatusForSession(selectedRecord.form?.session || selectedRecord.session)}
+              </div>
             </div>
           </div>
 
-          {/* COURSE TABLE */}
-          <h3 className="text-lg font-semibold mb-3 text-gray-700">
-            Registered Courses
-          </h3>
-
+          <h3 className="text-lg font-semibold mb-3 text-gray-700">Registered Courses</h3>
           <table className="w-full text-sm border border-gray-200 rounded-lg overflow-hidden">
             <thead className="bg-[#E9F2FF] text-gray-700">
               <tr>
@@ -189,7 +207,7 @@ export default function ViewPrintRegistration() {
               </tr>
             </thead>
             <tbody>
-              {selectedRecord.registeredCourses.map((c, i) => (
+              {(selectedRecord.attachedCourses || []).map((c, i) => (
                 <tr key={i} className="border-t border-gray-200 hover:bg-[#F7FBFF]">
                   <td className="p-3">{c.code}</td>
                   <td className="p-3">{c.name}</td>
@@ -197,29 +215,15 @@ export default function ViewPrintRegistration() {
                 </tr>
               ))}
               <tr className="bg-gray-50">
-                <td colSpan={2} className="p-3 font-bold">
-                  Total Credits
-                </td>
-                <td className="p-3 font-bold">{selectedRecord.totalCredits}</td>
+                <td colSpan={2} className="p-3 font-bold">Total Credits</td>
+                <td className="p-3 font-bold">{getTotalCredits(selectedRecord)}</td>
               </tr>
             </tbody>
           </table>
 
-          {/* BUTTONS */}
           <div className="flex gap-4 mt-6">
-            <button
-              onClick={handlePrint}
-              className="px-5 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
-            >
-              Print
-            </button>
-
-            <button
-              onClick={handleDownload}
-              className="px-5 py-2 bg-green-600 text-white rounded-md hover:bg-green-700"
-            >
-              Download
-            </button>
+            <button onClick={handlePrint} className="px-5 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">Print</button>
+            <button onClick={handleDownload} className="px-5 py-2 bg-green-600 text-white rounded-md hover:bg-green-700">Download</button>
           </div>
         </div>
       )}
