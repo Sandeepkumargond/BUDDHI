@@ -464,4 +464,540 @@ export const classNoticeSubjects = [
   "Computer Networks",
 ];
 
+// ============================================
+// MARKS DATA FOR FACULTY
+// ============================================
 
+// Students for Marks Management
+export const marksStudentsData = [
+  // CSE Semester 4 Section A
+  {
+    _id: "std001",
+    enrollmentNo: 2301001,
+    firstName: "Rohan",
+    lastName: "Kumar",
+    rollNo: 1,
+    email: "rohan.kumar@student.edu",
+    semester: 4,
+    section: "A",
+    branch: "CSE",
+  },
+  {
+    _id: "std002",
+    enrollmentNo: 2301002,
+    firstName: "Ananya",
+    lastName: "Gupta",
+    rollNo: 2,
+    email: "ananya.gupta@student.edu",
+    semester: 4,
+    section: "A",
+    branch: "CSE",
+  },
+  {
+    _id: "std003",
+    enrollmentNo: 2301003,
+    firstName: "Priya",
+    lastName: "Singh",
+    rollNo: 3,
+    email: "priya.singh@student.edu",
+    semester: 4,
+    section: "A",
+    branch: "CSE",
+  },
+  {
+    _id: "std004",
+    enrollmentNo: 2301004,
+    firstName: "Rahul",
+    lastName: "Sharma",
+    rollNo: 4,
+    email: "rahul.sharma@student.edu",
+    semester: 4,
+    section: "A",
+    branch: "CSE",
+  },
+  {
+    _id: "std005",
+    enrollmentNo: 2301005,
+    firstName: "Neha",
+    lastName: "Patel",
+    rollNo: 5,
+    email: "neha.patel@student.edu",
+    semester: 4,
+    section: "A",
+    branch: "CSE",
+  },
+  {
+    _id: "std006",
+    enrollmentNo: 2301006,
+    firstName: "Akshay",
+    lastName: "Verma",
+    rollNo: 6,
+    email: "akshay.verma@student.edu",
+    semester: 4,
+    section: "A",
+    branch: "CSE",
+  },
+  // CSE Semester 4 Section B
+  {
+    _id: "std007",
+    enrollmentNo: 2301007,
+    firstName: "Divya",
+    lastName: "Reddy",
+    rollNo: 7,
+    email: "divya.reddy@student.edu",
+    semester: 4,
+    section: "B",
+    branch: "CSE",
+  },
+  {
+    _id: "std008",
+    enrollmentNo: 2301008,
+    firstName: "Arjun",
+    lastName: "Malik",
+    rollNo: 8,
+    email: "arjun.malik@student.edu",
+    semester: 4,
+    section: "B",
+    branch: "CSE",
+  },
+  {
+    _id: "std009",
+    enrollmentNo: 2301009,
+    firstName: "Simran",
+    lastName: "Kaur",
+    rollNo: 9,
+    email: "simran.kaur@student.edu",
+    semester: 4,
+    section: "B",
+    branch: "CSE",
+  },
+  {
+    _id: "std010",
+    enrollmentNo: 2301010,
+    firstName: "Vivek",
+    lastName: "Kumar",
+    rollNo: 10,
+    email: "vivek.kumar@student.edu",
+    semester: 4,
+    section: "B",
+    branch: "CSE",
+  },
+];
+
+// Marks Data - Existing marks for students (Internal + External)
+export const marksDataTable = [
+  {
+    _id: "mark001",
+    studentId: "std001",
+    subject: "Data Structures",
+    semester: 4,
+    section: "A",
+    branch: "CSE",
+    internalMarks: 35,
+    externalMarks: 50,
+    grade: "A",
+    remarks: "Excellent performance",
+    academicYear: "2024-25",
+  },
+  {
+    _id: "mark002",
+    studentId: "std002",
+    subject: "Data Structures",
+    semester: 4,
+    section: "A",
+    branch: "CSE",
+    internalMarks: 38,
+    externalMarks: 54,
+    grade: "A+",
+    remarks: "Outstanding work",
+    academicYear: "2024-25",
+  },
+  {
+    _id: "mark003",
+    studentId: "std003",
+    subject: "Data Structures",
+    semester: 4,
+    section: "A",
+    branch: "CSE",
+    internalMarks: 32,
+    externalMarks: 46,
+    grade: "B+",
+    remarks: "Good performance",
+    academicYear: "2024-25",
+  },
+  {
+    _id: "mark004",
+    studentId: "std004",
+    subject: "Data Structures",
+    semester: 4,
+    section: "A",
+    branch: "CSE",
+    internalMarks: 36,
+    externalMarks: 52,
+    grade: "A",
+    remarks: "Very good",
+    academicYear: "2024-25",
+  },
+  {
+    _id: "mark005",
+    studentId: "std005",
+    subject: "Data Structures",
+    semester: 4,
+    section: "A",
+    branch: "CSE",
+    internalMarks: 30,
+    externalMarks: 45,
+    grade: "B",
+    remarks: "Satisfactory",
+    academicYear: "2024-25",
+  },
+  {
+    _id: "mark006",
+    studentId: "std006",
+    subject: "Data Structures",
+    semester: 4,
+    section: "A",
+    branch: "CSE",
+    internalMarks: 39,
+    externalMarks: 56,
+    grade: "A+",
+    remarks: "Exceptional",
+    academicYear: "2024-25",
+  },
+];
+
+// Departments for filter dropdown
+export const marksFilterDepartments = ["CSE", "ECE", "EEE", "ME", "CE"];
+
+// Semesters for filter dropdown
+export const marksFilterSemesters = [1, 2, 3, 4, 5, 6, 7, 8];
+
+// Sections for filter dropdown
+export const marksFilterSections = ["A", "B", "C", "D"];
+
+// Subjects for filter dropdown
+export const marksFilterSubjects = [
+  "Data Structures",
+  "Algorithms",
+  "Operating Systems",
+  "Database Management",
+  "Web Development",
+  "Computer Networks",
+  "Software Engineering",
+  "Cloud Computing",
+];
+
+// ============================================
+// ATTENDANCE DATA FOR STUDENTS
+// ============================================
+
+// Student courses/subjects with attendance data
+export const studentCoursesAttendance = [
+  {
+    id: 1,
+    courseName: "Software Engineering",
+    courseCode: "CS54116",
+    faculty: "Santosh Kumar Tripathy",
+    theoryAttendance: 76.19,
+    labAttendance: 86,
+    theoryTotal: 21,
+    theoryPresent: 16,
+    labTotal: 7,
+    labPresent: 6,
+    materials: 0,
+    marks: "-",
+  },
+  {
+    id: 2,
+    courseName: "Internet of Things",
+    courseCode: "CS54117",
+    faculty: "Bhaskar Mondal",
+    theoryAttendance: 100,
+    labAttendance: 89,
+    theoryTotal: 23,
+    theoryPresent: 23,
+    labTotal: 18,
+    labPresent: 16,
+    materials: 7,
+    marks: "-",
+  },
+  {
+    id: 3,
+    courseName: "Machine Learning",
+    courseCode: "CS54118",
+    faculty: "Mukesh Kumar",
+    theoryAttendance: 91.3,
+    labAttendance: 89,
+    theoryTotal: 23,
+    theoryPresent: 21,
+    labTotal: 18,
+    labPresent: 16,
+    materials: 6,
+    marks: "-",
+  },
+  {
+    id: 4,
+    courseName: "Information Security",
+    courseCode: "CS54119",
+    faculty: "Udai Pratap Rao",
+    theoryAttendance: 74.07,
+    labAttendance: null,
+    theoryTotal: 27,
+    theoryPresent: 20,
+    labTotal: 0,
+    labPresent: 0,
+    materials: 0,
+    marks: "-",
+  },
+  {
+    id: 5,
+    courseName: "Open Elective-1 (Communication Systems)",
+    courseCode: "OE05101",
+    faculty: "Richa Agarwal",
+    theoryAttendance: 47.83,
+    labAttendance: null,
+    theoryTotal: 23,
+    theoryPresent: 11,
+    labTotal: 0,
+    labPresent: 0,
+    materials: 0,
+    marks: "-",
+  },
+];
+
+// ============================================
+// MARKS DETAILS FOR STUDENTS (BY COURSE)
+// ============================================
+
+export const studentMarksDetails = {
+  // Course ID 1: Software Engineering
+  1: {
+    courseName: "Software Engineering",
+    courseCode: "CS54116",
+    faculty: "Santosh Kumar Tripathy",
+    totalMarks: 100,
+    passingMarks: 40,
+    data: [
+      {
+        id: 1,
+        assessmentName: "Mid Semester Exam",
+        marksObtained: 32,
+        totalMarks: 40,
+        percentage: 80,
+        date: "2025-02-15",
+      },
+      {
+        id: 2,
+        assessmentName: "Assignment 1",
+        marksObtained: 18,
+        totalMarks: 20,
+        percentage: 90,
+        date: "2025-02-10",
+      },
+      {
+        id: 3,
+        assessmentName: "Class Test",
+        marksObtained: 12,
+        totalMarks: 15,
+        percentage: 80,
+        date: "2025-02-05",
+      },
+      {
+        id: 4,
+        assessmentName: "Lab Performance",
+        marksObtained: 8,
+        totalMarks: 10,
+        percentage: 80,
+        date: "2025-02-12",
+      },
+    ],
+    totalObtained: 70,
+    totalPercentage: 78.89,
+  },
+  // Course ID 2: Internet of Things
+  2: {
+    courseName: "Internet of Things",
+    courseCode: "CS54117",
+    faculty: "Bhaskar Mondal",
+    totalMarks: 100,
+    passingMarks: 40,
+    data: [
+      {
+        id: 1,
+        assessmentName: "Mid Semester Exam",
+        marksObtained: 38,
+        totalMarks: 40,
+        percentage: 95,
+        date: "2025-02-16",
+      },
+      {
+        id: 2,
+        assessmentName: "Assignment 1",
+        marksObtained: 19,
+        totalMarks: 20,
+        percentage: 95,
+        date: "2025-02-11",
+      },
+      {
+        id: 3,
+        assessmentName: "Project Work",
+        marksObtained: 9,
+        totalMarks: 10,
+        percentage: 90,
+        date: "2025-02-13",
+      },
+    ],
+    totalObtained: 66,
+    totalPercentage: 91.67,
+  },
+  // Course ID 3: Machine Learning
+  3: {
+    courseName: "Machine Learning",
+    courseCode: "CS54118",
+    faculty: "Mukesh Kumar",
+    totalMarks: 100,
+    passingMarks: 40,
+    data: [
+      {
+        id: 1,
+        assessmentName: "Mid Semester Exam",
+        marksObtained: 35,
+        totalMarks: 40,
+        percentage: 87.5,
+        date: "2025-02-17",
+      },
+      {
+        id: 2,
+        assessmentName: "Assignment 1",
+        marksObtained: 17,
+        totalMarks: 20,
+        percentage: 85,
+        date: "2025-02-12",
+      },
+      {
+        id: 3,
+        assessmentName: "Assignment 2",
+        marksObtained: 19,
+        totalMarks: 20,
+        percentage: 95,
+        date: "2025-02-14",
+      },
+    ],
+    totalObtained: 71,
+    totalPercentage: 88.75,
+  },
+  // Course ID 4: Information Security (No marks uploaded yet)
+  4: null,
+  // Course ID 5: Open Elective (No marks uploaded yet)
+  5: null,
+};
+
+// ============================================
+// STUDY MATERIALS FOR STUDENTS (BY COURSE)
+// ============================================
+
+export const studentStudyMaterials = {
+  // Course ID 1: Software Engineering
+  1: [
+    {
+      id: 1,
+      title: "Software Development Life Cycle",
+      description: "Complete guide to SDLC phases and methodologies",
+      fileType: "pdf",
+      fileName: "SDLC_Guide.pdf",
+      fileSize: "2.5 MB",
+      uploadDate: "2025-02-01",
+      uploadedBy: "Santosh Kumar Tripathy",
+    },
+    {
+      id: 2,
+      title: "Design Patterns in Software Engineering",
+      description: "Learn common design patterns used in enterprise applications",
+      fileType: "pdf",
+      fileName: "Design_Patterns.pdf",
+      fileSize: "3.2 MB",
+      uploadDate: "2025-02-03",
+      uploadedBy: "Santosh Kumar Tripathy",
+    },
+    {
+      id: 3,
+      title: "Unit Testing and Test-Driven Development",
+      description: "Best practices for unit testing and TDD approach",
+      fileType: "pdf",
+      fileName: "TDD_Best_Practices.pdf",
+      fileSize: "1.8 MB",
+      uploadDate: "2025-02-05",
+      uploadedBy: "Santosh Kumar Tripathy",
+    },
+  ],
+  // Course ID 2: Internet of Things
+  2: [
+    {
+      id: 1,
+      title: "IoT Fundamentals and Architecture",
+      description: "Overview of IoT systems and architecture components",
+      fileType: "pdf",
+      fileName: "IoT_Fundamentals.pdf",
+      fileSize: "2.1 MB",
+      uploadDate: "2025-02-02",
+      uploadedBy: "Bhaskar Mondal",
+    },
+    {
+      id: 2,
+      title: "Sensor Networks and Data Collection",
+      description: "How to design and implement sensor networks",
+      fileType: "pdf",
+      fileName: "Sensor_Networks.pdf",
+      fileSize: "2.8 MB",
+      uploadDate: "2025-02-04",
+      uploadedBy: "Bhaskar Mondal",
+    },
+  ],
+  // Course ID 3: Machine Learning
+  3: [
+    {
+      id: 1,
+      title: "Machine Learning Algorithms Overview",
+      description: "Comprehensive guide to supervised and unsupervised learning",
+      fileType: "pdf",
+      fileName: "ML_Algorithms.pdf",
+      fileSize: "3.5 MB",
+      uploadDate: "2025-02-01",
+      uploadedBy: "Mukesh Kumar",
+    },
+    {
+      id: 2,
+      title: "Neural Networks and Deep Learning",
+      description: "Introduction to neural networks and deep learning concepts",
+      fileType: "pdf",
+      fileName: "Neural_Networks.pdf",
+      fileSize: "4.2 MB",
+      uploadDate: "2025-02-06",
+      uploadedBy: "Mukesh Kumar",
+    },
+    {
+      id: 3,
+      title: "Model Evaluation and Validation",
+      description: "Techniques for evaluating and validating ML models",
+      fileType: "pdf",
+      fileName: "Model_Evaluation.pdf",
+      fileSize: "2.3 MB",
+      uploadDate: "2025-02-08",
+      uploadedBy: "Mukesh Kumar",
+    },
+    {
+      id: 4,
+      title: "Hands-on Python Notebook - Iris Dataset",
+      description: "Practical example using Iris dataset with Python",
+      fileType: "pdf",
+      fileName: "Iris_Notebook.pdf",
+      fileSize: "1.5 MB",
+      uploadDate: "2025-02-09",
+      uploadedBy: "Mukesh Kumar",
+    },
+  ],
+  // Course ID 4: Information Security (No materials uploaded)
+  4: [],
+  // Course ID 5: Open Elective (No materials uploaded)
+  5: [],
+};

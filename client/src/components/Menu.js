@@ -36,7 +36,7 @@ const menusByRole = {
   faculty: [
     { icon: "/home.png", label: "Dashboard", href: "/faculty" },
     { icon: "/attendance.png", label: "Attendance", href: "/faculty/attendance" },
-    { icon: "/home.png", label: "Marks", href: "/marks" },
+    { icon: "/home.png", label: "Marks", href: "/faculty/marks" },
     { icon: "/home.png", label: "Study Materials", href: "/faculty/study-material" },
     { icon: "/home.png", label: "Class Notices", href: "/faculty/class-notices" },
   ],

@@ -1,7 +1,13 @@
 import { Router } from "express";
+<<<<<<< HEAD
 import { loginAdmin, logoutAdmin, refreshAdminAccessToken, changeAdminPassword, updateAdminAccountDetails, updateAdminImage, createStudent, createFaculty, createSubAdmin, deleteStudent, deleteFaculty, deleteSubAdmin } from "../controllers/admin.controller.js";
 import { adminGetFeePaymentById, adminGetReceiptRedirect, adminListFeePayments, adminCreateFeeStructure, adminGetFeeStructureById, adminListFeeStructures, adminPublishFeeStructure } from "../controllers/feePayment.controller.js";
 import { validateAdminFeePaymentQuery, validateCreateFeeStructure } from "../middlewares/feePayment.middleware.js";
+=======
+import { loginAdmin, logoutAdmin, refreshAdminAccessToken, changeAdminPassword, updateAdminAccountDetails, updateAdminImage, createStudent, createFaculty, createSubAdmin, deleteStudent, deleteFaculty, deleteSubAdmin, getAllFaculty } from "../controllers/admin.controller.js";
+import { adminGetFeePaymentById, adminGetReceiptRedirect, adminListFeePayments } from "../controllers/feePayment.controller.js";
+import { validateAdminFeePaymentQuery } from "../middlewares/feePayment.middleware.js";
+>>>>>>> e0bf079 (Add faculty fetching functionality and update routes)
 import { authenticateAdmin } from "../middlewares/admin.middleware.js";
 import { upload } from "../middlewares/multer.middleware.js";
 
@@ -100,5 +106,6 @@ router.route('/fee-structure/:id/publish').patch(
     authenticateAdmin,
     adminPublishFeeStructure
 )
+router.route('/get-all-faculty').get(getAllFaculty);
 
 export default router;

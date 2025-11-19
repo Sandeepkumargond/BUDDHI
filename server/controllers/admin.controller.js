@@ -609,3 +609,17 @@ export const deleteSubAdmin = asyncHandler(async (req, res, next) => {
         new ApiResponse(200, deletedSubAdmin, "SubAdmin deleted successfully")
     );
 });
+
+export const getAllFaculty = asyncHandler(async (req, res, next) => {
+    const facultyList = await Faculty.find().select("-password -refreshToken");
+
+    return res.status(200).json(
+        new ApiResponse(
+            200,
+            {
+                faculty: facultyList,
+            },
+            "Faculty list fetched successfully"
+        )
+    );
+});
