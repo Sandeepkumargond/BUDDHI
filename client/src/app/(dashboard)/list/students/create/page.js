@@ -1,291 +1,221 @@
 "use client";
 
-import { useState, useRef } from "react";
-import { useRouter } from "next/navigation";
-import { role } from "@/lib/data";
-import Image from "next/image";
+import { useState } from "react";
 
-const avatarList = [
-  "https://images.pexels.com/photos/220453/pexels-photo-220453.jpeg",
-  "https://images.pexels.com/photos/415829/pexels-photo-415829.jpeg",
-  "https://images.pexels.com/photos/614810/pexels-photo-614810.jpeg",
-  "https://images.pexels.com/photos/733872/pexels-photo-733872.jpeg",
-  "https://images.pexels.com/photos/2379004/pexels-photo-2379004.jpeg",
-];
+// SUCCESS CARD COMPONENT (NO global CSS)
+function SuccessCard({ message, show }) {
+  return (
+    <div
+      className={`
+        fixed top-6 right-6 w-72 z-50
+        bg-white border border-blue-200 shadow-lg rounded-xl p-4
+        transition-all duration-500 
+        ${show ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4 pointer-events-none"}
+      `}
+    >
+      <div className="flex items-center gap-3">
+        <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
+          <span className="text-blue-600 text-xl">✓</span>
+        </div>
+        <div>
+          <p className="font-semibold text-gray-700">Success</p>
+          <p className="text-sm text-gray-500">{message}</p>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export default function CreateStudentPage() {
-  const router = useRouter();
-  const fileInputRef = useRef(null);
+  const [form, setForm] = useState({
+    firstName: "",
+    lastName: "",
+    email: "",
+    personalMail: "",
+    gender: "",
+    program: "",
+    branch: "",
+    semester: "",
+    mobile: "",
+    registrationNumber: "",
+    dateOfAdmission: "",
+    dateOfBirth: "",
+    password: "",
+  });
 
-  const [uploadedPhoto, setUploadedPhoto] = useState(null);
-
-  const [form, setForm] = useState(
-    role === "subadmin"
-      ? {
-          firstName: "",
-          lastName: "",
-          personalEmail: "",
-          programme: "",
-          branch: "",
-          specialisation: "",
-          mobile: "",
-          fatherMobile: "",
-        }
-      : {
-          enrolmentNo: "",
-          rollNo: "",
-          firstName: "",
-          lastName: "",
-          branch: "",
-          programme: "",
-          specialisation: "",
-          personalEmail: "",
-          instituteEmail: "",
-          mobile: "",
-          password: "",
-        }
-  );
+  const [loading, setLoading] = useState(false);
+  const [errors, setErrors] = useState({});
+  const [successMsg, setSuccessMsg] = useState("");
+  const [showToast, setShowToast] = useState(false); // for animation
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
-  const generateRandomAvatar = () => {
-    const index = Math.floor(Math.random() * avatarList.length);
-    return avatarList[index];
+  const validateForm = () => {
+    const required = [
+      "firstName","lastName","email","personalMail","gender",
+      "program","branch","semester","mobile","registrationNumber",
+      "dateOfAdmission","dateOfBirth","password",
+    ];
+
+    const newErr = {};
+    required.forEach((f) => (!form[f] ? (newErr[f] = `${f} is required`) : null));
+
+    setErrors(newErr);
+    return Object.keys(newErr).length === 0;
   };
 
-  const handlePhotoUpload = (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onloadend = () => setUploadedPhoto(reader.result);
-    reader.readAsDataURL(file);
-  };
-
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (role !== "subadmin") {
-      if (
-        !form.enrolmentNo ||
-        !form.rollNo ||
-        !form.firstName ||
-        !form.lastName ||
-        !form.branch ||
-        !form.programme ||
-        !form.specialisation ||
-        !form.personalEmail ||
-        !form.instituteEmail ||
-        !form.mobile ||
-        !form.password
-      ) {
-        alert("Please fill all the fields");
+    if (!validateForm()) return;
+
+    try {
+      setLoading(true);
+
+      const res = await fetch("http://localhost:5000/api/v1/sub-admin/create-student", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify(form),
+      });
+
+      const data = await res.json();
+      setLoading(false);
+
+      if (!res.ok) {
+        alert(data.message || "Something went wrong");
         return;
       }
+
+      // Set success state
+      setSuccessMsg("Student created successfully!");
+      setShowToast(true);
+
+      // Auto-hide animation
+      setTimeout(() => setShowToast(false), 3500);
+
+      // Reset form
+      setForm({
+        firstName: "",
+        lastName: "",
+        email: "",
+        personalMail: "",
+        gender: "",
+        program: "",
+        branch: "",
+        semester: "",
+        mobile: "",
+        registrationNumber: "",
+        dateOfAdmission: "",
+        dateOfBirth: "",
+        password: "",
+      });
+
+    } catch (err) {
+      setLoading(false);
+      alert("Server error");
     }
-
-    const finalPhoto = uploadedPhoto || generateRandomAvatar();
-
-    const newStudent = {
-      enrolmentNo: form.enrolmentNo || "",
-      rollNo: form.rollNo || "",
-      name: `${form.firstName} ${form.lastName}`,
-      department: form.branch,
-      programme: form.programme,
-      specialisation: form.specialisation,
-      email: role === "subadmin" ? "" : form.instituteEmail,
-      personalEmail: form.personalEmail,
-      phone: form.mobile,
-      fatherMobile: form.fatherMobile || "",
-      class: "",
-      semester: role === "subadmin" ? 1 : "",
-      photo: finalPhoto,
-      password: form.password || "",
-    };
-
-    const existing = JSON.parse(localStorage.getItem("students") || "[]");
-    existing.push(newStudent);
-    localStorage.setItem("students", JSON.stringify(existing));
-
-    alert("Student created successfully!");
-    router.push("/list/students");
   };
 
   return (
-    <div className="p-6 max-w-4xl mx-auto">
-      <h1 className="text-3xl font-bold mb-6">
-        {role === "subadmin" ? "Student Admission Form" : "Create New Student"}
-      </h1>
+    <div className="p-6 m-4 bg-white rounded-xl border border-gray-100 shadow-sm">
+
+      {/* SUCCESS POPUP */}
+      <SuccessCard message={successMsg} show={showToast} />
+
+      <h1 className="text-2xl font-semibold text-gray-700">Create Student</h1>
+      <p className="text-sm text-gray-500 mb-6">Enter student details correctly.</p>
 
       <form
         onSubmit={handleSubmit}
-        className="bg-white p-6 shadow-md rounded-xl border grid grid-cols-1 md:grid-cols-2 gap-4"
+        className="space-y-5 max-w-4xl mx-auto bg-[#F5F9FF] p-6 rounded-xl border border-[#DCE7FF]"
       >
-        <div className="col-span-1 md:col-span-2 flex flex-col items-center mb-3">
-          <div className="w-24 h-24 rounded-full border-2 overflow-hidden mb-3">
-            <Image
-              src={uploadedPhoto || "/upload2.png"}
-              alt="Profile"
-              width={100}
-              height={100}
-              className="object-cover p-2 w-full h-full"
-            />
-          </div>
-
-          <button
-            type="button"
-            className="bg-gray-200 hover:bg-gray-300 px-4 py-2 rounded text-sm flex items-center gap-2"
-            onClick={() => fileInputRef.current.click()}
-          >
-            <Image src="/upload2.png" width={18} height={18} alt="upload" />
-            Upload Photo
-          </button>
-
-          <input
-            type="file"
-            accept="image/*"
-            ref={fileInputRef}
-            onChange={handlePhotoUpload}
-            className="hidden"
-          />
+        {/* NAME */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <Input label="First Name" name="firstName" value={form.firstName} onChange={handleChange} error={errors.firstName} />
+          <Input label="Last Name" name="lastName" value={form.lastName} onChange={handleChange} error={errors.lastName} />
         </div>
 
-        {role !== "subadmin" && (
-          <>
-            <input
-              type="text"
-              name="enrolmentNo"
-              placeholder="Enrollment No."
-              value={form.enrolmentNo}
-              onChange={handleChange}
-              className="border p-2 rounded"
-            />
+        {/* EMAILS */}
+        <Input label="Email" name="email" value={form.email} onChange={handleChange} error={errors.email} />
+        <Input label="Personal Email" name="personalMail" value={form.personalMail} onChange={handleChange} error={errors.personalMail} />
 
-            <input
-              type="text"
-              name="rollNo"
-              placeholder="Roll No."
-              value={form.rollNo}
-              onChange={handleChange}
-              className="border p-2 rounded"
-            />
-          </>
-        )}
+        {/* GENDER */}
+        <Select label="Gender" name="gender" value={form.gender} onChange={handleChange} options={["Male","Female","Other"]} error={errors.gender} />
 
-        <input
-          type="text"
-          name="firstName"
-          placeholder="First Name"
-          value={form.firstName}
-          onChange={handleChange}
-          className="border p-2 rounded"
-        />
+        {/* PROGRAM + BRANCH */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <Select label="Program" name="program" value={form.program} onChange={handleChange} options={["B.Tech","M.Tech","PhD"]} error={errors.program} />
+          <Select label="Branch" name="branch" value={form.branch} onChange={handleChange} options={["CSE","ECE","EEE","ME","CE"]} error={errors.branch} />
+        </div>
 
-        <input
-          type="text"
-          name="lastName"
-          placeholder="Last Name"
-          value={form.lastName}
-          onChange={handleChange}
-          className="border p-2 rounded"
-        />
+        {/* SEMESTER + MOBILE */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <Input label="Semester" name="semester" type="number" value={form.semester} onChange={handleChange} error={errors.semester} />
+          <Input label="Mobile" name="mobile" value={form.mobile} onChange={handleChange} error={errors.mobile} />
+        </div>
 
-        <input
-          type="email"
-          name="personalEmail"
-          placeholder="Personal Email"
-          value={form.personalEmail}
-          onChange={handleChange}
-          className="border p-2 rounded"
-        />
+        {/* REG NUMBER */}
+        <Input label="Registration Number" name="registrationNumber" value={form.registrationNumber} onChange={handleChange} error={errors.registrationNumber} />
 
-        <select
-          name="programme"
-          value={form.programme}
-          onChange={handleChange}
-          className="border p-2 rounded"
-        >
-          <option value="">Select Programme</option>
-          <option value="B.Tech">B.Tech</option>
-          <option value="M.Tech">M.Tech</option>
-          <option value="BCA">BCA</option>
-          <option value="MCA">MCA</option>
-          <option value="MBA">MBA</option>
-        </select>
+        {/* DATES */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <Input label="Date of Birth" name="dateOfBirth" type="date" value={form.dateOfBirth} onChange={handleChange} error={errors.dateOfBirth} />
+          <Input label="Date of Admission" name="dateOfAdmission" type="date" value={form.dateOfAdmission} onChange={handleChange} error={errors.dateOfAdmission} />
+        </div>
 
-        <select
-          name="branch"
-          value={form.branch}
-          onChange={handleChange}
-          className="border p-2 rounded"
-        >
-          <option value="">Select Branch</option>
-          <option value="CSE">CSE</option>
-          <option value="ECE">ECE</option>
-          <option value="MECH">MECH</option>
-          <option value="CIVIL">CIVIL</option>
-          <option value="EEE">EEE</option>
-        </select>
+        {/* PASSWORD */}
+        <Input label="Password" name="password" type="password" value={form.password} onChange={handleChange} error={errors.password} />
 
-        <input
-          type="text"
-          name="specialisation"
-          placeholder="Specialisation"
-          value={form.specialisation}
-          onChange={handleChange}
-          className="border p-2 rounded"
-        />
-
-        <input
-          type="tel"
-          name="mobile"
-          placeholder="Mobile Number"
-          value={form.mobile}
-          onChange={handleChange}
-          className="border p-2 rounded"
-        />
-
-        {role === "subadmin" && (
-          <input
-            type="tel"
-            name="fatherMobile"
-            placeholder="Father's Mobile Number"
-            value={form.fatherMobile}
-            onChange={handleChange}
-            className="border p-2 rounded"
-          />
-        )}
-
-        {role !== "subadmin" && (
-          <>
-            <input
-              type="email"
-              name="instituteEmail"
-              placeholder="Institute Email"
-              value={form.instituteEmail}
-              onChange={handleChange}
-              className="border p-2 rounded"
-            />
-
-            <input
-              type="password"
-              name="password"
-              placeholder="Password"
-              value={form.password}
-              onChange={handleChange}
-              className="border p-2 rounded"
-            />
-          </>
-        )}
-
-        <button
-          type="submit"
-          className="col-span-1 md:col-span-2 bg-[#C3EBFA] hover:bg-[#A9DDF0] text-black font-semibold py-3 rounded-lg"
-        >
-          {role === "subadmin" ? "Register Student" : "Create Student"}
-        </button>
+        {/* SUBMIT */}
+        <div className="flex justify-end">
+          <button
+            disabled={loading}
+            className="px-6 py-2 bg-blue-600 text-white rounded-md text-sm hover:bg-blue-700"
+          >
+            {loading ? "Creating..." : "Create Student"}
+          </button>
+        </div>
       </form>
+    </div>
+  );
+}
+
+// -------- INPUT COMPONENT --------
+function Input({ label, error, ...props }) {
+  return (
+    <div>
+      <label className="text-sm font-medium text-gray-700">{label}</label>
+      <input
+        {...props}
+        className={`w-full mt-1 p-2 rounded-md border ${
+          error ? "border-red-400" : "border-gray-300"
+        }`}
+      />
+      {error && <p className="text-xs text-red-600">{error}</p>}
+    </div>
+  );
+}
+
+// -------- SELECT COMPONENT --------
+function Select({ label, options, error, ...props }) {
+  return (
+    <div>
+      <label className="text-sm font-medium text-gray-700">{label}</label>
+      <select
+        {...props}
+        className={`w-full mt-1 p-2 rounded-md border ${
+          error ? "border-red-400" : "border-gray-300"
+        }`}
+      >
+        <option value="">Select {label}</option>
+        {options.map((op) => (
+          <option key={op}>{op}</option>
+        ))}
+      </select>
+      {error && <p className="text-xs text-red-600">{error}</p>}
     </div>
   );
 }
