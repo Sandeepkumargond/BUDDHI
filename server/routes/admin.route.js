@@ -6,6 +6,7 @@ import { authenticateAdmin } from "../middlewares/admin.middleware.js";
 import { upload } from "../middlewares/multer.middleware.js";
 import { adminCreateCourse, adminListDepartmentCourses, adminDeleteCourse, adminListDepartmentCoursesByCode } from "../controllers/course.controller.js";
 import { adminCreateRegistrationForm, adminListRegistrationForms, adminPublishRegistrationForm, adminListFormSubmissions, adminListAllRegistrations, adminDeleteRegistrationForm } from "../controllers/registration.controller.js";
+import { adminGetAdmitCardByDeptSem, adminPublishAdmitCard, adminListAdmitCards, adminDeleteAdmitCard } from "../controllers/admitCard.controller.js";
 import { adminGetDepartmentByCode, adminUpdateDepartmentHod, adminListDepartments } from "../controllers/department.controller.js";
 import { adminListStudents } from "../controllers/admin.controller.js";
 
@@ -179,6 +180,28 @@ router.route('/registration-forms/:id/submissions').get(
 router.route('/registrations').get(
     authenticateAdmin,
     adminListAllRegistrations
+);
+
+// Admit Cards (admin)
+router.route('/admit-cards/publish').post(
+    authenticateAdmin,
+    upload.single('signature'),
+    adminPublishAdmitCard
+);
+
+router.route('/admit-cards/by-dept/:code/semester/:semester').get(
+    authenticateAdmin,
+    adminGetAdmitCardByDeptSem
+);
+
+router.route('/admit-cards').get(
+    authenticateAdmin,
+    adminListAdmitCards
+);
+
+router.route('/admit-cards/:id').delete(
+    authenticateAdmin,
+    adminDeleteAdmitCard
 );
 
 // Keep generic id route last

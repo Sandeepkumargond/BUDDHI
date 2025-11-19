@@ -234,6 +234,37 @@ class ApiService {
     return this.request(`/admin/students${qs}`, { method: 'GET' });
   }
 
+  // Departments (admin)
+  async adminListDepartments(params = {}) {
+    const query = new URLSearchParams(params).toString();
+    const qs = query ? `?${query}` : '';
+    return this.request(`/admin/departments${qs}`, { method: 'GET' });
+  }
+
+  // Admit Cards (admin)
+  async adminPublishAdmitCard(payload) {
+    return this.request('/admin/admit-cards/publish', { method: 'POST', body: payload });
+  }
+
+  async adminGetAdmitCardByDeptSem(code, semester) {
+    return this.request(`/admin/admit-cards/by-dept/${encodeURIComponent(code)}/semester/${encodeURIComponent(semester)}`, { method: 'GET' });
+  }
+
+  // Admit Card (student)
+  async studentGetMyAdmitCard() {
+    return this.request('/student/admit-card', { method: 'GET' });
+  }
+
+  async adminListAdmitCards(params = {}) {
+    const query = new URLSearchParams(params).toString();
+    const qs = query ? `?${query}` : '';
+    return this.request(`/admin/admit-cards${qs}`, { method: 'GET' });
+  }
+
+  async adminDeleteAdmitCard(id) {
+    return this.request(`/admin/admit-cards/${id}`, { method: 'DELETE' });
+  }
+
   async getProfile(role) {
     const roleEndpoints = {
       'superadmin': '/super-admin/profile',

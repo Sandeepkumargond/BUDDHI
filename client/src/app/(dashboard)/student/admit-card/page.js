@@ -1,17 +1,71 @@
 "use client";
 
-import {
-  admitCardStudent,
-  examSession,
-  examCoordinator,
-  examInstructions,
-  examSchedule,
-} from "@/lib/aryan_admitcarddata";
 import Image from "next/image";
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { apiService } from "@/lib/api";
 
 export default function AdmitCardPage() {
   const [previewOpen, setPreviewOpen] = useState(false);
+  const [admitCardStudent, setAdmitCardStudent] = useState({
+    name: "",
+    rollNo: "",
+    enrolmentNo: "",
+    registrationNo: "",
+    course: "",
+    year: "",
+    semester: "",
+    dob: "",
+    photo: "/avatar.png",
+  });
+  const [examSession, setExamSession] = useState({
+    type: "",
+    session: "",
+    examCenter: "",
+    centerCode: "",
+    reportingTime: "",
+    gateClose: "",
+  });
+  const [examCoordinator, setExamCoordinator] = useState({
+    name: "",
+    phone: "",
+    email: "",
+    office: "",
+    signatureUrl: "",
+  });
+  const [instituteName, setInstituteName] = useState("");
+  const [examInstructions, setExamInstructions] = useState([]);
+  const [examSchedule, setExamSchedule] = useState([]);
+  const [message, setMessage] = useState("");
+
+  useEffect(() => {
+    let active = true;
+    const load = async () => {
+      try {
+        const res = await apiService.studentGetMyAdmitCard();
+        const data = res?.data || {};
+        if (!active) return;
+        if (data.student) setAdmitCardStudent((s) => ({ ...s, ...data.student, photo: data.student.photo || "/avatar.png" }));
+        if (data.session) setExamSession({
+          type: data.session.examType || data.session.type || "",
+          session: data.session.session || "",
+          examCenter: data.session.examCenter || "",
+          centerCode: data.session.centerCode || "",
+          reportingTime: data.session.reportingTime || "",
+          gateClose: data.session.gateClose || "",
+        });
+        if (Array.isArray(data.schedule)) setExamSchedule(data.schedule);
+        if (data.coordinator) setExamCoordinator(data.coordinator);
+        if (data.instituteName) setInstituteName(data.instituteName);
+        if (Array.isArray(data.instructions)) setExamInstructions(data.instructions);
+        setMessage("");
+      } catch (err) {
+        if (!active) return;
+        setMessage(err?.message || "Failed to load admit card");
+      }
+    };
+    load();
+    return () => { active = false };
+  }, []);
 
   /* ---------------------------------------
       DOWNLOAD ADMIT CARD (PDF)
@@ -24,37 +78,62 @@ export default function AdmitCardPage() {
         <title>Admit Card</title>
         <style>
           body { font-family: Arial; padding: 20px; }
+          .container { max-width: 900px; margin: 0 auto; }
           table { width: 100%; border-collapse: collapse; margin-top: 10px; }
           th, td { border: 1px solid #555; padding: 8px; }
           th { background: #eee; }
+          .student-box { display: flex; gap: 16px; align-items: center; justify-content: space-between; }
+          .student-info { flex: 1; margin-right: 16px; }
+          .student-photo { width: 90px; height: 90px; border-radius: 8px; object-fit: cover; border: 1px solid #ccc; }
         </style>
       </head>
       <body>
-        <h2 style="text-align:center;">Admit Card - ${examSession.session}</h2>
-        <hr />
+        <div class="container">
+          <h1 style="text-align:center;margin:0;">${instituteName || ''}</h1>
+          <h2 style="text-align:center;margin-top:4px;">Admit Card - ${examSession.session}</h2>
+          <hr />
 
-        <h3>Student Details</h3>
-        <p><strong>Name:</strong> ${admitCardStudent.name}</p>
-        <p><strong>Roll No:</strong> ${admitCardStudent.rollNo}</p>
-        <p><strong>Enrollment No:</strong> ${admitCardStudent.enrolmentNo}</p>
-        <p><strong>Course:</strong> ${admitCardStudent.course}</p>
+          <h3>Student Details</h3>
+          <div class="student-box">
+            <div class="student-info">
+              <p><strong>Name:</strong> ${admitCardStudent.name}</p>
+              <p><strong>Roll No:</strong> ${admitCardStudent.rollNo}</p>
+              <p><strong>Enrollment No:</strong> ${admitCardStudent.enrolmentNo}</p>
+              <p><strong>Course:</strong> ${admitCardStudent.course}</p>
+            </div>
+            <img class="student-photo" src="${admitCardStudent.photo || '/avatar.png'}" alt="Student Photo" />
+          </div>
 
-        <h3>Exam Session</h3>
-        <p><strong>Exam Type:</strong> ${examSession.type}</p>
-        <p><strong>Center:</strong> ${examSession.examCenter}</p>
+          <h3>Exam Session</h3>
+          <p><strong>Exam Type:</strong> ${examSession.type}</p>
+          <p><strong>Center:</strong> ${examSession.examCenter}</p>
 
-        <h3>Exam Schedule</h3>
-        <table>
-          <tr><th>Date</th><th>Code</th><th>Name</th><th>Time</th></tr>
-          ${examSchedule
-            .map(
-              (s) =>
-                `<tr><td>${s.date}</td><td>${s.code}</td><td>${s.name}</td><td>${s.time}</td></tr>`
-            )
-            .join("")}
-        </table>
+          <h3>Exam Schedule</h3>
+          <table>
+            <tr><th>Date</th><th>Code</th><th>Name</th><th>Time</th></tr>
+            ${examSchedule
+              .map(
+                (s) =>
+                  `<tr><td>${s.date}</td><td>${s.code}</td><td>${s.name}</td><td>${s.time}</td></tr>`
+              )
+              .join("")}
+          </table>
 
-        <br><p style="text-align:right;">Controller of Examination</p>
+          <h3 style="margin-top:16px;">Important Instructions</h3>
+          <ul style="margin-left:20px;">
+            ${ (Array.isArray(examInstructions) ? examInstructions : [])
+                .map((i) => `<li>${i}</li>`)
+                .join("") }
+          </ul>
+
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-top:24px;">
+            <div></div>
+            <div style="text-align:right;">
+              ${examCoordinator?.signatureUrl ? `<img src="${examCoordinator.signatureUrl}" alt="Signature" style="height:60px;object-fit:contain;display:block;margin-left:auto;" />` : ''}
+              <div style="margin-top:4px;">Exam Coordinator</div>
+            </div>
+          </div>
+        </div>
       </body>
       </html>
     `);
@@ -73,37 +152,62 @@ export default function AdmitCardPage() {
         <title>Admit Card Preview</title>
         <style>
           body { font-family: Arial; padding: 20px; line-height: 1.6; }
+          .container { max-width: 900px; margin: 0 auto; }
           h2 { text-align: center; }
           table { width: 100%; margin-top: 10px; border-collapse: collapse; }
           td, th { border: 1px solid #555; padding: 8px; }
           th { background: #eee; }
+          .student-box { display: flex; gap: 16px; align-items: center; justify-content: space-between; }
+          .student-info { flex: 1; margin-right: 16px; }
+          .student-photo { width: 90px; height: 90px; border-radius: 8px; object-fit: cover; border: 1px solid #ccc; }
         </style>
       </head>
       <body>
 
-        <h2>Admit Card Preview</h2>
-        <hr/>
+        <div class="container">
+          <h1 style="text-align:center;margin:0;">${instituteName || ''}</h1>
+          <h2 style="text-align:center;margin-top:4px;">Admit Card Preview</h2>
+          <hr/>
 
-        <h3>Student Details</h3>
-        <p><strong>Name:</strong> ${admitCardStudent.name}</p>
-        <p><strong>Roll No:</strong> ${admitCardStudent.rollNo}</p>
-        <p><strong>Enrollment:</strong> ${admitCardStudent.enrolmentNo}</p>
+          <h3>Student Details</h3>
+          <div class="student-box">
+            <div class="student-info">
+              <p><strong>Name:</strong> ${admitCardStudent.name}</p>
+              <p><strong>Roll No:</strong> ${admitCardStudent.rollNo}</p>
+              <p><strong>Enrollment:</strong> ${admitCardStudent.enrolmentNo}</p>
+            </div>
+            <img class="student-photo" src="${admitCardStudent.photo || '/avatar.png'}" alt="Student Photo" />
+          </div>
 
-        <h3>Exam Session</h3>
-        <p><strong>Exam:</strong> ${examSession.type}</p>
-        <p><strong>Session:</strong> ${examSession.session}</p>
-        <p><strong>Center:</strong> ${examSession.examCenter}</p>
+          <h3>Exam Session</h3>
+          <p><strong>Exam:</strong> ${examSession.type}</p>
+          <p><strong>Session:</strong> ${examSession.session}</p>
+          <p><strong>Center:</strong> ${examSession.examCenter}</p>
 
-        <h3>Exam Schedule</h3>
-        <table>
-          <tr><th>Date</th><th>Code</th><th>Subject</th><th>Time</th></tr>
-          ${examSchedule
-            .map(
-              (exam) =>
-                `<tr><td>${exam.date}</td><td>${exam.code}</td><td>${exam.name}</td><td>${exam.time}</td></tr>`
-            )
-            .join("")}
-        </table>
+          <h3>Exam Schedule</h3>
+          <table>
+            <tr><th>Date</th><th>Code</th><th>Subject</th><th>Time</th></tr>
+            ${examSchedule
+              .map(
+                (exam) =>
+                  `<tr><td>${exam.date}</td><td>${exam.code}</td><td>${exam.name}</td><td>${exam.time}</td></tr>`
+              )
+              .join("")}
+          </table>
+          <h3 style="margin-top:16px;">Important Instructions</h3>
+          <ul style="margin-left:20px;">
+            ${ (Array.isArray(examInstructions) ? examInstructions : [])
+                .map((i) => `<li>${i}</li>`)
+                .join("") }
+          </ul>
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-top:24px;">
+            <div></div>
+            <div style="text-align:right;">
+              ${examCoordinator?.signatureUrl ? `<img src="${examCoordinator.signatureUrl}" alt="Signature" style="height:60px;object-fit:contain;display:block;margin-left:auto;" />` : ''}
+              <div style="margin-top:4px;">Exam Coordinator</div>
+            </div>
+          </div>
+        </div>
 
       </body>
       </html>
@@ -113,6 +217,9 @@ export default function AdmitCardPage() {
 
   return (
     <div className="p-6 space-y-6">
+      {message ? (
+        <div className="text-sm text-red-600">{message}</div>
+      ) : null}
 
       {/* TOP ROW */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -128,7 +235,7 @@ export default function AdmitCardPage() {
 
           <div className="flex items-center gap-4">
             <Image
-              src={admitCardStudent.photo}
+              src={admitCardStudent.photo || "/avatar.png"}
               width={90}
               height={90}
               alt="student"

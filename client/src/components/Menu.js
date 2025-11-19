@@ -53,6 +53,15 @@ const menusByRole = {
     { Icon: FaUserShield, label: "Sub Admins", href: "/list/subadmins" },
     { Icon: FaBuilding, label: "Departments", href: "/list/departments" },
     {
+      Icon: FaIdCard,
+      label: "Admit Card",
+      isDropdown: true,
+      subItems: [
+        { label: "Publish Admit Card", href: "/admin/admit-card" },
+        { label: "Published Admit Cards", href: "/admin/admit-card/published" }
+      ]
+    },
+    {
       Icon: MdAppRegistration,
       label: "Registration",
       isDropdown: true,
