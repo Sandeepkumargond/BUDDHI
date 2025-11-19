@@ -38,7 +38,15 @@ class ApiService {
       }
 
       if (!response.ok) {
-        throw new Error(data.message || `HTTP ${response.status}: ${response.statusText}`);
+        const rawMessage = data.message || `HTTP ${response.status}: ${response.statusText}`;
+        // Map specific backend refresh token errors to a clearer client-side message
+        if (rawMessage.includes('Refresh Token is expired or used')) {
+          throw new Error('Session expired. Please log in again.');
+        }
+        if (rawMessage.toLowerCase().includes('invalid refresh token')) {
+          throw new Error('Session invalid. Please log in again.');
+        }
+        throw new Error(rawMessage);
       }
 
       return data;
@@ -190,6 +198,10 @@ class ApiService {
 
   async adminPublishRegistrationForm(id) {
     return this.request(`/admin/registration-forms/${id}/publish`, { method: 'PATCH' });
+  }
+
+  async adminDeleteRegistrationForm(id) {
+    return this.request(`/admin/registration-forms/${id}`, { method: 'DELETE' });
   }
 
   async adminListRegistrationFormSubmissions(id) {

@@ -74,6 +74,7 @@ export default function ViewPrintRegistration() {
   const generateHTML = (record) => {
     const session = record.form?.session || record.session;
     const semester = record.form?.semester || record.semester;
+    const title = record.form?.title || record.formTitle || `Semester ${semester} Registration (${session})`;
     const courses = record.attachedCourses || [];
     const totalCredits = getTotalCredits(record);
     const paymentStatus = getPaymentStatusForSession(session);
@@ -93,7 +94,7 @@ export default function ViewPrintRegistration() {
       <body>
         <div class="header">
           <h1>BUDDHI INSTITUTE OF TECHNOLOGY</h1>
-          <h3>Semester Registration Form</h3>
+          <h3>${title}</h3>
         </div>
 
         <h3>Student Information</h3>
@@ -102,7 +103,7 @@ export default function ViewPrintRegistration() {
           <tr><td><b>Enrollment:</b></td><td>${user?.enrollmentNo ?? '-'}</td></tr>
           <tr><td><b>Department:</b></td><td>${user?.branch || '-'}</td></tr>
           <tr><td><b>Semester:</b></td><td>${semester}</td></tr>
-          <tr><td><b>Academic Year:</b></td><td>${session}</td></tr>
+          <tr><td><b>Session:</b></td><td>${session}</td></tr>
           <tr><td><b>Payment:</b></td><td>${paymentStatus}</td></tr>
         </table>
 
@@ -177,7 +178,7 @@ export default function ViewPrintRegistration() {
             />
             <div>
               <h2 className="text-xl font-semibold text-gray-800">Buddhi Institute of Technology</h2>
-              <p className="text-gray-600 text-sm">Semester Registration Form</p>
+              <p className="text-gray-600 text-sm">{selectedRecord.form?.title || selectedRecord.formTitle || `Semester ${selectedRecord.form?.semester || selectedRecord.semester} Registration (${selectedRecord.form?.session || selectedRecord.session})`}</p>
             </div>
           </div>
 

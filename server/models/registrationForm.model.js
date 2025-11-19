@@ -36,6 +36,8 @@ const registrationSchema = new Schema(
     student: { type: mongoose.Schema.Types.ObjectId, ref: "Student", default: null },
     status: { type: String, enum: ["submitted"], default: undefined },
     submittedAt: { type: Date, default: undefined },
+    // Snapshot of form title for submissions to survive form deletion
+    formTitle: { type: String, trim: true, default: undefined },
   },
   { timestamps: true }
 );

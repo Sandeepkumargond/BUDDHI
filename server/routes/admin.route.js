@@ -5,7 +5,7 @@ import { validateAdminFeePaymentQuery, validateCreateFeeStructure } from "../mid
 import { authenticateAdmin } from "../middlewares/admin.middleware.js";
 import { upload } from "../middlewares/multer.middleware.js";
 import { adminCreateCourse, adminListDepartmentCourses, adminDeleteCourse, adminListDepartmentCoursesByCode } from "../controllers/course.controller.js";
-import { adminCreateRegistrationForm, adminListRegistrationForms, adminPublishRegistrationForm, adminListFormSubmissions, adminListAllRegistrations } from "../controllers/registration.controller.js";
+import { adminCreateRegistrationForm, adminListRegistrationForms, adminPublishRegistrationForm, adminListFormSubmissions, adminListAllRegistrations, adminDeleteRegistrationForm } from "../controllers/registration.controller.js";
 import { adminGetDepartmentByCode, adminUpdateDepartmentHod, adminListDepartments } from "../controllers/department.controller.js";
 import { adminListStudents } from "../controllers/admin.controller.js";
 
@@ -164,6 +164,11 @@ router.route('/registration-forms').get(
 router.route('/registration-forms/:id/publish').patch(
     authenticateAdmin,
     adminPublishRegistrationForm
+);
+
+router.route('/registration-forms/:id').delete(
+    authenticateAdmin,
+    adminDeleteRegistrationForm
 );
 
 router.route('/registration-forms/:id/submissions').get(

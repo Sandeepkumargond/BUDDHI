@@ -158,6 +158,7 @@ export const studentSubmitRegistration = asyncHandler(async (req, res) => {
     attachedCourses: Array.isArray(form.attachedCourses) ? form.attachedCourses : [],
     status: "submitted",
     submittedAt: new Date(),
+    formTitle: form.title || null,
   });
 
   return res.status(201).json(new ApiResponse(201, { registration }, "Registration submitted"));
@@ -202,4 +203,14 @@ export const adminListAllRegistrations = asyncHandler(async (req, res) => {
     .sort({ createdAt: -1 });
 
   return res.status(200).json(new ApiResponse(200, { registrations: regs }, "Registrations fetched"));
+});
+
+// ADMIN: Delete a registration form (soft delete by removal). Submissions remain for audit/print.
+export const adminDeleteRegistrationForm = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  if (!id) throw new ApiError(400, 'Form id is required');
+  const form = await RegistrationForm.findOneAndDelete({ _id: id, docType: 'form' });
+  if (!form) throw new ApiError(404, 'Form not found');
+  // Submissions referencing this form are left intact; they rely on snapshot fields.
+  return res.status(200).json(new ApiResponse(200, {}, 'Registration form deleted'));
 });
