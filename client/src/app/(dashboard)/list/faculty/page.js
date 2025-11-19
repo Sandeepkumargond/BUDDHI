@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import FormModal from "@/components/FormModal";
 import Pagination from "@/components/Pagination";
 import Table from "@/components/Table";
@@ -9,6 +9,8 @@ import { role, facultysData } from "@/lib/data";
 import { departmentsData } from "@/lib/roushaniData.js";
 import Image from "next/image";
 import Link from "next/link";
+import { apiService } from '@/lib/api';
+import { deptartmentMap } from '@/lib/maps';
 
 const columns = [
   {
@@ -47,9 +49,12 @@ const columns = [
 ];
 
 const facultyListPage = () => {
-  const [data, setData] = useState([...facultysData])
+  const [data, setData] = useState([])
+  const [allData, setAllData] = useState([])
   const [selectedDept, setSelectedDept] = useState("")
   const [searchTerm, setSearchTerm] = useState("")
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState(null)
 
   const handleDepartmentChange = (e) => {
     const code = e.target.value
@@ -63,7 +68,7 @@ const facultyListPage = () => {
   }
 
   const filterData = (searchTerm, departmentCode) => {
-    let filtered = [...facultysData]
+    let filtered = [...allData]
 
     // Filter by department
     if (departmentCode) {
@@ -72,17 +77,55 @@ const facultyListPage = () => {
 
     // Filter by search term
     if (searchTerm) {
-      filtered = filtered.filter((f) => 
-        f.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        f.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        f.facultyId.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        f.phone.includes(searchTerm) ||
-        f.department.toLowerCase().includes(searchTerm.toLowerCase())
+      const term = searchTerm.toLowerCase()
+      filtered = filtered.filter((f) =>
+        (f.name && f.name.toLowerCase().includes(term)) ||
+        (f.email && f.email.toLowerCase().includes(term)) ||
+        (f.facultyId && f.facultyId.toLowerCase().includes(term)) ||
+        (f.phone && f.phone.includes(searchTerm)) ||
+        (f.department && f.department.toLowerCase().includes(term)) ||
+        (f.departmentName && f.departmentName.toLowerCase().includes(term))
       )
     }
 
     setData(filtered)
   }
+
+  useEffect(() => {
+    const fetchFaculty = async () => {
+      setLoading(true)
+      setError(null)
+      try {
+        const res = await apiService.request('/admin/get-all-faculty')
+        // res expected shape: { statusCode, data: { faculty: [...] }, message }
+        const facultyList = (res && res.data && res.data.faculty) || []
+
+        const mapped = facultyList.map((f) => ({
+          id: f._id,
+          facultyId: f.facultyId,
+          name: `${f.firstName || ''} ${f.lastName || ''}`.trim(),
+          email: f.email || f.personalMail || '',
+          phone: f.mobile || '',
+          department: f.department || '',
+          departmentName: deptartmentMap[f.department]
+            ? `${deptartmentMap[f.department]} (${f.department})`
+            : (f.department || ''),
+          photo: f.imageUrl || f.image || null,
+          address: f.address || '',
+        }))
+
+        setAllData(mapped)
+        setData(mapped)
+      } catch (err) {
+        console.error('Failed to fetch faculty:', err)
+        setError(err.message || 'Failed to fetch')
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchFaculty()
+  }, [])
   const renderRow = (item) => (
     <tr
       key={item.id}
@@ -90,8 +133,8 @@ const facultyListPage = () => {
     >
       <td className="flex items-center gap-4 p-4">
         <Image
-          src={item.photo}
-          alt=""
+          src={item.photo || '/default-avatar.png'}
+          alt={item.name || ''}
           width={40}
           height={40}
           className="md:hidden xl:block w-10 h-10 rounded-full object-cover"
@@ -100,12 +143,12 @@ const facultyListPage = () => {
           <h3 className="font-semibold">{item.name}</h3>
           <p className="text-xs text-gray-500">{item.email}</p>
         </div>
-      </td> 
+      </td>
       <td className="hidden md:table-cell">{item.facultyId}</td>
-      <td className="hidden md:table-cell">{item.department}</td>
+      <td className="hidden md:table-cell">{item.departmentName || item.department}</td>
       <td className="hidden md:table-cell">{item.email}</td>
       <td className="hidden md:table-cell">{item.phone}</td>
-      <td className="hidden md:table-cell">{item.address}</td>
+      <td className="hidden md:table-cell">{item.address || ''}</td>
       <td>
         <div className="flex items-center gap-2">
           <Link href={`/list/faculty/${item.id}`}>
@@ -158,7 +201,13 @@ const facultyListPage = () => {
       </div>
 
       {/* LIST */}
-      <Table columns={columns} renderRow={renderRow} data={data} />
+      {loading ? (
+        <div className="p-6 text-center">Loading faculty...</div>
+      ) : error ? (
+        <div className="p-6 text-center text-red-600">Error: {error}</div>
+      ) : (
+        <Table columns={columns} renderRow={renderRow} data={data} />
+      )}
 
       {/* PAGINATION */}
       <Pagination />
