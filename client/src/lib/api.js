@@ -152,6 +152,39 @@ class ApiService {
     return this.request(`/admin/fee-structures${qs}`, { method: 'GET' });
   }
 
+  // Courses (admin)
+  async adminCreateCourse(payload) {
+    return this.request('/admin/courses', { method: 'POST', body: payload });
+  }
+
+  async adminListCoursesByDepartment(departmentId) {
+    return this.request(`/admin/departments/${departmentId}/courses`, { method: 'GET' });
+  }
+
+  async adminDeleteCourse(id) {
+    return this.request(`/admin/courses/${id}`, { method: 'DELETE' });
+  }
+
+  // Faculty (admin)
+  async adminDeleteFaculty(id) {
+    return this.request('/admin/delete-faculty', { method: 'DELETE', body: { id } });
+  }
+
+  // Departments (admin)
+  async adminGetDepartment(code) {
+    return this.request(`/admin/departments/${code}`, { method: 'GET' });
+  }
+
+  async adminUpdateDepartmentHod(code, facultyId) {
+    return this.request(`/admin/departments/${code}/hod`, { method: 'PATCH', body: { facultyId } });
+  }
+
+  async adminListStudents(params = {}) {
+    const query = new URLSearchParams(params).toString();
+    const qs = query ? `?${query}` : '';
+    return this.request(`/admin/students${qs}`, { method: 'GET' });
+  }
+
   async getProfile(role) {
     const roleEndpoints = {
       'superadmin': '/super-admin/profile',

@@ -5,9 +5,31 @@ import { FeePayment } from "../models/feePayment.model.js";
 dotenv.config();
 
 const connectDB = async () => {
+    const uri = process.env.MONGODB_URI;
+    const directUri = process.env.MONGODB_URI_DIRECT; // optional non-SRV fallback
+    const options = {
+        serverSelectionTimeoutMS: 15000,
+        family: 4,
+    };
+
+    const tryConnect = async (connectionString, label) => {
+        await mongoose.connect(connectionString, options);
+        console.log(`MongoDB connected successfully (${label})`);
+    };
+
     try {
-        await mongoose.connect(process.env.MONGODB_URI);
-        console.log("MongoDB connected successfully");
+        try {
+            await tryConnect(uri, 'primary');
+        } catch (primaryErr) {
+            const msg = String(primaryErr?.message || primaryErr);
+            const looksLikeSrvDns = msg.includes('querySrv') || msg.includes('_mongodb._tcp');
+            if (looksLikeSrvDns && directUri) {
+                console.warn('SRV DNS failed, attempting direct connection string...');
+                await tryConnect(directUri, 'direct');
+            } else {
+                throw primaryErr;
+            }
+        }
 
         // One-time index migration to avoid duplicate null transactionId
         try {
@@ -99,6 +121,7 @@ const connectDB = async () => {
         }
     } catch (error) {
         console.error("MongoDB connection failed:", error.message);
+        console.error("Hint: If you're behind a DNS/firewall that blocks SRV lookups, set MONGODB_URI_DIRECT to a non-SRV connection string (mongodb://host:27017/db). Also ensure network access to the cluster.");
         process.exit(1);
     }
 };

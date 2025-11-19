@@ -1,9 +1,10 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
+import { toast } from "react-hot-toast";
 
 import FormModal from "@/components/FormModal";
 import Table from "@/components/Table";
@@ -15,9 +16,10 @@ import {
   studentData,
    coursesData, 
 } from "@/lib/roushaniData";
+import { apiService } from "@/lib/api";
 
 const StatCard = ({ title, value, subtitle }) => (
-  <div className="flex-1 min-w-[160px] rounded-xl p-5 bg-[#F5F9FF] border border-[#DCE7FF] shadow-[0_2px_8px_rgba(0,0,0,0.04)]">
+  <div className="flex-1 min-w-40 rounded-xl p-5 bg-[#F5F9FF] border border-[#DCE7FF] shadow-[0_2px_8px_rgba(0,0,0,0.04)]">
     <div className="text-xs font-medium text-gray-600">{title}</div>
     <div className="mt-1 text-3xl font-semibold text-gray-800">{value}</div>
     {subtitle && (
@@ -54,26 +56,107 @@ export default function DepartmentDetailsPage() {
   const [activeTab, setActiveTab] = useState("overview");
   const [showHodModal, setShowHodModal] = useState(false);
   const [selectedHod, setSelectedHod] = useState(department.hod);
-  const [localDept, setLocalDept] = useState({ ...department }); // for inline edits (frontend-only)
+  const [localDept, setLocalDept] = useState({ ...department });
+  const [backendDept, setBackendDept] = useState(null);
+  const [deptStats, setDeptStats] = useState({ facultyCount: 0, studentCount: 0 });
+  const [loadingDept, setLoadingDept] = useState(false);
+  const [hodLoading, setHodLoading] = useState(false);
   const [facultyPage, setFacultyPage] = useState(1);
   const [studentPage, setStudentPage] = useState(1);
 
 
   // Derived data
-  const faculties = useMemo(
-    () => facultyData.filter((f) => f.departmentId === localDept.id),
-    [localDept]
-  );
+  const [faculties, setFaculties] = useState([]);
+  // Fetch faculty list from backend for this department
+    // Fetch department details from backend
+    useEffect(() => {
+      let mounted = true;
+      (async () => {
+        if (!localDept?.code) return;
+        setLoadingDept(true);
+        try {
+          const res = await apiService.adminGetDepartment(localDept.code);
+          const dept = res?.data?.department || res?.department || null;
+          const stats = res?.data?.stats || res?.stats || { facultyCount: faculties.length, studentCount: 0 };
+          if (mounted && dept) {
+            setBackendDept(dept);
+            setDeptStats(stats);
+            if (dept?.hod?._id) setSelectedHod(dept.hod._id);
+          }
+        } catch (e) {
+          // fallback: keep static department
+        } finally {
+          if (mounted) setLoadingDept(false);
+        }
+      })();
+      return () => { mounted = false; };
+    }, [localDept.code, faculties.length]);
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      try {
+        const qs = localDept?.code ? `?department=${encodeURIComponent(localDept.code)}` : '';
+        const res = await apiService.request(`/admin/get-all-faculty${qs}`);
+        const list = res?.data?.faculty || [];
+        if (!mounted) return;
+        // Map to minimal structure used in this page
+        const mapped = list.map((f) => ({
+          id: f._id,
+          name: `${f.firstName || ''} ${f.lastName || ''}`.trim(),
+          designation: (Array.isArray(f.designation) && f.designation[0]) || f.designation || '',
+          email: f.email || f.personalMail || '',
+          phone: f.mobile || '',
+          department: f.department,
+          photo: f.imageUrl || null,
+        }));
+        setFaculties(mapped);
+      } catch (e) {
+        // fallback to local seed data if API fails
+        const local = facultyData.filter((f) => f.departmentId === localDept.id);
+        if (mounted) setFaculties(local);
+      }
+    })();
+    return () => { mounted = false; };
+  }, [localDept.id, localDept.code]);
 
-  const students = useMemo(
-    () => studentData.filter((s) => s.departmentId === localDept.id),
-    [localDept]
-  );
+  const [students, setStudents] = useState([]);
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      try {
+        if (!localDept?.code) return;
+        const res = await apiService.adminListStudents({ branch: localDept.code });
+        const list = res?.data?.students || res?.students || [];
+        if (!mounted) return;
+        const mapped = list.map(st => ({
+          id: st._id,
+            name: `${st.firstName || ''} ${st.lastName || ''}`.trim(),
+            roll: st.rollNo || st.enrollmentNo || '',
+            year: st.program || '',
+            semester: st.semester || '',
+        }));
+        setStudents(mapped);
+      } catch (e) {
+        const local = studentData.filter((s) => s.departmentId === localDept.id);
+        if (mounted) setStudents(local);
+      }
+    })();
+    return () => { mounted = false; };
+  }, [localDept.id, localDept.code]);
 
-  const hod = useMemo(
-    () => facultyData.find((f) => f.id === localDept.hod),
-    [localDept]
-  );
+  const hod = useMemo(() => {
+    if (backendDept?.hod) {
+      return {
+        id: backendDept.hod._id,
+        name: `${backendDept.hod.firstName || ''} ${backendDept.hod.lastName || ''}`.trim(),
+        email: backendDept.hod.email,
+        phone: backendDept.hod.mobile,
+        photo: backendDept.hod.imageUrl,
+        designation: Array.isArray(backendDept.hod.designation) ? backendDept.hod.designation[0] : backendDept.hod.designation
+      };
+    }
+    return facultyData.find((f) => f.departmentId === localDept.id && f.id === localDept.hod) || null;
+  }, [backendDept, localDept]);
 
   // ⭐ Courses list for this department
 const departmentCourses = useMemo(
@@ -82,6 +165,21 @@ const departmentCourses = useMemo(
 );
 
 const [courses, setCourses] = useState(departmentCourses);
+
+useEffect(() => {
+  let mounted = true;
+  (async () => {
+    try {
+      const res = await apiService.adminListCoursesByDepartment(localDept.id);
+      const fetched = res?.data?.courses || res?.courses || [];
+      if (mounted && Array.isArray(fetched)) setCourses(fetched);
+    } catch (e) {
+      // fallback to local static if API not available
+      if (mounted) setCourses(departmentCourses);
+    }
+  })();
+  return () => { mounted = false; };
+}, [localDept.id]);
  
   // Pagination (simple)
   const FACULTY_PER_PAGE = 6;
@@ -110,7 +208,6 @@ const [courses, setCourses] = useState(departmentCourses);
     { header: "Roll", accessor: "roll", className: "hidden md:table-cell" },
     { header: "Year", accessor: "year", className: "hidden md:table-cell" },
     { header: "Semester", accessor: "semester", className: "hidden md:table-cell" },
-    { header: "Actions", accessor: "action" },
   ];
 
 
@@ -118,6 +215,7 @@ const [courses, setCourses] = useState(departmentCourses);
   { header: "Course Name", accessor: "name" },
   { header: "Course Code", accessor: "code", className: "hidden md:table-cell" },
   { header: "Credits", accessor: "credits", className: "hidden md:table-cell" },
+  { header: "Semester", accessor: "semester", className: "hidden md:table-cell" },
   { header: "Actions", accessor: "action" },
 ];
 
@@ -126,7 +224,7 @@ const [courses, setCourses] = useState(departmentCourses);
     <tr key={f.id} className="border-b border-gray-100 hover:bg-[#F7FBFF]">
       <td className="p-4 flex items-center gap-3">
         <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center overflow-hidden">
-          <Image src={f.photo ?? "/faculty-placeholder.png"} alt={f.name} width={40} height={40} />
+          <Image src={f.photo ?? "/avatar.png"} alt={f.name} width={40} height={40} />
         </div>
         <div>
           <div className="font-medium text-gray-700">{f.name}</div>
@@ -138,12 +236,40 @@ const [courses, setCourses] = useState(departmentCourses);
       <td className="hidden lg:table-cell p-4">{f.phone}</td>
       <td className="p-4">
         <div className="flex items-center gap-2">
-          <button className="text-sm px-3 py-1 rounded-md border border-gray-200 hover:bg-gray-50">View</button>
-          <button className="text-sm px-3 py-1 rounded-md border border-red-200 text-red-600 hover:bg-red-50">Remove</button>
+          <button className="text-sm px-3 py-1 rounded-md border border-gray-200 hover:bg-gray-50" onClick={() => openFacultyModal(f.id)}>View</button>
+          <button className="text-sm px-3 py-1 rounded-md border border-red-200 text-red-600 hover:bg-red-50" onClick={() => handleDeleteFaculty(f.id)}>Remove</button>
         </div>
       </td>
     </tr>
   );
+  const [showFacultyModal, setShowFacultyModal] = useState(false);
+  const [facultyDetails, setFacultyDetails] = useState(null);
+  const [facultyLoading, setFacultyLoading] = useState(false);
+
+  async function openFacultyModal(facultyId) {
+    setFacultyLoading(true);
+    setShowFacultyModal(true);
+    try {
+      const res = await apiService.request(`/faculty/${facultyId}`);
+      const fac = res?.data || res;
+      // Support ApiResponse shape
+      const user = fac?.user || fac;
+      setFacultyDetails(user);
+    } catch (e) {
+      setFacultyDetails({ error: e.message || 'Failed to load faculty' });
+    } finally {
+      setFacultyLoading(false);
+    }
+  }
+
+  async function handleDeleteFaculty(id) {
+    try {
+      await apiService.adminDeleteFaculty(id);
+      setFaculties(prev => prev.filter(f => f.id !== id));
+    } catch (e) {
+      // optionally toast
+    }
+  }
 
   const renderStudentRow = (s) => (
     <tr key={s.id} className="border-b border-gray-100 hover:bg-[#F7FBFF]">
@@ -154,12 +280,6 @@ const [courses, setCourses] = useState(departmentCourses);
       <td className="hidden md:table-cell p-4">{s.roll}</td>
       <td className="hidden md:table-cell p-4">{s.year}</td>
       <td className="hidden md:table-cell p-4">{s.semester}</td>
-      <td className="p-4">
-        <div className="flex items-center gap-2">
-          <button className="text-sm px-3 py-1 rounded-md border border-gray-200 hover:bg-gray-50">Profile</button>
-          <button className="text-sm px-3 py-1 rounded-md border border-yellow-200 text-yellow-700 hover:bg-yellow-50">Move</button>
-        </div>
-      </td>
     </tr>
   );
 
@@ -168,6 +288,7 @@ const [courses, setCourses] = useState(departmentCourses);
     <td className="p-4">{c.name}</td>
     <td className="hidden md:table-cell p-4">{c.code}</td>
     <td className="hidden md:table-cell p-4">{c.credits}</td>
+    <td className="hidden md:table-cell p-4">{c.semester ?? "-"}</td>
     <td className="p-4">
       <div className="flex items-center gap-2">
         <button className="text-sm px-3 py-1 rounded-md border border-red-200 text-red-600 hover:bg-red-50"
@@ -181,12 +302,23 @@ const [courses, setCourses] = useState(departmentCourses);
 
 
   // Handlers
-  function handleApplyHod() {
-    // Frontend-only update for now: update localDept and hide modal
-    setLocalDept((prev) => ({ ...prev, hod: Number(selectedHod) }));
-    setShowHodModal(false);
-    // Note: in future, call backend API to persist change
-
+  async function handleApplyHod() {
+    if (!selectedHod || !localDept?.code) {
+      setShowHodModal(false);
+      return;
+    }
+    setHodLoading(true);
+    try {
+      await apiService.adminUpdateDepartmentHod(localDept.code, selectedHod);
+      const res = await apiService.adminGetDepartment(localDept.code);
+      const dept = res?.data?.department || res?.department;
+      if (dept) setBackendDept(dept);
+    } catch (e) {
+      // silently ignore or add toast (optional)
+    } finally {
+      setHodLoading(false);
+      setShowHodModal(false);
+    }
   }
 
   function handleDeleteDepartment() {
@@ -195,8 +327,14 @@ const [courses, setCourses] = useState(departmentCourses);
     router.push("/list/departments");
   }
 
-   function handleDeleteCourse(id) {
-  setCourses((prev) => prev.filter((c) => c.id !== id));
+   async function handleDeleteCourse(id) {
+  try {
+    await apiService.adminDeleteCourse(id);
+    setCourses((prev) => prev.filter((c) => (c._id || c.id) !== id));
+    toast.success("Course deleted");
+  } catch (e) {
+    toast.error(e.message || "Failed to delete course");
+  }
 }
 
   // UI
@@ -231,10 +369,9 @@ const [courses, setCourses] = useState(departmentCourses);
 
       {/* Stats */}
       <div className="flex gap-4 flex-wrap mb-6">
-        <StatCard title="Total Faculty" value={faculties.length} />
-        <StatCard title="Total Students" value={students.length} />
-        <StatCard title="Courses Offered" value={localDept.courses ?? 12} />
-        <StatCard title="Avg Attendance" value={`${localDept.avgAttendance ?? 86}%`} subtitle="Last month" />
+        <StatCard title="Total Faculty" value={deptStats.facultyCount || faculties.length} />
+        <StatCard title="Total Students" value={deptStats.studentCount || students.length} />
+        <StatCard title="Courses Offered" value={courses.length} />
       </div>
 
       {/* Tabs */}
@@ -426,14 +563,25 @@ const [courses, setCourses] = useState(departmentCourses);
       </div>
 
       {/* ⭐ Add Course Button */}
-      <FormModal table="course" type="create" departmentId={localDept.id} />
+      <FormModal
+        table="course"
+        type="create"
+        departmentId={localDept.id}
+        onCreate={(newCourse) => setCourses((prev) => [newCourse, ...prev])}
+      />
     </div>
 
     <div className="bg-white rounded-xl border border-gray-100 overflow-hidden">
       <Table
         columns={courseColumns}
         renderRow={renderCourseRow}
-        data={courses}
+        data={courses.map((c) => ({
+          id: c._id || c.id,
+          name: c.name,
+          code: c.code,
+          credits: c.credits,
+          semester: c.semester,
+        }))}
       />
     </div>
   </div>
@@ -487,14 +635,55 @@ const [courses, setCourses] = useState(departmentCourses);
         </button>
         <button
           onClick={handleApplyHod}
-          className="px-4 py-2 rounded-lg bg-blue-600 text-white"
+          className="px-4 py-2 rounded-lg bg-blue-600 text-white disabled:opacity-50"
+          disabled={hodLoading}
         >
-          Apply
+          {hodLoading ? 'Saving...' : 'Apply'}
         </button>
       </div>
     </div>
   </div>
 )}
+
+    {/* Faculty View Modal */}
+    {showFacultyModal && (
+      <div className="fixed inset-0 z-50 flex items-center justify-center">
+        <div className="absolute inset-0 bg-black/40" onClick={() => { setShowFacultyModal(false); setFacultyDetails(null); }} />
+        <div className="relative bg-white rounded-2xl w-full max-w-xl p-6 z-10 shadow-lg border border-gray-100">
+          <button
+            onClick={() => { setShowFacultyModal(false); setFacultyDetails(null); }}
+            className="absolute top-3 right-3 w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 text-gray-500 text-xl"
+          >✕</button>
+          {facultyLoading && <p className="text-sm text-gray-500">Loading...</p>}
+          {!facultyLoading && facultyDetails && !facultyDetails.error && (
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold text-gray-800">Faculty Details</h3>
+              <div className="flex items-center gap-4">
+                <div className="w-16 h-16 rounded-full overflow-hidden bg-gray-100">
+                  <Image src={facultyDetails.imageUrl || '/avatar.png'} alt={facultyDetails.firstName || ''} width={64} height={64} />
+                </div>
+                <div>
+                  <p className="font-medium text-gray-700">{facultyDetails.firstName} {facultyDetails.lastName}</p>
+                  <p className="text-xs text-gray-500">{facultyDetails.email}</p>
+                  <p className="text-xs text-gray-500">{facultyDetails.mobile}</p>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-3 text-sm">
+                <div className="text-gray-500">Department</div>
+                <div className="text-gray-700">{facultyDetails.department}</div>
+                <div className="text-gray-500">Designation</div>
+                <div className="text-gray-700">{Array.isArray(facultyDetails.designation) ? facultyDetails.designation.join(', ') : facultyDetails.designation}</div>
+                <div className="text-gray-500">Account Status</div>
+                <div className="text-gray-700">{facultyDetails.accountStatus}</div>
+              </div>
+            </div>
+          )}
+          {!facultyLoading && facultyDetails?.error && (
+            <p className="text-sm text-red-500">{facultyDetails.error}</p>
+          )}
+        </div>
+      </div>
+    )}
 
     </div>
   );

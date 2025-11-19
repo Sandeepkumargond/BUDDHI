@@ -12,6 +12,4 @@ const departmentSchema = new Schema(
   { timestamps: true }
 );
 
-departmentSchema.index({ code: 1 }, { unique: true });
-
 export const Department = mongoose.model("Department", departmentSchema);

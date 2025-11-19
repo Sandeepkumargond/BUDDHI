@@ -56,10 +56,55 @@ const facultyListPage = () => {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
 
+  const fetchFaculty = async (departmentCode = "") => {
+    setLoading(true)
+    setError(null)
+    try {
+      const qs = departmentCode ? `?department=${encodeURIComponent(departmentCode)}` : ''
+      const res = await apiService.request(`/admin/get-all-faculty${qs}`)
+      const facultyList = (res && res.data && res.data.faculty) || []
+
+      const mapped = facultyList.map((f) => ({
+        id: f._id,
+        facultyId: f.facultyId,
+        name: `${f.firstName || ''} ${f.lastName || ''}`.trim(),
+        email: f.email || f.personalMail || '',
+        phone: f.mobile || '',
+        department: f.department || '',
+        departmentName: deptartmentMap[f.department]
+          ? `${deptartmentMap[f.department]} (${f.department})`
+          : (f.department || ''),
+        photo: f.imageUrl || f.image || null,
+        address: f.address || '',
+      }))
+
+      setAllData(mapped)
+      // Apply current search term client-side on the newly fetched data
+      setData(
+        searchTerm
+          ? mapped.filter((f) =>
+              (f.name && f.name.toLowerCase().includes(searchTerm.toLowerCase())) ||
+              (f.email && f.email.toLowerCase().includes(searchTerm.toLowerCase())) ||
+              (f.facultyId && f.facultyId.toLowerCase().includes(searchTerm.toLowerCase())) ||
+              (f.phone && f.phone.includes(searchTerm)) ||
+              (f.department && f.department.toLowerCase().includes(searchTerm.toLowerCase())) ||
+              (f.departmentName && f.departmentName.toLowerCase().includes(searchTerm.toLowerCase()))
+            )
+          : mapped
+      )
+    } catch (err) {
+      console.error('Failed to fetch faculty:', err)
+      setError(err.message || 'Failed to fetch')
+    } finally {
+      setLoading(false)
+    }
+  }
+
   const handleDepartmentChange = (e) => {
     const code = e.target.value
     setSelectedDept(code)
-    filterData(searchTerm, code)
+    // Fetch department-filtered data from backend for accuracy and performance
+    fetchFaculty(code)
   }
 
   const handleSearch = (term) => {
@@ -92,39 +137,8 @@ const facultyListPage = () => {
   }
 
   useEffect(() => {
-    const fetchFaculty = async () => {
-      setLoading(true)
-      setError(null)
-      try {
-        const res = await apiService.request('/admin/get-all-faculty')
-        // res expected shape: { statusCode, data: { faculty: [...] }, message }
-        const facultyList = (res && res.data && res.data.faculty) || []
-
-        const mapped = facultyList.map((f) => ({
-          id: f._id,
-          facultyId: f.facultyId,
-          name: `${f.firstName || ''} ${f.lastName || ''}`.trim(),
-          email: f.email || f.personalMail || '',
-          phone: f.mobile || '',
-          department: f.department || '',
-          departmentName: deptartmentMap[f.department]
-            ? `${deptartmentMap[f.department]} (${f.department})`
-            : (f.department || ''),
-          photo: f.imageUrl || f.image || null,
-          address: f.address || '',
-        }))
-
-        setAllData(mapped)
-        setData(mapped)
-      } catch (err) {
-        console.error('Failed to fetch faculty:', err)
-        setError(err.message || 'Failed to fetch')
-      } finally {
-        setLoading(false)
-      }
-    }
-
-    fetchFaculty()
+    fetchFaculty("")
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
   const renderRow = (item) => (
     <tr
