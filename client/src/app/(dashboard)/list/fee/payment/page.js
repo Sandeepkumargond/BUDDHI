@@ -68,6 +68,24 @@ const FeePaymentPage = () => {
         const items = Array.isArray(res?.data) ? res.data : [];
         setPayments(items);
 
+        // Fetch student's registrations (submissions) to determine real registration status & subjects
+        let latestRegistrationForSemester = null;
+        try {
+          const regRes = await apiService.studentListMyRegistrations();
+            const regs = regRes?.data?.registrations || [];
+            // Filter by current semester if available
+            const currentSem = user?.semester;
+            const filtered = currentSem ? regs.filter(r => (r.form?.semester || r.semester) === currentSem) : regs;
+            // Pick latest by submittedAt/createdAt
+            latestRegistrationForSemester = filtered.sort((a,b)=>{
+              const da = new Date(a.submittedAt || a.createdAt).getTime();
+              const db = new Date(b.submittedAt || b.createdAt).getTime();
+              return db - da;
+            })[0] || null;
+        } catch (e) {
+          latestRegistrationForSemester = null; // ignore errors, treat as not registered
+        }
+
         // Fetch applicable published fee structure (latest preferred, kept for header if no selection yet)
         try {
           const sres = await apiService.getMyFeeStructure();
@@ -81,14 +99,24 @@ const FeePaymentPage = () => {
             const pendingAmount = Math.max(total - paidAmount, 0);
             const paymentStatus = pendingAmount === 0 ? 'Paid' : (paidAmount > 0 ? 'Partial' : 'Pending');
 
-            const reg = {
+            // Build registrationData from real submission if exists; else placeholder/pending
+            const reg = latestRegistrationForSemester ? {
+              semester: latestRegistrationForSemester.form?.semester || latestRegistrationForSemester.semester || structure.semester || user?.semester || '—',
+              academicYear: latestRegistrationForSemester.form?.session || latestRegistrationForSemester.session || structure.session,
+              isHosteler: user?.isHosteller || false,
+              hostelBlock: user?.hostelAlloted || '—',
+              roomNumber: user?.roomNo || '—',
+              registrationStatus: 'Completed',
+              registrationDate: new Date(latestRegistrationForSemester.submittedAt || latestRegistrationForSemester.createdAt || Date.now()).toISOString().slice(0,10),
+              subjects: (latestRegistrationForSemester.attachedCourses || []).map(c => `${c.code} - ${c.name} (${c.credits} cr)`),
+            } : {
               semester: structure.semester ?? user?.semester ?? '—',
               academicYear: structure.session,
               isHosteler: user?.isHosteller || false,
               hostelBlock: user?.hostelAlloted || '—',
               roomNumber: user?.roomNo || '—',
-              registrationStatus: 'Completed',
-              registrationDate: new Date().toISOString().slice(0,10),
+              registrationStatus: 'Pending',
+              registrationDate: '—',
               subjects: [],
             };
 
@@ -140,16 +168,25 @@ const FeePaymentPage = () => {
             // set header feeData to this selection if not already set from single applicable
             if (!feeData) {
               const heads = (sel.structure.feeHeads || []).map(h => ({ name: h.name, amount: Number(h.amount || 0) }));
-              setRegistrationData(prev => prev ?? {
+              setRegistrationData(prev => prev ?? (latestRegistrationForSemester ? {
+                semester: latestRegistrationForSemester.form?.semester || latestRegistrationForSemester.semester || sel.structure.semester || user?.semester || '—',
+                academicYear: latestRegistrationForSemester.form?.session || latestRegistrationForSemester.session || sel.structure.session,
+                isHosteler: user?.isHosteller || false,
+                hostelBlock: user?.hostelAlloted || '—',
+                roomNumber: user?.roomNo || '—',
+                registrationStatus: 'Completed',
+                registrationDate: new Date(latestRegistrationForSemester.submittedAt || latestRegistrationForSemester.createdAt || Date.now()).toISOString().slice(0,10),
+                subjects: (latestRegistrationForSemester.attachedCourses || []).map(c => `${c.code} - ${c.name} (${c.credits} cr)`),
+              } : {
                 semester: sel.structure.semester ?? user?.semester ?? '—',
                 academicYear: sel.structure.session,
                 isHosteler: user?.isHosteller || false,
                 hostelBlock: user?.hostelAlloted || '—',
                 roomNumber: user?.roomNo || '—',
-                registrationStatus: 'Completed',
-                registrationDate: new Date().toISOString().slice(0,10),
+                registrationStatus: 'Pending',
+                registrationDate: '—',
                 subjects: [],
-              });
+              }));
               setFeeData({
                 semester: sel.structure.semester ?? user?.semester ?? '—',
                 academicYear: sel.structure.session,

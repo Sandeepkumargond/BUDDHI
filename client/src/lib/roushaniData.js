@@ -297,8 +297,14 @@ export const semesterCourses = {
     { id: 5, code: "CSE201", name: "Algorithms", credits: 4 },
     { id: 6, code: "CSE202", name: "Computer Networks", credits: 3 },
   ],
-  "4": [],
-  "5": [],
+  "4": [
+    { id: 7, code: "CSE301", name: "Operating Systems", credits: 4 },
+    { id: 8, code: "CSE302", name: "Database Management Systems", credits: 3 },
+  ],
+  "5": [
+    { id: 9, code: "CSE401", name: "Software Engineering", credits: 3 },
+    { id: 10, code: "CSE402", name: "Compiler Design", credits: 3 },
+  ],
 };
 
 export const instituteInfo = {

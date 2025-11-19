@@ -32,6 +32,7 @@ import adminRoutes from "./routes/admin.route.js";
 import studentRoutes from "./routes/student.route.js";
 import facultyRoutes from "./routes/faculty.route.js";
 import subAdminRoutes from "./routes/subAdmin.route.js";
+import ApiError from "./utils/ApiError.js";
 
 // route declarations
 app.use("/api/v1/health", healthCheckRoutes);
@@ -40,6 +41,25 @@ app.use("/api/v1/admin", adminRoutes);
 app.use("/api/v1/student", studentRoutes);
 app.use("/api/v1/faculty", facultyRoutes);
 app.use("/api/v1/sub-admin", subAdminRoutes);
+
+// Centralized error handler to ensure JSON responses instead of default HTML
+app.use((err, req, res, next) => {
+    console.error("Error:", err);
+    if (err instanceof ApiError) {
+        return res.status(err.statusCode).json({
+            success: false,
+            message: err.message,
+            errors: err.errors || [],
+            data: err.data || null
+        });
+    }
+    return res.status(err.statusCode && Number.isInteger(err.statusCode) ? err.statusCode : 500).json({
+        success: false,
+        message: err.message || "Internal Server Error",
+        errors: [],
+        data: null
+    });
+});
 
 connectDB().then(() => {
     app.listen(PORT, () => {

@@ -38,7 +38,15 @@ class ApiService {
       }
 
       if (!response.ok) {
-        throw new Error(data.message || `HTTP ${response.status}: ${response.statusText}`);
+        const rawMessage = data.message || `HTTP ${response.status}: ${response.statusText}`;
+        // Map specific backend refresh token errors to a clearer client-side message
+        if (rawMessage.includes('Refresh Token is expired or used')) {
+          throw new Error('Session expired. Please log in again.');
+        }
+        if (rawMessage.toLowerCase().includes('invalid refresh token')) {
+          throw new Error('Session invalid. Please log in again.');
+        }
+        throw new Error(rawMessage);
       }
 
       return data;
@@ -46,6 +54,12 @@ class ApiService {
       console.error('API request failed:', error);
       throw error;
     }
+  }
+
+  // Health
+  async health() {
+    // No auth required; useful to detect server availability
+    return this.request('/health', { method: 'GET' });
   }
 
   // Authentication methods
@@ -161,8 +175,43 @@ class ApiService {
     return this.request(`/admin/departments/${departmentId}/courses`, { method: 'GET' });
   }
 
+  async adminListCoursesByDepartmentCode(code, params = {}) {
+    const query = new URLSearchParams(params).toString();
+    const qs = query ? `?${query}` : '';
+    return this.request(`/admin/departments/${code}/courses-by-code${qs}`, { method: 'GET' });
+  }
+
   async adminDeleteCourse(id) {
     return this.request(`/admin/courses/${id}`, { method: 'DELETE' });
+  }
+
+  // Registration (admin)
+  async adminCreateRegistrationForm(payload) {
+    return this.request('/admin/registration-forms', { method: 'POST', body: payload });
+  }
+
+  async adminListRegistrationForms(params = {}) {
+    const query = new URLSearchParams(params).toString();
+    const qs = query ? `?${query}` : '';
+    return this.request(`/admin/registration-forms${qs}`, { method: 'GET' });
+  }
+
+  async adminPublishRegistrationForm(id) {
+    return this.request(`/admin/registration-forms/${id}/publish`, { method: 'PATCH' });
+  }
+
+  async adminDeleteRegistrationForm(id) {
+    return this.request(`/admin/registration-forms/${id}`, { method: 'DELETE' });
+  }
+
+  async adminListRegistrationFormSubmissions(id) {
+    return this.request(`/admin/registration-forms/${id}/submissions`, { method: 'GET' });
+  }
+
+  async adminListAllRegistrations(params = {}) {
+    const query = new URLSearchParams(params).toString();
+    const qs = query ? `?${query}` : '';
+    return this.request(`/admin/registrations${qs}`, { method: 'GET' });
   }
 
   // Faculty (admin)
@@ -201,6 +250,25 @@ class ApiService {
 
     console.log('Getting profile for role:', role, 'endpoint:', endpoint);
     return this.request(endpoint);
+  }
+
+  // Registration (student)
+  async studentListRegistrationForms(params = {}) {
+    const query = new URLSearchParams(params).toString();
+    const qs = query ? `?${query}` : '';
+    return this.request(`/student/registration-forms${qs}`, { method: 'GET' });
+  }
+
+  async studentGetRegistrationForm(id) {
+    return this.request(`/student/registration-forms/${id}`, { method: 'GET' });
+  }
+
+  async studentSubmitRegistration(id) {
+    return this.request(`/student/registration-forms/${id}/submit`, { method: 'POST' });
+  }
+
+  async studentListMyRegistrations() {
+    return this.request('/student/registrations', { method: 'GET' });
   }
 
   // Generic: get user by id based on role

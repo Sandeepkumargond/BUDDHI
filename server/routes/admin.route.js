@@ -4,7 +4,8 @@ import { adminGetFeePaymentById, adminGetReceiptRedirect, adminListFeePayments, 
 import { validateAdminFeePaymentQuery, validateCreateFeeStructure } from "../middlewares/feePayment.middleware.js";
 import { authenticateAdmin } from "../middlewares/admin.middleware.js";
 import { upload } from "../middlewares/multer.middleware.js";
-import { adminCreateCourse, adminListDepartmentCourses, adminDeleteCourse } from "../controllers/course.controller.js";
+import { adminCreateCourse, adminListDepartmentCourses, adminDeleteCourse, adminListDepartmentCoursesByCode } from "../controllers/course.controller.js";
+import { adminCreateRegistrationForm, adminListRegistrationForms, adminPublishRegistrationForm, adminListFormSubmissions, adminListAllRegistrations, adminDeleteRegistrationForm } from "../controllers/registration.controller.js";
 import { adminGetDepartmentByCode, adminUpdateDepartmentHod, adminListDepartments } from "../controllers/department.controller.js";
 import { adminListStudents } from "../controllers/admin.controller.js";
 
@@ -116,6 +117,12 @@ router.route('/departments/:departmentId/courses').get(
     adminListDepartmentCourses
 );
 
+// Courses by department code (e.g., CSE), optional semester via query param
+router.route('/departments/:code/courses-by-code').get(
+    authenticateAdmin,
+    adminListDepartmentCoursesByCode
+);
+
 router.route('/courses/:id').delete(
     authenticateAdmin,
     adminDeleteCourse
@@ -141,6 +148,37 @@ router.route('/departments/:code/hod').patch(
 router.route('/students').get(
     authenticateAdmin,
     adminListStudents
+);
+
+// Registration Forms (admin)
+router.route('/registration-forms').post(
+    authenticateAdmin,
+    adminCreateRegistrationForm
+);
+
+router.route('/registration-forms').get(
+    authenticateAdmin,
+    adminListRegistrationForms
+);
+
+router.route('/registration-forms/:id/publish').patch(
+    authenticateAdmin,
+    adminPublishRegistrationForm
+);
+
+router.route('/registration-forms/:id').delete(
+    authenticateAdmin,
+    adminDeleteRegistrationForm
+);
+
+router.route('/registration-forms/:id/submissions').get(
+    authenticateAdmin,
+    adminListFormSubmissions
+);
+
+router.route('/registrations').get(
+    authenticateAdmin,
+    adminListAllRegistrations
 );
 
 // Keep generic id route last

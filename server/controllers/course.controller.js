@@ -33,6 +33,26 @@ export const adminListDepartmentCourses = asyncHandler(async (req, res) => {
   return res.status(200).json(new ApiResponse(200, { courses }, "Courses fetched"));
 });
 
+// New: list courses by department code (e.g., CSE, EE) with optional semester filter
+export const adminListDepartmentCoursesByCode = asyncHandler(async (req, res) => {
+  const { code } = req.params || {};
+  if (!code) throw new ApiError(400, "department code is required in path");
+
+  // Centralized mapping to align with numeric departmentId used in Course documents
+  const deptCodeToId = { CSE: 1, EE: 2, ME: 3, CE: 4, ECE: 5 };
+  const deptId = deptCodeToId[code];
+  if (!deptId) throw new ApiError(400, `Unknown department code: ${code}`);
+
+  const semesterParam = req.query?.semester;
+  const query = { departmentId: Number(deptId) };
+  if (semesterParam !== undefined) {
+    query.semester = Number(semesterParam);
+  }
+
+  const courses = await Course.find(query).sort({ semester: 1, code: 1 });
+  return res.status(200).json(new ApiResponse(200, { courses }, "Courses fetched"));
+});
+
 export const adminDeleteCourse = asyncHandler(async (req, res) => {
   const { id } = req.params;
   if (!id) throw new ApiError(400, "Course id is required");
