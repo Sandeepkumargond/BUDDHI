@@ -8,6 +8,7 @@ import TableSearch from "@/components/TableSearch";
 import Image from "next/image";
 import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
+import { apiService } from '@/lib/api';
 
 const columns = [
   { header: "Info", accessor: "info" },
@@ -167,7 +168,7 @@ export default function StudentListPage() {
 
       <td>
         <div className="flex items-center gap-2">
-         <Link href={`/list/students/${item._id}`}>
+          <Link href={`/list/students/${item._id}`}>
             <button className="w-7 h-7 bg-[#C3EBFA] rounded-full flex items-center justify-center">
               <Image src="/view.png" width={16} height={16} alt="view" />
             </button>

@@ -1,21 +1,110 @@
 // src/app/(dashboard)/list/students/[enrolmentNo]/page.js
 "use client";
 
-import { use, useMemo } from "react";
+import { use, useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { studentsData } from "@/lib/aryandata";
 import ProfileClientSection from "./ProfileClientSection";
+import { apiService } from '@/lib/api';
 
 export default function SingleStudentPage({ params }) {
   const resolved = use(params);
   const enrolmentNo = resolved?.enrolmentNo;
 
-  const student = useMemo(() => {
-    return studentsData.find(
-      (s) => String(s.enrolmentNo) === String(enrolmentNo)
-    );
+  const [student, setStudent] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    if (!enrolmentNo) return;
+
+    const fetchStudent = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        // server route: GET /api/v1/student/:id
+        const res = await apiService.request(`/student/${enrolmentNo}`);
+        console.log('Fetched student data:', res);
+        // res.data is the student document
+        const s = res && res.data ? res.data : null;
+        if (!s) {
+          setStudent(null);
+          return;
+        }
+
+        // Map server fields to the client shape used in this page
+        const mapped = {
+          _id: s._id,
+          photo: s.imageUrl || '/student.png',
+          name: `${s.firstName || ''} ${s.lastName || ''}`.trim(),
+          department: s.branch || s.department || '',
+          semester: s.semester || '',
+          class: s.section || s.class || '',
+          rollNo: s.rollNo || '',
+          enrolmentNo: s.enrollmentNo || s.enrolmentNo || '',
+          status: s.accountStatus || s.status || '',
+          dob: s.dateOfBirth ? new Date(s.dateOfBirth).toLocaleDateString() : '',
+          gender: s.gender || '',
+          bloodGroup: s.bloodGroup || '',
+          category: s.category || '',
+          nationality: s.nationality || '',
+          phone: s.mobile || s.fatherMobile || '',
+          email: s.email || s.personalMail || '',
+          alternatePhone: s.alternatePhone || '',
+          city: s.city || '',
+          state: s.state || '',
+          currentAddress: s.address || s.currentAddress || '',
+          permanentAddress: s.permanentAddress || '',
+          postalCode: s.postalCode || s.pincode || '',
+          course: s.program || s.course || '',
+          mentor: s.mentor || '',
+          cgpa: s.cgpa || '',
+          backlogs: s.backlogs || '',
+          feeStatus: s.feeStatus || '',
+          idCardNo: s.idCardNo || '',
+          libraryCardNo: s.libraryCardNo || '',
+          hostel: s.hostelAlloted || s.hostel || '',
+          scholarship: s.scholarshipDetails || s.scholarship || '',
+          parentName: s.fatherName || '',
+          parentPhone: s.fatherMobile || s.parentPhone || '',
+          parentEmail: s.parentEmail || s.personalMail || '',
+          parentOccupation: s.fatherOccupation || s.parentOccupation || '',
+          aadhar: s.aadharNo || s.aadhar || '',
+          healthIssues: s.healthIssues || '',
+          insurance: s.insurance || '',
+        };
+
+        setStudent(mapped);
+      } catch (err) {
+        console.error('Failed to fetch student:', err);
+        setError(err.message || 'Failed to fetch student');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchStudent();
   }, [enrolmentNo]);
+
+  if (loading) {
+    return (
+      <div className="p-8">
+        <p className="text-gray-600">Loading student...</p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="p-8">
+        <h1 className="text-xl font-semibold text-red-600">Error</h1>
+        <p className="text-sm text-red-600">{error}</p>
+        <Link href="/list/students" className="text-blue-600 underline mt-4 block">
+          Back to Students
+        </Link>
+      </div>
+    );
+  }
 
   if (!student) {
     return (
