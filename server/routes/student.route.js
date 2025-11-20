@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { authenticateStudent } from "../middlewares/student.middleware.js";
-import { availableMail, changeStudentPassword, getMyProfile, getStudentById, loginStudent, logoutStudent, refreshStudentAccessToken, updateStudentAccountDetails, updateStudentImage } from "../controllers/student.controller.js";
+import { availableMail, changeStudentPassword, getMyProfile, getStudentById, loginStudent, logoutStudent, refreshStudentAccessToken, updateStudentAccountDetails, updateStudentImage, getMyMonthlyAttendance } from "../controllers/student.controller.js";
 import { createFeePayment, listMyFeePayments, getMyFeePaymentReceipt, getMyApplicableFeeStructure, getMyApplicableFeeStructures } from "../controllers/feePayment.controller.js";
 import { validateCreateFeePayment } from "../middlewares/feePayment.middleware.js";
 import { upload } from "../middlewares/multer.middleware.js";
@@ -97,6 +97,12 @@ router.route('/registrations').get(
 router.route('/admit-card').get(
     authenticateStudent,
     studentGetMyAdmitCard
+);
+
+// Monthly Attendance (student)
+router.route('/monthly-attendance').get(
+    authenticateStudent,
+    getMyMonthlyAttendance
 );
 
 // Keep generic id route last (no regex due to router lib constraints)

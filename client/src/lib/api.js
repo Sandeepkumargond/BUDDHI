@@ -509,6 +509,14 @@ class ApiService {
       body: { attendanceId }
     });
   }
+
+  // Student endpoints
+  async getMyMonthlyAttendance(params) {
+    const queryString = new URLSearchParams(params).toString();
+    return this.request(`/student/monthly-attendance?${queryString}`, {
+      method: 'GET'
+    });
+  }
 }
 
 export const apiService = new ApiService();

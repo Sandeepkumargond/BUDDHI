@@ -100,7 +100,6 @@ export default function AttendancePage() {
         year: selectedYear
       };
 
-      console.log("📤 Loading attendance with params:", params);
 
       const response = await apiService.getMonthlyAttendance(params);
       const attendanceData = response.data?.attendance;
