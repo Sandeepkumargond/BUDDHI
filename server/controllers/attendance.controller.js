@@ -276,7 +276,8 @@ export const assignCourseToFaculty = asyncHandler(async (req, res) => {
   const course = await Course.findById(courseId);
   if (!course) throw new ApiError(404, "Course not found");
 
-  // Check if exact same course + semester + section + batch combination already exists
+  // Check if exact same combination already exists (courseId + semester + section + batch)
+  // Allow same course with different semester, section, or batch
   const duplicateIndex = faculty.assignedCourses.findIndex(
     ac => ac.courseId.toString() === courseId && 
           ac.semester === Number(semester) &&
@@ -286,7 +287,7 @@ export const assignCourseToFaculty = asyncHandler(async (req, res) => {
   );
 
   if (duplicateIndex !== -1) {
-    throw new ApiError(400, "This course is already assigned to this faculty for the same semester, section, and batch");
+    throw new ApiError(400, "This exact course assignment (same semester, section, and batch) already exists");
   }
 
   // Add new assignment
@@ -303,6 +304,34 @@ export const assignCourseToFaculty = asyncHandler(async (req, res) => {
 
   return res.status(201).json(
     new ApiResponse(201, { faculty: faculty.assignedCourses }, "Course assigned to faculty successfully")
+  );
+});
+
+// Remove course assignment from faculty (admin function)
+export const removeCourseFromFaculty = asyncHandler(async (req, res) => {
+  const { facultyId, assignmentId } = req.body || {};
+
+  if (!facultyId) throw new ApiError(400, "facultyId is required");
+  if (!assignmentId) throw new ApiError(400, "assignmentId is required");
+
+  const faculty = await Faculty.findById(facultyId);
+  if (!faculty) throw new ApiError(404, "Faculty not found");
+
+  // Find and remove the assignment
+  const assignmentIndex = faculty.assignedCourses.findIndex(
+    ac => ac._id.toString() === assignmentId
+  );
+
+  if (assignmentIndex === -1) {
+    throw new ApiError(404, "Course assignment not found");
+  }
+
+  // Remove the assignment
+  faculty.assignedCourses.splice(assignmentIndex, 1);
+  await faculty.save();
+
+  return res.status(200).json(
+    new ApiResponse(200, { faculty: faculty.assignedCourses }, "Course assignment removed successfully")
   );
 });
 

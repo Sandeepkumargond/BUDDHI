@@ -3,6 +3,7 @@ import { availableMail, changeFacultyPassword, getFacultyById, getMyProfile, log
 import { authenticateFaculty } from "../middlewares/faculty.middleware.js";
 import { upload } from "../middlewares/multer.middleware.js";
 import { saveAttendance, listMyAttendance, getAttendanceById, getStudentsForAttendance, getMyAssignedCourses, deleteAttendance, getCourseStudents } from "../controllers/attendance.controller.js";
+import { getMonthlyAttendance, updateActiveDays, updateStudentAttendance, bulkUpdateAttendance, finalizeAttendance, unfinalizeAttendance, getMyMonthlyAttendances } from "../controllers/monthlyAttendance.controller.js";
 
 const router = Router();
 
@@ -75,6 +76,42 @@ router.route('/my-courses').get(
 router.route('/courses/:courseId/students').get(
     authenticateFaculty,
     getCourseStudents
+);
+
+// Monthly attendance routes
+router.route('/monthly-attendance').get(
+    authenticateFaculty,
+    getMonthlyAttendance
+);
+
+router.route('/monthly-attendance/list').get(
+    authenticateFaculty,
+    getMyMonthlyAttendances
+);
+
+router.route('/monthly-attendance/active-days').patch(
+    authenticateFaculty,
+    updateActiveDays
+);
+
+router.route('/monthly-attendance/student').patch(
+    authenticateFaculty,
+    updateStudentAttendance
+);
+
+router.route('/monthly-attendance/bulk-update').patch(
+    authenticateFaculty,
+    bulkUpdateAttendance
+);
+
+router.route('/monthly-attendance/finalize').patch(
+    authenticateFaculty,
+    finalizeAttendance
+);
+
+router.route('/monthly-attendance/unfinalize').patch(
+    authenticateFaculty,
+    unfinalizeAttendance
 );
 
 // Parametric route MUST come last to avoid catching specific route names

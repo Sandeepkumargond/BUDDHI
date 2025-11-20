@@ -445,6 +445,57 @@ class ApiService {
   async assignCourseToFaculty(payload) {
     return this.request('/admin/assign-course', { method: 'POST', body: payload });
   }
+
+  async removeCourseFromFaculty(facultyId, assignmentId) {
+    return this.request('/admin/remove-course', { method: 'POST', body: { facultyId, assignmentId } });
+  }
+
+  // Monthly Attendance APIs
+  async getMonthlyAttendance(params) {
+    const query = new URLSearchParams(params).toString();
+    return this.request(`/faculty/monthly-attendance?${query}`, { method: 'GET' });
+  }
+
+  async getMyMonthlyAttendances(params = {}) {
+    const query = new URLSearchParams(params).toString();
+    const qs = query ? `?${query}` : '';
+    return this.request(`/faculty/monthly-attendance/list${qs}`, { method: 'GET' });
+  }
+
+  async updateActiveDays(attendanceId, totalActiveDays) {
+    return this.request('/faculty/monthly-attendance/active-days', {
+      method: 'PATCH',
+      body: { attendanceId, totalActiveDays }
+    });
+  }
+
+  async updateStudentAttendance(attendanceId, studentId, daysPresent) {
+    return this.request('/faculty/monthly-attendance/student', {
+      method: 'PATCH',
+      body: { attendanceId, studentId, daysPresent }
+    });
+  }
+
+  async bulkUpdateAttendance(attendanceId, updates) {
+    return this.request('/faculty/monthly-attendance/bulk-update', {
+      method: 'PATCH',
+      body: { attendanceId, updates }
+    });
+  }
+
+  async finalizeMonthlyAttendance(attendanceId) {
+    return this.request('/faculty/monthly-attendance/finalize', {
+      method: 'PATCH',
+      body: { attendanceId }
+    });
+  }
+
+  async unfinalizeMonthlyAttendance(attendanceId) {
+    return this.request('/faculty/monthly-attendance/unfinalize', {
+      method: 'PATCH',
+      body: { attendanceId }
+    });
+  }
 }
 
 export const apiService = new ApiService();

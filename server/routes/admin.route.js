@@ -9,7 +9,7 @@ import { adminCreateRegistrationForm, adminListRegistrationForms, adminPublishRe
 import { adminGetAdmitCardByDeptSem, adminPublishAdmitCard, adminListAdmitCards, adminDeleteAdmitCard } from "../controllers/admitCard.controller.js";
 import { adminGetDepartmentByCode, adminUpdateDepartmentHod, adminListDepartments } from "../controllers/department.controller.js";
 import { adminListStudents } from "../controllers/admin.controller.js";
-import { assignCourseToFaculty } from "../controllers/attendance.controller.js";
+import { assignCourseToFaculty, removeCourseFromFaculty } from "../controllers/attendance.controller.js";
 
 const router = Router();
 
@@ -171,6 +171,11 @@ router.route('/students').get(
 router.route('/assign-course').post(
     authenticateAdmin,
     assignCourseToFaculty
+);
+
+router.route('/remove-course').post(
+    authenticateAdmin,
+    removeCourseFromFaculty
 );
 
 // Registration Forms (admin)

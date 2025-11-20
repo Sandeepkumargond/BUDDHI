@@ -13,6 +13,7 @@ export default function FacultyManagement() {
   const [showAddModal, setShowAddModal] = useState(false);
   const [showAssignModal, setShowAssignModal] = useState(false);
   const [selectedFaculty, setSelectedFaculty] = useState(null);
+  const [expandedFacultyId, setExpandedFacultyId] = useState(null);
 
   useEffect(() => {
     fetchFaculty();
@@ -113,6 +114,19 @@ export default function FacultyManagement() {
     }
   };
 
+  const handleRemoveCourse = async (facultyId, assignmentId, courseName) => {
+    if (!confirm(`Are you sure you want to remove the course assignment: ${courseName}?`)) return;
+    
+    try {
+      await apiService.removeCourseFromFaculty(facultyId, assignmentId);
+      showToast.success("Course assignment removed successfully!");
+      fetchFaculty();
+    } catch (error) {
+      console.error('Remove course error:', error);
+      showToast.error(error.response?.data?.message || error.message || "Failed to remove course assignment");
+    }
+  };
+
   const openAssignModal = (faculty) => {
     setSelectedFaculty(faculty);
     setShowAssignModal(true);
@@ -151,42 +165,88 @@ export default function FacultyManagement() {
             </thead>
             <tbody className="divide-y divide-gray-200">
               {facultyList.map((faculty) => (
-                <tr key={faculty._id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 whitespace-nowrap text-sm">{faculty.facultyId}</td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="flex items-center">
-                      <img
-                        src={faculty.imageUrl || "/avatar.png"}
-                        alt={faculty.firstName}
-                        className="w-10 h-10 rounded-full mr-3"
-                      />
-                      <div>
-                        <div className="text-sm font-medium text-gray-900">
-                          {faculty.firstName} {faculty.lastName}
+                <>
+                  <tr key={faculty._id} className="hover:bg-gray-50">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm">{faculty.facultyId}</td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="flex items-center">
+                        <img
+                          src={faculty.imageUrl || "/avatar.png"}
+                          alt={faculty.firstName}
+                          className="w-10 h-10 rounded-full mr-3"
+                        />
+                        <div>
+                          <div className="text-sm font-medium text-gray-900">
+                            {faculty.firstName} {faculty.lastName}
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm">{faculty.email}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm">{faculty.department}</td>
-                  <td className="px-6 py-4 text-sm">
-                    {faculty.assignedCourses?.filter(c => c.isActive).length || 0} course(s)
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm space-x-2">
-                    <button
-                      onClick={() => openAssignModal(faculty)}
-                      className="px-3 py-1 bg-green-100 text-green-700 rounded hover:bg-green-200"
-                    >
-                      Assign Course
-                    </button>
-                    <button
-                      onClick={() => handleDeleteFaculty(faculty._id)}
-                      className="px-3 py-1 bg-red-100 text-red-700 rounded hover:bg-red-200"
-                    >
-                      Delete
-                    </button>
-                  </td>
-                </tr>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm">{faculty.email}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm">{faculty.department}</td>
+                    <td className="px-6 py-4 text-sm">
+                      <button
+                        onClick={() => setExpandedFacultyId(expandedFacultyId === faculty._id ? null : faculty._id)}
+                        className="text-blue-600 hover:text-blue-800 underline"
+                      >
+                        {faculty.assignedCourses?.filter(c => c.isActive).length || 0} course(s)
+                      </button>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm space-x-2">
+                      <button
+                        onClick={() => openAssignModal(faculty)}
+                        className="px-3 py-1 bg-green-100 text-green-700 rounded hover:bg-green-200"
+                      >
+                        Assign Course
+                      </button>
+                      <button
+                        onClick={() => handleDeleteFaculty(faculty._id)}
+                        className="px-3 py-1 bg-red-100 text-red-700 rounded hover:bg-red-200"
+                      >
+                        Delete
+                      </button>
+                    </td>
+                  </tr>
+                  {expandedFacultyId === faculty._id && faculty.assignedCourses?.filter(c => c.isActive).length > 0 && (
+                    <tr key={`${faculty._id}-courses`}>
+                      <td colSpan="6" className="px-6 py-4 bg-gray-50">
+                        <div className="space-y-2">
+                          <h3 className="font-semibold text-sm text-gray-700 mb-3">Assigned Courses:</h3>
+                          <div className="grid gap-2">
+                            {faculty.assignedCourses.filter(c => c.isActive).map((assignment) => (
+                              <div 
+                                key={assignment._id} 
+                                className="flex items-center justify-between bg-white p-3 rounded border border-gray-200"
+                              >
+                                <div className="flex-1">
+                                  <div className="font-medium text-sm">
+                                    {assignment.courseId?.name || 'Unknown Course'} ({assignment.courseId?.code || 'N/A'})
+                                  </div>
+                                  <div className="text-xs text-gray-600 mt-1">
+                                    Semester: {assignment.semester}
+                                    {assignment.section && ` | Section: ${assignment.section}`}
+                                    {assignment.batch && ` | Batch: ${assignment.batch}`}
+                                    {assignment.academicYear && ` | Year: ${assignment.academicYear}`}
+                                  </div>
+                                </div>
+                                <button
+                                  onClick={() => handleRemoveCourse(
+                                    faculty._id, 
+                                    assignment._id,
+                                    `${assignment.courseId?.name || 'Unknown'} (Sem ${assignment.semester}${assignment.section ? `, Sec ${assignment.section}` : ''})`
+                                  )}
+                                  className="ml-4 px-3 py-1 bg-red-100 text-red-700 rounded hover:bg-red-200 text-sm"
+                                >
+                                  Remove
+                                </button>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      </td>
+                    </tr>
+                  )}
+                </>
               ))}
             </tbody>
           </table>
@@ -523,11 +583,16 @@ function AssignCourseModal({ faculty, courses, onClose, onSubmit }) {
           {/* Show existing assignments */}
           {faculty.assignedCourses?.filter(c => c.isActive).length > 0 && (
             <div className="border-t pt-3">
-              <p className="text-sm font-medium mb-2">Current Assignments:</p>
-              <div className="space-y-1 text-sm text-gray-600">
-                {faculty.assignedCourses.filter(c => c.isActive).map((course, idx) => (
-                  <div key={idx}>
-                    Sem {course.semester} {course.section ? `- Sec ${course.section}` : ''}
+              <p className="text-sm font-medium mb-2">Current Assignments ({faculty.assignedCourses.filter(c => c.isActive).length}):</p>
+              <div className="space-y-2 text-sm text-gray-600 max-h-40 overflow-y-auto">
+                {faculty.assignedCourses.filter(c => c.isActive).map((assignment, idx) => (
+                  <div key={idx} className="bg-gray-50 p-2 rounded">
+                    <div className="font-medium">{assignment.courseId?.name || 'Unknown'} ({assignment.courseId?.code || 'N/A'})</div>
+                    <div className="text-xs">
+                      Sem {assignment.semester}
+                      {assignment.section && ` | Sec ${assignment.section}`}
+                      {assignment.batch && ` | Batch ${assignment.batch}`}
+                    </div>
                   </div>
                 ))}
               </div>

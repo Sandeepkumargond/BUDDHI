@@ -681,7 +681,9 @@ export const deleteSubAdmin = asyncHandler(async (req, res, next) => {
 export const getAllFaculty = asyncHandler(async (req, res, next) => {
     const { department } = req.query || {};
     const filter = department ? { department } : {};
-    const facultyList = await Faculty.find(filter).select("-password -refreshToken");
+    const facultyList = await Faculty.find(filter)
+        .select("-password -refreshToken")
+        .populate('assignedCourses.courseId', 'name code semester');
 
     return res.status(200).json(
         new ApiResponse(

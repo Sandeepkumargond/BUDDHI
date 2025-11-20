@@ -2,13 +2,13 @@
 
 import { useEffect, useState } from "react";
 import { showToast } from "@/lib/toast";
-import AttendanceHeader from "./_components/AttendanceHeader";
-import StudentList from "./_components/StudentList";
-import ManualMarking from "./_components/ManualMarking";
-import ExcelUploadBox from "./_components/ExcelUploadBox";
-import RightStatsPanel from "./_components/RightStatsPanel";
-import BulkActions from "./_components/BulkActions";
-import { loadStudentsForClass, saveAttendanceSnapshot, getMyAssignedCourses } from "./utils/attendanceAPI";
+import { apiService } from "@/lib/api";
+import { getMyAssignedCourses } from "./utils/attendanceAPI";
+
+const MONTHS = [
+  "January", "February", "March", "April", "May", "June",
+  "July", "August", "September", "October", "November", "December"
+];
 
 export default function AttendancePage() {
   const [classInfo, setClassInfo] = useState({
@@ -18,18 +18,20 @@ export default function AttendancePage() {
     subject: "",
     semester: "",
     section: "",
-    batch: "",
-    date: new Date().toISOString().slice(0, 10),
-    period: "1",
-    mode: "theory"
+    batch: ""
   });
 
-  const [students, setStudents] = useState([]);
-  const [selection, setSelection] = useState({});
-  const [mode, setMode] = useState("theory");
-  const [view, setView] = useState("manual");
   const [assignedCourses, setAssignedCourses] = useState([]);
-  const [loading, setLoading] = useState(false);
+
+  // Monthly attendance states
+  const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1);
+  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
+  const [monthlyAttendance, setMonthlyAttendance] = useState(null);
+  const [monthlyLoading, setMonthlyLoading] = useState(false);
+  const [activeDaysInput, setActiveDaysInput] = useState("");
+  const [editingActiveDays, setEditingActiveDays] = useState(false);
+  const [attendanceLoaded, setAttendanceLoaded] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
 
   // Fetch assigned courses on mount
   useEffect(() => {
@@ -58,87 +60,6 @@ export default function AttendancePage() {
     fetchCourses();
   }, []);
 
-  useEffect(() => {
-    const fetchStudents = async () => {
-      if (classInfo.courseId && classInfo.semester) {
-        setLoading(true);
-        try {
-          const s = await loadStudentsForClass(classInfo);
-          setStudents(s);
-          const init = {};
-          s.forEach(st => {
-            init[st.rollNo] = {
-              theory: { status: "absent", remark: "" },
-              lab: { status: "absent", remark: "" }
-            };
-          });
-          setSelection(init);
-        } catch (error) {
-          console.error('Failed to load students:', error);
-          showToast.error('Failed to load students');
-        } finally {
-          setLoading(false);
-        }
-      }
-    };
-    fetchStudents();
-  }, [classInfo.courseId, classInfo.semester, classInfo.section, classInfo.batch]);
-
-  const updateStudentStatus = (rollNo, type, status) => {
-    setSelection(prev => {
-      const next = { ...prev, [rollNo]: { ...prev[rollNo], [type]: { ...prev[rollNo][type], status } } };
-      return next;
-    });
-  };
-
-  const updateStudentRemark = (rollNo, type, remark) => {
-    setSelection(prev => {
-      const next = { ...prev, [rollNo]: { ...prev[rollNo], [type]: { ...prev[rollNo][type], remark } } };
-      return next;
-    });
-  };
-
-  const markAll = (type, status) => {
-    setSelection(prev => {
-      const next = { ...prev };
-      Object.keys(next).forEach(k => {
-        next[k] = { ...next[k], [type]: { ...next[k][type], status } };
-      });
-      return next;
-    });
-  };
-
-  const handleSave = async () => {
-    if (!classInfo.courseId) {
-      showToast.error("Please select a course first");
-      return;
-    }
-
-    if (students.length === 0) {
-      showToast.error("No students found for this course");
-      return;
-    }
-
-    // Verify this is an assigned course
-    const isAssigned = assignedCourses.some(ac => ac.course._id === classInfo.courseId);
-    if (!isAssigned) {
-      showToast.error("You can only mark attendance for your assigned courses");
-      return;
-    }
-
-    try {
-      const payload = {
-        classInfo,
-        timestamp: new Date().toISOString(),
-        attendance: selection
-      };
-      await saveAttendanceSnapshot(classInfo, payload);
-      showToast.success("Attendance saved successfully!");
-    } catch (error) {
-      showToast.error("Failed to save attendance: " + error.message);
-    }
-  };
-
   const handleCourseChange = (courseId) => {
     const course = assignedCourses.find(c => c.course._id === courseId);
     if (course) {
@@ -152,103 +73,528 @@ export default function AttendancePage() {
         section: course.section,
         batch: course.batch
       }));
+      // Reset attendance loaded state when course changes
+      setAttendanceLoaded(false);
+      setMonthlyAttendance(null);
+    }
+  };
+
+  // Load monthly attendance when course, month, and year are selected
+  const loadMonthlyAttendance = async () => {
+    if (!classInfo.courseId) {
+      showToast.error("Please select a course");
+      return;
+    }
+
+    setMonthlyLoading(true);
+    try {
+      const params = {
+        courseId: classInfo.courseId,
+        semester: classInfo.semester,
+        section: classInfo.section || '',
+        batch: classInfo.batch || '',
+        month: selectedMonth,
+        year: selectedYear
+      };
+
+      const response = await apiService.getMonthlyAttendance(params);
+      const attendanceData = response.data?.attendance;
+      setMonthlyAttendance(attendanceData);
+      setActiveDaysInput(attendanceData.totalActiveDays.toString());
+      setAttendanceLoaded(true);
+    } catch (error) {
+      console.error("Failed to fetch attendance:", error);
+      showToast.error(error.response?.data?.message || "Failed to load attendance");
+    } finally {
+      setMonthlyLoading(false);
+    }
+  };
+
+  const handleUpdateActiveDays = async () => {
+    const days = parseInt(activeDaysInput);
+    if (isNaN(days) || days < 0) {
+      showToast.error("Please enter a valid number of active days");
+      return;
+    }
+
+    try {
+      const response = await apiService.updateActiveDays(monthlyAttendance._id, days);
+      setMonthlyAttendance(response.data?.attendance);
+      setEditingActiveDays(false);
+      showToast.success("Active days updated successfully");
+    } catch (error) {
+      console.error("Failed to update active days:", error);
+      showToast.error(error.response?.data?.message || "Failed to update active days");
+    }
+  };
+
+  const handleMarkPresent = async (studentId, currentDays) => {
+    console.log("handleMarkPresent called with:", { studentId, currentDays, attendanceId: monthlyAttendance._id });
+    
+    if (monthlyAttendance.totalActiveDays === 0) {
+      showToast.error("Please set total active days first");
+      return;
+    }
+
+    if (currentDays >= monthlyAttendance.totalActiveDays) {
+      showToast.error("Days present cannot exceed total active days");
+      return;
+    }
+
+    try {
+      const response = await apiService.updateStudentAttendance(
+        monthlyAttendance._id,
+        studentId,
+        currentDays + 1
+      );
+      setMonthlyAttendance(response.data?.attendance);
+    } catch (error) {
+      console.error("Failed to update attendance:", error);
+      showToast.error(error.response?.data?.message || "Failed to update attendance");
+    }
+  };
+
+  const handleMarkAbsent = async (studentId, currentDays) => {
+    if (currentDays <= 0) {
+      showToast.error("Student already has 0 days present");
+      return;
+    }
+
+    try {
+      const response = await apiService.updateStudentAttendance(
+        monthlyAttendance._id,
+        studentId,
+        currentDays - 1
+      );
+      setMonthlyAttendance(response.data?.attendance);
+    } catch (error) {
+      console.error("Failed to update attendance:", error);
+      showToast.error(error.response?.data?.message || "Failed to update attendance");
+    }
+  };
+
+  const handleMarkAllPresent = async () => {
+    if (monthlyAttendance.totalActiveDays === 0) {
+      showToast.error("Please set total active days first");
+      return;
+    }
+
+    try {
+      const updates = monthlyAttendance.students.map(s => ({
+        studentId: s.studentId._id,
+        daysPresent: Math.min(s.daysPresent + 1, monthlyAttendance.totalActiveDays)
+      }));
+
+      const response = await apiService.bulkUpdateAttendance(monthlyAttendance._id, updates);
+      setMonthlyAttendance(response.data?.attendance);
+      showToast.success("Marked all students present");
+    } catch (error) {
+      console.error("Failed to update attendance:", error);
+      showToast.error(error.response?.data?.message || "Failed to mark all present");
+    }
+  };
+
+  const handleMarkAllAbsent = async () => {
+    try {
+      const updates = monthlyAttendance.students.map(s => ({
+        studentId: s.studentId._id,
+        daysPresent: Math.max(s.daysPresent - 1, 0)
+      }));
+
+      const response = await apiService.bulkUpdateAttendance(monthlyAttendance._id, updates);
+      setMonthlyAttendance(response.data?.attendance);
+      showToast.success("Marked all students absent");
+    } catch (error) {
+      console.error("Failed to update attendance:", error);
+      showToast.error(error.response?.data?.message || "Failed to mark all absent");
+    }
+  };
+
+  const handleFinalizeAttendance = async () => {
+    if (!confirm("Are you sure you want to finalize this attendance? You won't be able to edit it after finalization.")) {
+      return;
+    }
+
+    try {
+      const response = await apiService.finalizeMonthlyAttendance(monthlyAttendance._id);
+      setMonthlyAttendance(response.data?.attendance);
+      showToast.success("Attendance finalized successfully");
+    } catch (error) {
+      console.error("Failed to finalize attendance:", error);
+      showToast.error(error.response?.data?.message || "Failed to finalize attendance");
+    }
+  };
+
+  const handleUnfinalizeAttendance = async () => {
+    if (!confirm("Are you sure you want to reopen this attendance for editing?")) {
+      return;
+    }
+
+    try {
+      const response = await apiService.unfinalizeMonthlyAttendance(monthlyAttendance._id);
+      setMonthlyAttendance(response.data?.attendance);
+      showToast.success("Attendance reopened for editing");
+    } catch (error) {
+      console.error("Failed to reopen attendance:", error);
+      showToast.error(error.message || "Failed to reopen attendance");
     }
   };
 
   return (
-    <div className="p-6 grid grid-cols-12 gap-6">
-      <div className="col-span-12">
-        <AttendanceHeader
-          classInfo={classInfo}
-          setClassInfo={setClassInfo}
-          mode={mode}
-          setMode={(m) => { setMode(m); setClassInfo(prev => ({ ...prev, mode: m })); }}
-          view={view}
-          setView={setView}
-          assignedCourses={assignedCourses}
-          onCourseChange={handleCourseChange}
-        />
-      </div>
-
-      <div className="col-span-8 space-y-4">
-        <div className="bg-white shadow rounded-lg p-4">
-          <div className="flex items-center justify-between mb-3">
-            <h2 className="font-semibold">Mark Attendance — {classInfo.mode?.toUpperCase()}</h2>
-            <div className="flex items-center gap-2">
-              <button onClick={() => markAll(classInfo.mode, "present")} className="px-3 py-1 rounded bg-green-100 hover:bg-green-200">Mark All Present</button>
-              <button onClick={() => markAll(classInfo.mode, "absent")} className="px-3 py-1 rounded bg-red-100 hover:bg-red-200">Mark All Absent</button>
-              <button onClick={() => markAll(classInfo.mode, "leave")} className="px-3 py-1 rounded bg-yellow-100 hover:bg-yellow-200">Mark All Leave</button>
-            </div>
+    <div className="p-6">
+      {!attendanceLoaded ? (
+        // Selection Screen - Choose Course, Month, Year
+        <div className="max-w-4xl mx-auto">
+          <div className="mb-6">
+            <h1 className="text-3xl font-bold mb-2">Monthly Attendance</h1>
+            <p className="text-gray-600">Select course and month to view and manage attendance</p>
           </div>
 
-          {loading ? (
-            <div className="text-center py-8">Loading students...</div>
-          ) : !classInfo.courseId ? (
-            <div className="text-center py-8 text-gray-500">
-              Please select a course from your assigned courses to mark attendance.
+          <div className="bg-white rounded-lg shadow-lg p-8">
+            <h2 className="text-xl font-semibold mb-6">Select Course & Period</h2>
+            
+            <div className="space-y-6">
+              {/* Course Selection */}
+              <div>
+                <label className="block text-sm font-medium mb-2 text-gray-700">Course *</label>
+                {assignedCourses.length > 0 ? (
+                  <select 
+                    value={classInfo.courseId || ""} 
+                    onChange={e => handleCourseChange(e.target.value)} 
+                    className="w-full border-2 border-gray-300 p-3 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+                    required
+                  >
+                    <option value="">Select Assigned Course</option>
+                    {assignedCourses.map(ac => (
+                      <option key={ac._id} value={ac.course._id}>
+                        {ac.course.code} - {ac.course.name} (Sem {ac.semester}, Sec {ac.section || 'All'}, Batch {ac.batch || 'All'})
+                      </option>
+                    ))}
+                  </select>
+                ) : (
+                  <div className="text-center text-gray-500 py-4 bg-gray-50 rounded-lg">
+                    No courses assigned. Please contact admin.
+                  </div>
+                )}
+              </div>
+
+              {/* Selected Course Info */}
+              {classInfo.courseId && (
+                <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                  <p className="text-sm text-blue-900">
+                    <strong>Selected:</strong> {classInfo.courseName} ({classInfo.courseCode})
+                    <br />
+                    <strong>Details:</strong> Semester {classInfo.semester} | Section {classInfo.section || 'All'} | Batch {classInfo.batch || 'All'}
+                  </p>
+                </div>
+              )}
+
+              {/* Month and Year Selection */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium mb-2 text-gray-700">Month *</label>
+                  <select 
+                    value={selectedMonth} 
+                    onChange={e => setSelectedMonth(parseInt(e.target.value))}
+                    className="w-full border-2 border-gray-300 p-3 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+                  >
+                    {MONTHS.map((month, idx) => (
+                      <option key={idx} value={idx + 1}>{month}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium mb-2 text-gray-700">Year *</label>
+                  <select 
+                    value={selectedYear} 
+                    onChange={e => setSelectedYear(parseInt(e.target.value))}
+                    className="w-full border-2 border-gray-300 p-3 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+                  >
+                    {Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - 2 + i).map(year => (
+                      <option key={year} value={year}>{year}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              {/* Load Button */}
+              <div className="pt-4">
+                <button
+                  onClick={loadMonthlyAttendance}
+                  disabled={!classInfo.courseId || monthlyLoading}
+                  className="w-full px-6 py-4 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed font-semibold text-lg shadow-lg hover:shadow-xl transition-all"
+                >
+                  {monthlyLoading ? "Loading Attendance..." : "Load Monthly Attendance →"}
+                </button>
+              </div>
             </div>
-          ) : students.length === 0 ? (
-            <div className="text-center py-8 text-gray-500">
-              No students found for {classInfo.courseName} (Sem {classInfo.semester}, Section {classInfo.section || 'All'}).
+          </div>
+        </div>
+      ) : (
+        // Monthly Attendance View
+        <div className="max-w-7xl mx-auto">
+          <div className="mb-6 flex items-center justify-between">
+            <div>
+              <h2 className="text-2xl font-bold mb-2">📅 {MONTHS[selectedMonth - 1]} {selectedYear} - {classInfo.courseName}</h2>
+              <p className="text-gray-600">Semester {classInfo.semester} | Section {classInfo.section || 'All'} | Batch {classInfo.batch || 'All'}</p>
             </div>
-          ) : view === "manual" ? (
-            <ManualMarking
-              students={students}
-              selection={selection}
-              mode={classInfo.mode}
-              onToggle={updateStudentStatus}
-              onRemark={updateStudentRemark}
-            />
-          ) : (
-            <ExcelUploadBox
-              classInfo={classInfo}
-              students={students}
-              onApply={(parsed) => {
-                setSelection(prev => {
-                  const next = { ...prev };
-                  parsed.forEach(row => {
-                    if (next[row.rollNo]) {
-                      next[row.rollNo] = {
-                        ...next[row.rollNo],
-                        [classInfo.mode]: { status: row.status || "present", remark: row.remark || "" }
-                      };
-                    }
-                  });
-                  return next;
-                });
+            <button
+              onClick={() => {
+                setAttendanceLoaded(false);
+                setMonthlyAttendance(null);
               }}
-            />
-          )}
-
-          <div className="mt-4 flex gap-3">
-            <button onClick={handleSave} className="px-4 py-2 rounded bg-[#C3EBFA] hover:bg-[#a3d5f5] font-medium">Save Attendance</button>
-            <button onClick={() => {
-              navigator.clipboard.writeText(JSON.stringify({ classInfo, attendance: selection }));
-              showToast.success("Attendance copied to clipboard");
-            }} className="px-4 py-2 rounded bg-gray-100 hover:bg-gray-200">Export JSON</button>
+              className="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600"
+            >
+              ← Change Selection
+            </button>
           </div>
-        </div>
 
-        <div className="bg-white shadow rounded-lg p-4">
-          <StudentList
-            students={students}
-            selection={selection}
-            mode={classInfo.mode}
-            onToggle={updateStudentStatus}
-            onRemark={updateStudentRemark}
-          />
-        </div>
-      </div>
+          {/* Monthly Attendance Management */}
+          {monthlyLoading ? (
+            <div className="bg-white rounded-lg shadow p-6 text-center">
+              <p>Loading monthly attendance...</p>
+            </div>
+          ) : monthlyAttendance ? (
+            <div className="bg-white rounded-lg shadow p-6">
+              {/* Active Days Section */}
+              <div className="mb-6 p-6 bg-linear-to-r from-blue-50 to-blue-100 rounded-lg border-2 border-blue-300">
+                <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                  <div>
+                    <h3 className="font-bold text-xl mb-2 text-blue-900">
+                      📅 Total Active Days: <span className="text-2xl">{monthlyAttendance.totalActiveDays}</span>
+                    </h3>
+                    <p className="text-sm text-gray-700 font-medium">
+                      {MONTHS[selectedMonth - 1]} {selectedYear}
+                    </p>
+                    {monthlyAttendance.totalActiveDays === 0 && (
+                      <p className="text-red-600 text-sm mt-2 font-semibold">
+                        ⚠️ Please set the total active days before marking attendance!
+                      </p>
+                    )}
+                  </div>
+                  
+                  {!monthlyAttendance.isFinalized && (
+                    <div className="flex items-center gap-2">
+                      {editingActiveDays ? (
+                        <>
+                          <div className="flex flex-col gap-1">
+                            <label className="text-xs font-medium text-gray-700">Enter Active Days:</label>
+                            <input
+                              type="number"
+                              min="0"
+                              value={activeDaysInput}
+                              onChange={(e) => setActiveDaysInput(e.target.value)}
+                              placeholder="e.g., 25"
+                              className="w-28 border-2 border-blue-400 rounded px-3 py-2 text-lg font-semibold focus:ring-2 focus:ring-blue-500"
+                            />
+                          </div>
+                          <div className="flex flex-col gap-1 mt-5">
+                            <button
+                              onClick={handleUpdateActiveDays}
+                              className="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600 font-semibold"
+                            >
+                              ✓ Save
+                            </button>
+                            <button
+                              onClick={() => {
+                                setEditingActiveDays(false);
+                                setActiveDaysInput(monthlyAttendance.totalActiveDays.toString());
+                              }}
+                              className="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600 text-sm"
+                            >
+                              Cancel
+                            </button>
+                          </div>
+                        </>
+                      ) : (
+                        <button
+                          onClick={() => setEditingActiveDays(true)}
+                          className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-semibold shadow-lg hover:shadow-xl transition-all"
+                        >
+                          {monthlyAttendance.totalActiveDays === 0 ? "➕ Set Active Days" : "✏️ Edit Active Days"}
+                        </button>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </div>
 
-      <div className="col-span-4 space-y-4">
-        <RightStatsPanel students={students} selection={selection} mode={classInfo.mode} />
-        <BulkActions
-          students={students}
-          selection={selection}
-          mode={classInfo.mode}
-          onApply={(fn) => setSelection(prev => fn(prev))}
-        />
-      </div>
+              {/* Status Badge */}
+              {monthlyAttendance.isFinalized && (
+                <div className="mb-4 p-3 bg-green-100 border border-green-400 text-green-700 rounded">
+                  ✓ This attendance has been finalized and cannot be edited.
+                </div>
+              )}
+
+              {/* Bulk Actions and Search */}
+              <div className="mb-4 p-4 bg-gray-50 border-2 border-gray-200 rounded-lg">
+                <div className="flex flex-col lg:flex-row items-center justify-between gap-4">
+                  {/* Search Bar */}
+                  <div className="flex-1 max-w-md">
+                    <div className="relative">
+                      <input
+                        type="text"
+                        placeholder="Search by Roll No, Enrolment No, or Name..."
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        className="w-full px-4 py-2 pl-10 border-2 border-gray-300 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition"
+                      />
+                      <svg
+                        className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                      </svg>
+                    </div>
+                  </div>
+
+                  {/* Bulk Actions */}
+                  {!monthlyAttendance.isFinalized && monthlyAttendance.totalActiveDays > 0 && (
+                    <div className="flex items-center gap-3">
+                      <span className="text-sm text-gray-700 font-medium hidden lg:inline">
+                        <strong>💡 Bulk Actions:</strong>
+                      </span>
+                      <button
+                        onClick={handleMarkAllPresent}
+                        className="px-6 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 font-semibold shadow-md hover:shadow-lg transition-all"
+                      >
+                        ✓ Mark All Present
+                      </button>
+                      <button
+                        onClick={handleMarkAllAbsent}
+                        className="px-6 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 font-semibold shadow-md hover:shadow-lg transition-all"
+                      >
+                        ✗ Mark All Absent
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Students Table */}
+              <div className="bg-white rounded-lg shadow-lg overflow-hidden">
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead className="bg-gray-50 border-b-2 border-gray-200">
+                      <tr>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Roll No</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Enrolment No</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Name</th>
+                        <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">Days Present</th>
+                        <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">Attendance %</th>
+                        {!monthlyAttendance.isFinalized && (
+                          <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">Mark Attendance</th>
+                        )}
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-200">
+                      {monthlyAttendance.students
+                        .filter((student) => {
+                          if (!searchQuery.trim()) return true;
+                          const query = searchQuery.toLowerCase();
+                          const rollNo = (student.rollNo || '').toString().toLowerCase();
+                          const enrolmentNo = (student.enrolmentNo || '').toLowerCase();
+                          const name = (student.name || '').toLowerCase();
+                          return rollNo.includes(query) || enrolmentNo.includes(query) || name.includes(query);
+                        })
+                        .map((student, index) => {
+                      if (index === 0) {
+                        console.log("First student object structure:", student);
+                        console.log("student.studentId:", student.studentId);
+                        console.log("student.studentId?._id:", student.studentId?._id);
+                      }
+                      
+                      return (
+                        <tr key={student._id} className="hover:bg-gray-50">
+                        <td className="px-6 py-4 whitespace-nowrap text-sm">{student.rollNo}</td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm">{student.enrolmentNo}</td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="flex items-center">
+                            <img
+                              src={student.studentId?.imageUrl || "/avatar.png"}
+                              alt={student.name}
+                              className="w-8 h-8 rounded-full mr-3"
+                            />
+                            <span className="text-sm font-medium">{student.name}</span>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-center">
+                          <div className="flex flex-col items-center">
+                            <span className="text-xl font-bold text-gray-900">{student.daysPresent}</span>
+                            <span className="text-xs text-gray-500">out of {monthlyAttendance.totalActiveDays}</span>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-center">
+                          <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold ${
+                            student.percentage >= 75 ? 'bg-green-100 text-green-800' :
+                            student.percentage >= 65 ? 'bg-yellow-100 text-yellow-800' :
+                            'bg-red-100 text-red-800'
+                          }`}>
+                            {student.percentage.toFixed(2)}%
+                          </span>
+                        </td>
+                        {!monthlyAttendance.isFinalized && (
+                          <td className="px-6 py-4 whitespace-nowrap text-center">
+                            <div className="flex items-center justify-center gap-3">
+                              <button
+                                onClick={() => handleMarkPresent(student.studentId._id, student.daysPresent)}
+                                disabled={student.daysPresent >= monthlyAttendance.totalActiveDays || monthlyAttendance.totalActiveDays === 0}
+                                className="px-8 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 disabled:bg-gray-300 disabled:text-gray-500 disabled:cursor-not-allowed font-semibold shadow-md hover:shadow-lg transition-all"
+                              >
+                                ✓ Present
+                              </button>
+                              <button
+                                onClick={() => handleMarkAbsent(student.studentId._id, student.daysPresent)}
+                                disabled={student.daysPresent <= 0 || monthlyAttendance.totalActiveDays === 0}
+                                className="px-8 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 disabled:bg-gray-300 disabled:text-gray-500 disabled:cursor-not-allowed font-semibold shadow-md hover:shadow-lg transition-all"
+                              >
+                                ✗ Absent
+                              </button>
+                            </div>
+                          </td>
+                        )}
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+              </div>
+
+              {/* Finalize/Unfinalize Button */}
+              <div className="mt-6 flex flex-col sm:flex-row items-center justify-between gap-4 p-4 bg-gray-50 rounded-lg">
+                <div className="text-sm text-gray-600">
+                  <p><strong>Total Students:</strong> {monthlyAttendance.students.length}</p>
+                  <p><strong>Average Attendance:</strong> {
+                    monthlyAttendance.students.length > 0 
+                      ? (monthlyAttendance.students.reduce((sum, s) => sum + s.percentage, 0) / monthlyAttendance.students.length).toFixed(2)
+                      : 0
+                  }%</p>
+                </div>
+                {!monthlyAttendance.isFinalized ? (
+                  <button
+                    onClick={handleFinalizeAttendance}
+                    disabled={monthlyAttendance.totalActiveDays === 0}
+                    className="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:bg-gray-300 disabled:cursor-not-allowed font-semibold shadow-lg hover:shadow-xl transition-all"
+                  >
+                    🔒 Finalize Attendance
+                  </button>
+                ) : (
+                  <button
+                    onClick={handleUnfinalizeAttendance}
+                    className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-semibold shadow-lg hover:shadow-xl transition-all"
+                  >
+                    ✏️ Edit Attendance
+                  </button>
+                )}
+              </div>
+            </div>
+          ) : null}
+        </div>
+      )}
     </div>
   );
 }
