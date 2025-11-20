@@ -1,8 +1,26 @@
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5000';
+// Base URL resolution: prefer explicit env, else infer from window origin (client-side) or default localhost.
+// Ensure single /api/v1 suffix.
+function resolveBaseUrl() {
+  let raw = process.env.NEXT_PUBLIC_API_BASE_URL;
+  if (!raw && typeof window !== 'undefined') {
+    raw = window.location.origin; // fallback to current origin in production if env missing
+  }
+  if (!raw) raw = 'http://localhost:5000';
+  // Strip trailing slashes
+  raw = raw.replace(/\/$/, '');
+  // If raw already ends with /api or /api/v1 leave, else append /api/v1
+  if (!/\/api(\/v1)?$/.test(raw)) raw = `${raw}/api/v1`;
+  return raw;
+}
 
 class ApiService {
   constructor() {
-    this.baseURL = `${API_BASE_URL}/api/v1`;
+    this.baseURL = resolveBaseUrl();
+    this.accessToken = null; // in-memory token fallback if cookies blocked cross-site
+  }
+
+  setAccessToken(token) {
+    this.accessToken = token;
   }
 
   async request(endpoint, options = {}) {
@@ -13,6 +31,10 @@ class ApiService {
 
     // Build headers safely based on method/body
     const headers = { ...(options.headers || {}) };
+    // Attach bearer token if available (helps when cookies are stripped on cross-site requests)
+    if (this.accessToken && !headers['Authorization']) {
+      headers['Authorization'] = `Bearer ${this.accessToken}`;
+    }
     if (!isFormData && method !== 'GET') {
       headers['Content-Type'] = headers['Content-Type'] || 'application/json';
     }
@@ -93,10 +115,14 @@ class ApiService {
       loginData.username = credentials.email; // Use email as username if username not provided
     }
 
-    return this.request(endpoint, {
+    const res = await this.request(endpoint, {
       method: 'POST',
       body: loginData,
     });
+    // Store accessToken if present (for Authorization header on cross-site without cookies)
+    const token = res?.data?.accessToken;
+    if (token) this.setAccessToken(token);
+    return res;
   }
 
   // Refresh access token using refresh token cookie
@@ -114,9 +140,12 @@ class ApiService {
       throw new Error('Invalid role');
     }
 
-    return this.request(endpoint, {
+    const res = await this.request(endpoint, {
       method: 'POST',
     });
+    const token = res?.data?.accessToken;
+    if (token) this.setAccessToken(token);
+    return res;
   }
 
   // Create superadmin for testing
