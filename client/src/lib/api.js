@@ -496,6 +496,19 @@ class ApiService {
       body: { attendanceId }
     });
   }
+
+  async deleteMonthlyAttendance(attendanceId) {
+    return this.request(`/faculty/monthly-attendance/${attendanceId}`, {
+      method: 'DELETE'
+    });
+  }
+
+  async syncStudents(attendanceId) {
+    return this.request('/faculty/monthly-attendance/sync-students', {
+      method: 'PATCH',
+      body: { attendanceId }
+    });
+  }
 }
 
 export const apiService = new ApiService();

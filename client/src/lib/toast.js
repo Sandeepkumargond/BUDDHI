@@ -13,6 +13,13 @@ export const showToast = {
       position: 'top-right',
     });
   },
+  warning: (message) => {
+    toast.error(message, {
+      duration: 4000,
+      position: 'top-right',
+      icon: '⚠️',
+    });
+  },
   loading: (message) => {
     return toast.loading(message, {
       position: 'top-right',

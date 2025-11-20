@@ -32,6 +32,9 @@ export default function AttendancePage() {
   const [editingActiveDays, setEditingActiveDays] = useState(false);
   const [attendanceLoaded, setAttendanceLoaded] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [attendanceMode, setAttendanceMode] = useState("manual"); // 'manual' or 'bulk'
+  const [excelFile, setExcelFile] = useState(null);
+  const [uploadLoading, setUploadLoading] = useState(false);
 
   // Fetch assigned courses on mount
   useEffect(() => {
@@ -97,8 +100,17 @@ export default function AttendancePage() {
         year: selectedYear
       };
 
+      console.log("📤 Loading attendance with params:", params);
+
       const response = await apiService.getMonthlyAttendance(params);
       const attendanceData = response.data?.attendance;
+      console.log("📥 Received attendance data:", {
+        studentCount: attendanceData?.students?.length,
+        course: attendanceData?.courseName,
+        semester: attendanceData?.semester,
+        section: attendanceData?.section,
+        batch: attendanceData?.batch
+      });
       setMonthlyAttendance(attendanceData);
       setActiveDaysInput(attendanceData.totalActiveDays.toString());
       setAttendanceLoaded(true);
@@ -240,6 +252,211 @@ export default function AttendancePage() {
     }
   };
 
+  const handleRefreshStudents = async () => {
+    if (!confirm("This will sync the student list with the database and add any missing students. Existing attendance data will be preserved. Continue?")) {
+      return;
+    }
+
+    try {
+      const response = await apiService.syncStudents(monthlyAttendance._id);
+      setMonthlyAttendance(response.data?.attendance);
+      showToast.success(response.message || "Student list refreshed successfully");
+    } catch (error) {
+      console.error("Failed to refresh students:", error);
+      showToast.error(error.response?.data?.message || "Failed to refresh student list");
+    }
+  };
+
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      if (!file.name.match(/\.(xlsx|xls)$/)) {
+        showToast.error("Please upload an Excel file (.xlsx or .xls)");
+        return;
+      }
+      setExcelFile(file);
+    }
+  };
+
+  const handleExcelUpload = async () => {
+    if (!excelFile) {
+      showToast.error("Please select an Excel file first");
+      return;
+    }
+
+    setUploadLoading(true);
+    try {
+      // Import XLSX library dynamically
+      const XLSX = await import('xlsx');
+      
+      // Read the file
+      const reader = new FileReader();
+      reader.onload = async (e) => {
+        try {
+          const data = new Uint8Array(e.target.result);
+          const workbook = XLSX.read(data, { type: 'array' });
+          const sheetName = workbook.SheetNames[0];
+          const worksheet = workbook.Sheets[sheetName];
+          
+          // Convert to JSON with default empty values
+          const jsonData = XLSX.utils.sheet_to_json(worksheet, { defval: '' });
+
+          console.log("📊 Excel Data Parsed:", jsonData.length, "rows");
+          if (jsonData.length > 0) {
+            console.log("📋 First row sample:", jsonData[0]);
+            console.log("🔑 Column headers:", Object.keys(jsonData[0]));
+          }
+
+          if (jsonData.length === 0) {
+            showToast.error("Excel file is empty");
+            setUploadLoading(false);
+            return;
+          }
+
+          // Process the Excel data
+          const attendanceUpdates = [];
+          const notFoundStudents = [];
+          let processedCount = 0;
+          
+          for (const row of jsonData) {
+            processedCount++;
+            
+            // Get roll number from first column (supports various column names)
+            const rollNo = (
+              row['Roll no'] || 
+              row['Roll No'] || 
+              row['RollNo'] || 
+              row['Roll Number'] || 
+              row['roll_no'] ||
+              row['ROLL NO'] ||
+              Object.values(row)[0] // Fallback to first column value
+            )?.toString().trim();
+            
+            console.log(`Row ${processedCount}: Roll No = "${rollNo}"`);
+            
+            if (!rollNo) {
+              console.log("⚠️ Skipping row - no roll number found");
+              continue;
+            }
+
+            // Find the student in monthlyAttendance by roll number or enrollment number
+            const student = monthlyAttendance.students.find(s => 
+              (s.rollNo && s.rollNo.toString().trim() === rollNo) ||
+              (s.enrolmentNo && s.enrolmentNo.toString().trim() === rollNo)
+            );
+
+            if (!student) {
+              notFoundStudents.push(rollNo);
+              console.warn(`❌ Student with roll/enrollment number ${rollNo} not found`);
+              console.log("Available roll numbers:", monthlyAttendance.students.map(s => s.rollNo));
+              continue;
+            }
+
+            console.log(`✅ Found student: ${student.name} (${student.rollNo})`);
+
+            // Count P's (Present) in all day columns
+            // Skip first 2 columns (Roll No and Student Name)
+            let presentCount = 0;
+            const keys = Object.keys(row);
+            
+            console.log(`Checking ${keys.length - 2} day columns for roll ${rollNo}...`);
+            
+            for (let i = 2; i < keys.length; i++) {
+              const key = keys[i];
+              const value = row[key]?.toString().trim().toUpperCase();
+              
+              // Count P as present
+              if (value === 'P' || value === 'PRESENT') {
+                presentCount++;
+              }
+            }
+
+            console.log(`📊 Roll ${rollNo}: ${presentCount} days present out of ${keys.length - 2} days`);
+
+            // Get student ID - handle both populated and non-populated cases
+            let studentIdToUse;
+            if (typeof student.studentId === 'object' && student.studentId !== null) {
+              studentIdToUse = student.studentId._id;
+            } else {
+              studentIdToUse = student.studentId;
+            }
+
+            console.log(`Student ID for ${rollNo}:`, studentIdToUse);
+
+            // Always add to updates (even if 0 present days)
+            attendanceUpdates.push({
+              studentId: studentIdToUse,
+              daysPresent: presentCount
+            });
+          }
+
+          console.log("📤 Attendance updates to send:", attendanceUpdates);
+
+          console.log("📤 Attendance updates to send:", attendanceUpdates);
+
+          if (attendanceUpdates.length === 0) {
+            showToast.error("No valid attendance data found in Excel file");
+            setUploadLoading(false);
+            return;
+          }
+
+          // Show warning if some students were not found
+          if (notFoundStudents.length > 0) {
+            console.warn("Students not found:", notFoundStudents);
+            showToast.warning(
+              `${notFoundStudents.length} student(s) not found: ${notFoundStudents.slice(0, 3).join(', ')}${notFoundStudents.length > 3 ? '...' : ''}`
+            );
+          }
+
+          console.log("🚀 Calling API with:", {
+            attendanceId: monthlyAttendance._id,
+            updatesCount: attendanceUpdates.length
+          });
+
+          // Send bulk update to backend
+          const response = await apiService.bulkUpdateAttendance(
+            monthlyAttendance._id,
+            attendanceUpdates
+          );
+
+          console.log("✅ API Response:", response);
+
+          if (response?.data?.attendance) {
+            setMonthlyAttendance(response.data.attendance);
+            showToast.success(`✅ Successfully updated attendance for ${attendanceUpdates.length} student(s)`);
+          } else {
+            console.error("Unexpected response format:", response);
+            showToast.error("Attendance updated but response format unexpected");
+          }
+          
+          setExcelFile(null);
+          
+          // Reset file input
+          const fileInput = document.getElementById('excel-upload-input');
+          if (fileInput) fileInput.value = '';
+          
+        } catch (parseError) {
+          console.error("Error parsing Excel:", parseError);
+          showToast.error("Failed to parse Excel file. Please check the format.");
+        } finally {
+          setUploadLoading(false);
+        }
+      };
+
+      reader.onerror = () => {
+        showToast.error("Failed to read file");
+        setUploadLoading(false);
+      };
+
+      reader.readAsArrayBuffer(excelFile);
+
+    } catch (error) {
+      console.error("Failed to process Excel:", error);
+      showToast.error("Failed to upload attendance");
+      setUploadLoading(false);
+    }
+  };
+
   return (
     <div className="p-6">
       {!attendanceLoaded ? (
@@ -357,6 +574,33 @@ export default function AttendancePage() {
             </div>
           ) : monthlyAttendance ? (
             <div className="bg-white rounded-lg shadow p-6">
+              {/* Mode Tabs */}
+              <div className="mb-6 bg-gray-100 rounded-lg p-2 flex gap-2">
+                <button
+                  onClick={() => setAttendanceMode("manual")}
+                  className={`flex-1 px-6 py-3 rounded-lg font-semibold transition-all ${
+                    attendanceMode === "manual"
+                      ? "bg-blue-600 text-white shadow-md"
+                      : "bg-white text-gray-600 hover:bg-gray-50"
+                  }`}
+                >
+                  📝 Manual Attendance
+                </button>
+                <button
+                  onClick={() => setAttendanceMode("bulk")}
+                  className={`flex-1 px-6 py-3 rounded-lg font-semibold transition-all ${
+                    attendanceMode === "bulk"
+                      ? "bg-blue-600 text-white shadow-md"
+                      : "bg-white text-gray-600 hover:bg-gray-50"
+                  }`}
+                >
+                  📊 Bulk Upload (Excel)
+                </button>
+              </div>
+
+              {attendanceMode === "manual" ? (
+                // Manual Attendance Mode
+                <>
               {/* Active Days Section */}
               <div className="mb-6 p-6 bg-linear-to-r from-blue-50 to-blue-100 rounded-lg border-2 border-blue-300">
                 <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
@@ -426,6 +670,47 @@ export default function AttendancePage() {
                   ✓ This attendance has been finalized and cannot be edited.
                 </div>
               )}
+
+              {/* Student Count and Refresh Option */}
+              <div className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg flex items-center justify-between">
+                <div>
+                  <span className="font-semibold text-gray-700">
+                    👥 Students: {monthlyAttendance.students.length}
+                  </span>
+                  <span className="text-sm text-gray-500 ml-2">
+                    (Semester {monthlyAttendance.semester} | Section {monthlyAttendance.section || 'All'} | Batch {monthlyAttendance.batch || 'All'})
+                  </span>
+                </div>
+                {!monthlyAttendance.isFinalized && (
+                  <div className="flex gap-2">
+                    <button
+                      onClick={handleRefreshStudents}
+                      className="px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 font-semibold text-sm shadow transition-all"
+                      title="Reload attendance with updated student list from database"
+                    >
+                      🔄 Refresh Students
+                    </button>
+                    <button
+                      onClick={async () => {
+                        if (confirm("Are you sure you want to delete this attendance record? This action cannot be undone.")) {
+                          try {
+                            await apiService.deleteMonthlyAttendance(monthlyAttendance._id);
+                            showToast.success("Attendance record deleted successfully");
+                            setAttendanceLoaded(false);
+                            setMonthlyAttendance(null);
+                          } catch (error) {
+                            showToast.error(error.response?.data?.message || "Failed to delete attendance");
+                          }
+                        }
+                      }}
+                      className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 font-semibold text-sm shadow transition-all"
+                      title="Delete this attendance record permanently"
+                    >
+                      🗑️ Delete Record
+                    </button>
+                  </div>
+                )}
+              </div>
 
               {/* Bulk Actions and Search */}
               <div className="mb-4 p-4 bg-gray-50 border-2 border-gray-200 rounded-lg">
@@ -591,6 +876,211 @@ export default function AttendancePage() {
                   </button>
                 )}
               </div>
+                </>
+              ) : (
+                // Bulk Upload Mode
+                <div className="space-y-6">
+                  {/* Active Days Section */}
+                  <div className="p-6 bg-gradient-to-r from-blue-50 to-blue-100 rounded-lg border-2 border-blue-300">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h3 className="font-bold text-xl text-blue-900">
+                          📅 Total Active Days: <span className="text-2xl">{monthlyAttendance.totalActiveDays}</span>
+                        </h3>
+                        <p className="text-sm text-gray-700 mt-1">
+                          {MONTHS[selectedMonth - 1]} {selectedYear}
+                        </p>
+                      </div>
+                      {!monthlyAttendance.isFinalized && (
+                        <div className="flex items-center gap-2">
+                          {editingActiveDays ? (
+                            <>
+                              <input
+                                type="number"
+                                min="0"
+                                value={activeDaysInput}
+                                onChange={(e) => setActiveDaysInput(e.target.value)}
+                                placeholder="e.g., 25"
+                                className="w-28 border-2 border-blue-400 rounded px-3 py-2 text-lg font-semibold"
+                              />
+                              <button
+                                onClick={handleUpdateActiveDays}
+                                className="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600 font-semibold"
+                              >
+                                ✓ Save
+                              </button>
+                              <button
+                                onClick={() => {
+                                  setEditingActiveDays(false);
+                                  setActiveDaysInput(monthlyAttendance.totalActiveDays.toString());
+                                }}
+                                className="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600"
+                              >
+                                Cancel
+                              </button>
+                            </>
+                          ) : (
+                            <button
+                              onClick={() => setEditingActiveDays(true)}
+                              className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-semibold"
+                            >
+                              {monthlyAttendance.totalActiveDays === 0 ? "➕ Set Active Days" : "✏️ Edit Active Days"}
+                            </button>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Instructions */}
+                  <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4">
+                    <h4 className="font-bold text-yellow-800 mb-2">📋 Excel Format Instructions:</h4>
+                    <ul className="text-sm text-yellow-700 space-y-1 list-disc list-inside">
+                      <li><strong>Column A (Roll no):</strong> Student roll numbers (must match exactly)</li>
+                      <li><strong>Column B (Student Name):</strong> Student names (optional, for reference)</li>
+                      <li><strong>Columns C onwards (Day 1, Day 2, Day 3...):</strong> Daily attendance</li>
+                      <li>Mark <strong>P</strong> for Present and <strong>A</strong> for Absent</li>
+                      <li>Example format:</li>
+                    </ul>
+                    <div className="mt-2 text-xs bg-white p-2 rounded border border-yellow-300 overflow-x-auto">
+                      <table className="text-left">
+                        <thead>
+                          <tr className="border-b">
+                            <th className="pr-4">Roll no</th>
+                            <th className="pr-4">Student Name</th>
+                            <th className="pr-2">Day 1</th>
+                            <th className="pr-2">Day 2</th>
+                            <th className="pr-2">Day 3</th>
+                            <th className="pr-2">...</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          <tr>
+                            <td className="pr-4">20230001</td>
+                            <td className="pr-4">Sandeep K P</td>
+                            <td className="pr-2">P</td>
+                            <td className="pr-2">P</td>
+                            <td className="pr-2">A</td>
+                            <td className="pr-2">...</td>
+                          </tr>
+                          <tr>
+                            <td className="pr-4">20230002</td>
+                            <td className="pr-4">Aryan Bansal</td>
+                            <td className="pr-2">P</td>
+                            <td className="pr-2">P</td>
+                            <td className="pr-2">P</td>
+                            <td className="pr-2">...</td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+                    <p className="text-sm text-yellow-700 mt-2">
+                      💡 <strong>Tip:</strong> The system will count all P's for each student and update their attendance accordingly.
+                    </p>
+                  </div>
+
+                  {/* File Upload */}
+                  <div className="bg-white border-2 border-dashed border-gray-300 rounded-lg p-8 text-center">
+                    <div className="space-y-4">
+                      <div className="text-6xl">📤</div>
+                      <h3 className="text-xl font-semibold text-gray-700">Upload Attendance Excel</h3>
+                      <p className="text-sm text-gray-500">
+                        Select an Excel file (.xlsx or .xls) containing attendance data
+                      </p>
+                      
+                      <div className="flex flex-col items-center gap-4">
+                        <input
+                          type="file"
+                          accept=".xlsx,.xls"
+                          onChange={handleFileChange}
+                          disabled={monthlyAttendance.isFinalized || uploadLoading}
+                          id="excel-upload-input"
+                          style={{ display: 'none' }}
+                        />
+                        <button
+                          onClick={() => {
+                            const input = document.getElementById('excel-upload-input');
+                            if (input) input.click();
+                          }}
+                          disabled={monthlyAttendance.isFinalized || uploadLoading}
+                          className={`px-6 py-3 rounded-lg font-semibold cursor-pointer transition-all ${
+                            monthlyAttendance.isFinalized || uploadLoading
+                              ? "bg-gray-300 text-gray-500 cursor-not-allowed"
+                              : "bg-blue-600 text-white hover:bg-blue-700 shadow-md hover:shadow-lg"
+                          }`}
+                        >
+                          Choose Excel File
+                        </button>
+
+                        {excelFile && (
+                          <div className="flex items-center gap-3 bg-green-50 px-4 py-2 rounded-lg border border-green-200">
+                            <span className="text-green-700 font-medium">📄 {excelFile.name}</span>
+                            <button
+                              onClick={() => setExcelFile(null)}
+                              className="text-red-600 hover:text-red-800"
+                            >
+                              ✕
+                            </button>
+                          </div>
+                        )}
+
+                        {excelFile && (
+                          <button
+                            onClick={handleExcelUpload}
+                            disabled={uploadLoading || monthlyAttendance.isFinalized}
+                            className="px-8 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:bg-gray-300 disabled:cursor-not-allowed font-semibold shadow-lg hover:shadow-xl transition-all"
+                          >
+                            {uploadLoading ? "Processing..." : "📊 Process & Update Attendance"}
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Current Attendance Summary */}
+                  <div className="bg-white rounded-lg border-2 border-gray-200 p-6">
+                    <h4 className="font-bold text-lg mb-4">📊 Current Attendance Summary</h4>
+                    <div className="grid grid-cols-3 gap-4 text-center">
+                      <div className="p-4 bg-blue-50 rounded-lg">
+                        <p className="text-sm text-gray-600">Total Students</p>
+                        <p className="text-2xl font-bold text-blue-600">{monthlyAttendance.students.length}</p>
+                      </div>
+                      <div className="p-4 bg-green-50 rounded-lg">
+                        <p className="text-sm text-gray-600">Average Attendance</p>
+                        <p className="text-2xl font-bold text-green-600">
+                          {monthlyAttendance.students.length > 0
+                            ? (monthlyAttendance.students.reduce((sum, s) => sum + s.percentage, 0) / monthlyAttendance.students.length).toFixed(1)
+                            : 0}%
+                        </p>
+                      </div>
+                      <div className="p-4 bg-purple-50 rounded-lg">
+                        <p className="text-sm text-gray-600">Active Days</p>
+                        <p className="text-2xl font-bold text-purple-600">{monthlyAttendance.totalActiveDays}</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Finalize Button */}
+                  <div className="flex justify-center">
+                    {!monthlyAttendance.isFinalized ? (
+                      <button
+                        onClick={handleFinalizeAttendance}
+                        disabled={monthlyAttendance.totalActiveDays === 0}
+                        className="px-8 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:bg-gray-300 disabled:cursor-not-allowed font-semibold shadow-lg hover:shadow-xl transition-all"
+                      >
+                        🔒 Finalize Attendance
+                      </button>
+                    ) : (
+                      <button
+                        onClick={handleUnfinalizeAttendance}
+                        className="px-8 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-semibold shadow-lg hover:shadow-xl transition-all"
+                      >
+                        ✏️ Edit Attendance
+                      </button>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
           ) : null}
         </div>

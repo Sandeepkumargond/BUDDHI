@@ -3,7 +3,7 @@ import { availableMail, changeFacultyPassword, getFacultyById, getMyProfile, log
 import { authenticateFaculty } from "../middlewares/faculty.middleware.js";
 import { upload } from "../middlewares/multer.middleware.js";
 import { saveAttendance, listMyAttendance, getAttendanceById, getStudentsForAttendance, getMyAssignedCourses, deleteAttendance, getCourseStudents } from "../controllers/attendance.controller.js";
-import { getMonthlyAttendance, updateActiveDays, updateStudentAttendance, bulkUpdateAttendance, finalizeAttendance, unfinalizeAttendance, getMyMonthlyAttendances } from "../controllers/monthlyAttendance.controller.js";
+import { getMonthlyAttendance, updateActiveDays, updateStudentAttendance, bulkUpdateAttendance, finalizeAttendance, unfinalizeAttendance, getMyMonthlyAttendances, deleteMonthlyAttendance, syncStudents } from "../controllers/monthlyAttendance.controller.js";
 
 const router = Router();
 
@@ -112,6 +112,16 @@ router.route('/monthly-attendance/finalize').patch(
 router.route('/monthly-attendance/unfinalize').patch(
     authenticateFaculty,
     unfinalizeAttendance
+);
+
+router.route('/monthly-attendance/sync-students').patch(
+    authenticateFaculty,
+    syncStudents
+);
+
+router.route('/monthly-attendance/:attendanceId').delete(
+    authenticateFaculty,
+    deleteMonthlyAttendance
 );
 
 // Parametric route MUST come last to avoid catching specific route names
