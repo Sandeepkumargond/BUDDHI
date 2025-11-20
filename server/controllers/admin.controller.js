@@ -43,6 +43,22 @@ export const getAdminDetailsById = async (adminId) => {
     return admin;
 };
 
+export const getMyProfile = asyncHandler(async (req, res) => {
+    const adminId = req.user?._id;
+
+    const admin = await getAdminDetailsById(adminId);
+
+    return res.status(200).json(
+        new ApiResponse(
+            200,
+            {
+                user: admin,
+            },
+            "Admin profile fetched successfully"
+        )
+    );
+});
+
 export const changePassword = asyncHandler(async (req, res, next) => {
     const adminId = req.user?._id;
 
@@ -260,15 +276,21 @@ export const updateAdminAccountDetails = asyncHandler(async (req, res, next) => 
         firstName,
         lastName,
         mobile,
+        personalMail,
         social
     } = req.body || {};
 
+    let parsedSocial = social;
+    if (typeof parsedSocial === 'string') {
+        try { parsedSocial = JSON.parse(parsedSocial); } catch (e) { /* ignore */ }
+    }
 
     const updateData = {
         firstName: firstName !== undefined ? firstName : admin.firstName,
         lastName: lastName !== undefined ? lastName : admin.lastName,
         mobile: mobile !== undefined ? mobile : admin.mobile,
-        social: social !== undefined ? social : admin.social,
+        personalMail: personalMail !== undefined ? personalMail : admin.personalMail,
+        social: parsedSocial !== undefined ? parsedSocial : admin.social,
     };
 
 

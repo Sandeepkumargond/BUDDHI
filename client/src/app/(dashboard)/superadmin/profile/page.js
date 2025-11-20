@@ -3,9 +3,10 @@ import { useState, useEffect } from 'react';
 import ProfileForm from '@/components/ProfileForm';
 import { useAuth } from '@/context/AuthContext';
 import { apiService } from '@/lib/api';
+import { showToast } from '@/lib/toast';
 
 const SuperAdminProfile = () => {
-  const { user: authUser, role } = useAuth();
+  const { user: authUser, role, updateUser } = useAuth();
   const [user, setUser] = useState(authUser);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -22,7 +23,9 @@ const SuperAdminProfile = () => {
     try {
       setLoading(true);
       const response = await apiService.getProfile('superadmin');
-      setUser(response.data.superAdmin || response.data.user);
+      const userData = response.data?.superAdmin || response.data?.user;
+      setUser(userData);
+      updateUser(userData); // Update AuthContext
     } catch (err) {
       setError(err.message);
     } finally {
@@ -40,7 +43,7 @@ const SuperAdminProfile = () => {
         }
       }
 
-      const accountResponse = await apiService.request('/super-admin/update-account', {
+      await apiService.request('/super-admin/update-account', {
         method: 'PATCH',
         body: accountData,
       });

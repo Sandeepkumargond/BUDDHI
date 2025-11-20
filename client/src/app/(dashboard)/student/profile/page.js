@@ -3,9 +3,10 @@ import { useState, useEffect } from 'react';
 import ProfileForm from '@/components/ProfileForm';
 import { useAuth } from '@/context/AuthContext';
 import { apiService } from '@/lib/api';
+import { showToast } from '@/lib/toast';
 
 const StudentProfile = () => {
-  const { user: authUser, role, isAuthenticated } = useAuth();
+  const { user: authUser, role, isAuthenticated, updateUser } = useAuth();
   const [user, setUser] = useState(authUser);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -24,6 +25,7 @@ const StudentProfile = () => {
       const response = await apiService.getProfile('student');
       const userData = response.data?.student || response.data?.user;
       setUser(userData);
+      updateUser(userData); // Update AuthContext
     } catch (err) {
       console.error('Failed to fetch student profile:', err);
       setError(err.message);

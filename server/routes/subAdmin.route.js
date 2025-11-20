@@ -1,11 +1,16 @@
 import { Router } from "express";
-import { changeSubAdminPassword, createFaculty, createStudent, loginSubAdmin, logoutSubAdmin, refreshSubAdminAccessToken, updateSubAdminAccountDetails, updateSubAdminImage, getAllStudents} from "../controllers/subAdmin.controller.js";
+import { changeSubAdminPassword, createFaculty, createStudent, getMyProfile, loginSubAdmin, logoutSubAdmin, refreshSubAdminAccessToken, updateSubAdminAccountDetails, updateSubAdminImage, getAllStudents} from "../controllers/subAdmin.controller.js";
 import { authenticateSubAdmin } from "../middlewares/subAdmin.middleware.js";
 import { upload } from "../middlewares/multer.middleware.js";
 
 const router = Router();
 
 router.route('/login').post(loginSubAdmin);
+
+router.route('/profile').get(
+    authenticateSubAdmin,
+    getMyProfile
+);
 
 router.route('/logout').post(
     authenticateSubAdmin,

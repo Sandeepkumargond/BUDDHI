@@ -41,6 +41,22 @@ export const getSubAdminDetailsById = async (subAdminId) => {
     return subAdmin;
 };
 
+export const getMyProfile = asyncHandler(async (req, res) => {
+    const subAdminId = req.user?._id;
+
+    const subAdmin = await getSubAdminDetailsById(subAdminId);
+
+    return res.status(200).json(
+        new ApiResponse(
+            200,
+            {
+                user: subAdmin,
+            },
+            "SubAdmin profile fetched successfully"
+        )
+    );
+});
+
 export const changePassword = asyncHandler(async (req, res, next) => {
     const subAdminId = req.user?._id;
 
@@ -258,15 +274,21 @@ export const updateSubAdminAccountDetails = asyncHandler(async (req, res, next) 
         firstName,
         lastName,
         mobile,
+        personalMail,
         social
     } = req.body || {};
 
+    let parsedSocial = social;
+    if (typeof parsedSocial === 'string') {
+        try { parsedSocial = JSON.parse(parsedSocial); } catch (e) { /* ignore */ }
+    }
 
     const updateData = {
         firstName: firstName !== undefined ? firstName : subAdmin.firstName,
         lastName: lastName !== undefined ? lastName : subAdmin.lastName,
         mobile: mobile !== undefined ? mobile : subAdmin.mobile,
-        social: social !== undefined ? social : subAdmin.social,
+        personalMail: personalMail !== undefined ? personalMail : subAdmin.personalMail,
+        social: parsedSocial !== undefined ? parsedSocial : subAdmin.social,
     };
 
 

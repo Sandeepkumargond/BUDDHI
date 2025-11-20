@@ -7,26 +7,37 @@ class ApiService {
 
   async request(endpoint, options = {}) {
     const url = `${this.baseURL}${endpoint}`;
+
+    const method = (options.method || 'GET').toUpperCase();
+    const isFormData = typeof FormData !== 'undefined' && options.body instanceof FormData;
+
+    // Build headers safely based on method/body
+    const headers = { ...(options.headers || {}) };
+    if (!isFormData && method !== 'GET') {
+      headers['Content-Type'] = headers['Content-Type'] || 'application/json';
+    }
+
     const config = {
-      headers: {
-        'Content-Type': 'application/json',
-        ...options.headers,
-      },
-      credentials: 'include', // Important for cookies
-      ...options,
+      method,
+      headers,
+      credentials: 'include', // include cookies for auth
+      cache: 'no-store', // always fetch fresh data
     };
 
-    // Handle FormData separately (for file uploads)
-    if (config.body instanceof FormData) {
-      // Remove Content-Type header to let browser set it with boundary
-      delete config.headers['Content-Type'];
-    } else if (config.body && typeof config.body !== 'string') {
-      config.body = JSON.stringify(config.body);
+    // Attach body appropriately
+    if (method !== 'GET' && method !== 'HEAD') {
+      if (isFormData) {
+        config.body = options.body; // browser sets correct boundary
+      } else if (options.body && typeof options.body !== 'string') {
+        config.body = JSON.stringify(options.body);
+      } else if (typeof options.body === 'string') {
+        config.body = options.body;
+      }
     }
 
     try {
       const response = await fetch(url, config);
-      
+
       // Check if response is JSON
       const contentType = response.headers.get('content-type');
       let data;

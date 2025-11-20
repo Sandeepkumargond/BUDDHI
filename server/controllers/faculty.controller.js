@@ -34,6 +34,22 @@ export const getFacultyDetailsById = async (facultyId) => {
     return faculty;
 };
 
+export const getMyProfile = asyncHandler(async (req, res) => {
+    const facultyId = req.user?._id;
+
+    const faculty = await getFacultyDetailsById(facultyId);
+
+    return res.status(200).json(
+        new ApiResponse(
+            200,
+            {
+                user: faculty,
+            },
+            "Faculty profile fetched successfully"
+        )
+    );
+});
+
 export const changeFacultyPassword = asyncHandler(async (req, res, next) => {
     const facultyId = req.user?._id;
 
@@ -224,15 +240,23 @@ export const updateFacultyAccountDetails = asyncHandler(async (req, res, next) =
         firstName,
         lastName,
         mobile,
+        personalMail,
+        address,
         social
     } = req.body || {};
 
+    let parsedSocial = social;
+    if (typeof parsedSocial === 'string') {
+        try { parsedSocial = JSON.parse(parsedSocial); } catch (e) { /* ignore */ }
+    }
 
     const updateData = {
         firstName: firstName !== undefined ? firstName : faculty.firstName,
         lastName: lastName !== undefined ? lastName : faculty.lastName,
         mobile: mobile !== undefined ? mobile : faculty.mobile,
-        social: social !== undefined ? social : faculty.social,
+        personalMail: personalMail !== undefined ? personalMail : faculty.personalMail,
+        address: address !== undefined ? address : faculty.address,
+        social: parsedSocial !== undefined ? parsedSocial : faculty.social,
     };
 
     const updatedFaculty = await Faculty.findByIdAndUpdate(

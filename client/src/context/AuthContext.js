@@ -152,6 +152,10 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  const updateUser = (updatedUserData) => {
+    setUser(updatedUserData);
+  };
+
   const value = {
     user,
     role,
@@ -159,7 +163,8 @@ export const AuthProvider = ({ children }) => {
     isAuthenticated,
     login,
     logout,
-    checkAuthStatus
+    checkAuthStatus,
+    updateUser
   };
 
   return (

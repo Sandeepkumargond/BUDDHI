@@ -34,6 +34,22 @@ export const getStudentDetailsById = async (studentId) => {
     return student;
 };
 
+export const getMyProfile = asyncHandler(async (req, res) => {
+    const studentId = req.user?._id;
+
+    const student = await getStudentDetailsById(studentId);
+
+    return res.status(200).json(
+        new ApiResponse(
+            200,
+            {
+                user: student,
+            },
+            "Student profile fetched successfully"
+        )
+    );
+});
+
 export const changeStudentPassword = asyncHandler(async (req, res, next) => {
     const studentId = req.user?._id;
 
@@ -224,15 +240,31 @@ export const updateStudentAccountDetails = asyncHandler(async (req, res, next) =
         firstName,
         lastName,
         mobile,
-        social
+        personalMail,
+        address,
+        social,
+        semester,
+        section,
+        fatherName,
+        motherName
     } = req.body || {};
 
+    let parsedSocial = social;
+    if (typeof parsedSocial === 'string') {
+        try { parsedSocial = JSON.parse(parsedSocial); } catch (e) { /* ignore parse errors */ }
+    }
 
     const updateData = {
         firstName: firstName !== undefined ? firstName : student.firstName,
         lastName: lastName !== undefined ? lastName : student.lastName,
         mobile: mobile !== undefined ? mobile : student.mobile,
-        social: social !== undefined ? social : student.social,
+        personalMail: personalMail !== undefined ? personalMail : student.personalMail,
+        address: address !== undefined ? address : student.address,
+        social: parsedSocial !== undefined ? parsedSocial : student.social,
+        semester: semester !== undefined ? Number(semester) : student.semester,
+        section: section !== undefined ? section : student.section,
+        fatherName: fatherName !== undefined ? fatherName : student.fatherName,
+        motherName: motherName !== undefined ? motherName : student.motherName,
     };
 
     const updatedStudent = await Student.findByIdAndUpdate(

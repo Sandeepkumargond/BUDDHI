@@ -316,16 +316,20 @@ export const updateSuperAdminAccountDetails = asyncHandler(async (req, res, next
     const {
         firstName,
         lastName,
-        mobile,
+        username,
         social
     } = req.body || {};
 
+    let parsedSocial = social;
+    if (typeof parsedSocial === 'string') {
+        try { parsedSocial = JSON.parse(parsedSocial); } catch (e) { /* ignore */ }
+    }
 
     const updateData = {
         firstName: firstName !== undefined ? firstName : superAdmin.firstName,
         lastName: lastName !== undefined ? lastName : superAdmin.lastName,
-        mobile: mobile !== undefined ? mobile : superAdmin.mobile,
-        social: social !== undefined ? social : superAdmin.social,
+        username: username !== undefined ? String(username).toLowerCase() : superAdmin.username,
+        social: parsedSocial !== undefined ? parsedSocial : superAdmin.social,
     };
 
 
