@@ -24,7 +24,6 @@ export default function SingleStudentPage({ params }) {
       try {
         // server route: GET /api/v1/student/:id
         const res = await apiService.request(`/student/${enrolmentNo}`);
-        console.log('Fetched student data:', res);
         // res.data is the student document
         const s = res && res.data ? res.data : null;
         if (!s) {

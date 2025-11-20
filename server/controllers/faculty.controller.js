@@ -116,7 +116,8 @@ export const loginFaculty = asyncHandler(async (req, res, next) => {
 
     const options = {
         httpOnly: true,
-        secure: true
+        secure: true,
+        sameSite: 'None'
     }
 
     return res
@@ -148,7 +149,8 @@ export const logoutFaculty = asyncHandler(async (req, res, next) => {
 
     const options = {
         httpOnly: true,
-        secure: true
+        secure: true,
+        sameSite: 'None'
     }
 
     return res
@@ -188,10 +190,11 @@ export const refreshFacultyAccessToken = asyncHandler(async (req, res) => {
 
         const options = {
             httpOnly: true,
-            secure: true
+            secure: true,
+            sameSite: 'None'
         }
 
-        const { accessToken, refreshToken: newRefreshToken } = await generateFacultyAccessAndRefreshToken(faculty?._id);
+        const { accessToken, refreshToken: newRefreshToken } = await generateFacultyAccessAndRefreshToken(faculty._id);
 
         res
             .status(200)

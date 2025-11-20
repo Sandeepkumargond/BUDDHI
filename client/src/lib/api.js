@@ -25,7 +25,6 @@ class ApiService {
     }
 
     try {
-      console.log('Making API request to:', url, 'with options:', config);
       const response = await fetch(url, config);
       
       // Check if response is JSON
@@ -232,6 +231,20 @@ class ApiService {
     const query = new URLSearchParams(params).toString();
     const qs = query ? `?${query}` : '';
     return this.request(`/admin/students${qs}`, { method: 'GET' });
+  }
+
+  async adminCreateStudent(payload) {
+    return this.request('/admin/create-student', { method: 'POST', body: payload });
+  }
+
+  async subAdminListStudents(params = {}) {
+    const query = new URLSearchParams(params).toString();
+    const qs = query ? `?${query}` : '';
+    return this.request(`/sub-admin/students${qs}`, { method: 'GET' });
+  }
+
+  async subAdminCreateStudent(payload) {
+    return this.request('/sub-admin/create-student', { method: 'POST', body: payload });
   }
 
   // Departments (admin)

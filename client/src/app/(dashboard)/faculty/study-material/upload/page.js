@@ -3,6 +3,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { showToast } from "@/lib/toast";
 import FileUploader from "../_components/FileUploader";
 import ScheduleModal from "../_components/ScheduleModal";
 import VersionHistoryModal from "../_components/VersionHistoryModal";
@@ -82,7 +83,7 @@ export default function UploadPage() {
 
   function save(publishNow = false) {
     if (!form.title || !form.subject) {
-      alert("Please provide title and subject");
+      showToast.error("Please provide title and subject");
       return;
     }
 
@@ -103,7 +104,7 @@ export default function UploadPage() {
       dup.releaseOn = form.releaseOn || dup.releaseOn;
       dup.expireOn = form.expireOn || dup.expireOn;
       saveMaterials(materials);
-      alert("Existing material updated (version saved).");
+      showToast.success("Existing material updated (version saved).");
       router.push("/faculty/study-material");
       return;
     }
@@ -111,7 +112,7 @@ export default function UploadPage() {
     const newMat = buildMaterialObj(publishNow);
     materials.unshift(newMat);
     saveMaterials(materials);
-    alert(publishNow ? "Material published" : "Saved as draft");
+    showToast.success(publishNow ? "Material published" : "Saved as draft");
     router.push("/faculty/study-material");
   }
 

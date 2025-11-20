@@ -34,7 +34,6 @@ const menusByRole = {
     { Icon: FaGraduationCap, label: "Grade Card", href: "/student/grade-card" },
     { Icon: FaClipboardCheck, label: "Attendance", href: "/student/attendance" },
     { Icon: FaCommentDots, label: "Feedback", href: "/list/feedback" },
-    { Icon: FiSettings, label: "Settings", href: "/student/settings" },
   ],
 
   faculty: [
@@ -72,7 +71,6 @@ const menusByRole = {
       ]
     },
     { Icon: MdAnnouncement, label: "Add Notices", href: "/list/add-notice" },
-    { Icon: FiSettings, label: "Settings", href: "/settings" },
   ],
 
   subadmin: [

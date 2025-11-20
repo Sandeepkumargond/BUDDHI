@@ -9,6 +9,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
 import { apiService } from '@/lib/api';
+import { showToast } from '@/lib/toast';
 
 const columns = [
   { header: "Info", accessor: "info" },
@@ -34,20 +35,21 @@ export default function StudentListPage() {
  useEffect(() => {
   async function fetchStudents() {
     try {
-      const endpoint =
-        role === "admin"
-          ? "http://localhost:5000/api/v1/admin/students"
-          : "http://localhost:5000/api/v1/sub-admin/students";
+      let data;
+      
+      if (role === "admin") {
+        const res = await apiService.adminListStudents();
+        data = res;
+      } else if (role === "subadmin") {
+        const res = await apiService.subAdminListStudents();
+        data = res;
+      } else {
+        console.error("Unauthorized role for student list");
+        return;
+      }
 
-      const res = await fetch(endpoint, {
-        method: "GET",
-        credentials: "include",
-      });
-
-      const data = await res.json();
-
-      if (!res.ok) {
-        console.error("Error fetching students:", data.message);
+      if (!data || !data.data) {
+        console.error("Error fetching students:", data?.message || "No data returned");
         return;
       }
 
@@ -134,7 +136,7 @@ export default function StudentListPage() {
         DELETE (Future)
   ----------------------------- */
   const handleDelete = (id) => {
-    alert("Deletion will be implemented later");
+    showToast.error("Deletion feature coming soon");
   };
 
 

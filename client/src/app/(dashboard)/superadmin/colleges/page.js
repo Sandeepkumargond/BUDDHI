@@ -33,7 +33,7 @@ const AllCollegesPage = () => {
           college.id === id ? { ...college, status: "inactive" } : college
         )
       );
-      alert("College deactivated successfully!");
+      showToast.success("College deactivated successfully!");
     }
   };
 

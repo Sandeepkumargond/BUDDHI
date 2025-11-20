@@ -44,11 +44,11 @@ const MarksTable = ({
       const external = parseFloat(marks.externalMarks) || 0;
 
       if (marks.internalMarks !== "" && (isNaN(internal) || internal < 0 || internal > 40)) {
-        alert(`Invalid internal marks for ${student.firstName}. Internal marks must be between 0 and 40.`);
+        showToast.error(`Invalid internal marks for ${student.firstName}. Internal marks must be between 0 and 40.`);
         return false;
       }
       if (marks.externalMarks !== "" && (isNaN(external) || external < 0 || external > 60)) {
-        alert(`Invalid external marks for ${student.firstName}. External marks must be between 0 and 60.`);
+        showToast.error(`Invalid external marks for ${student.firstName}. External marks must be between 0 and 60.`);
         return false;
       }
     }

@@ -167,7 +167,7 @@ const ViewRequestsPage = () => {
       
       console.log("College data:", collegeFormData);
       
-      alert("College added successfully!");
+      showToast.success("College added successfully!");
       
       // Reset form and close modal
       setCollegeFormData({
@@ -195,7 +195,7 @@ const ViewRequestsPage = () => {
       setShowAddCollegeModal(false);
       
     } catch (error) {
-      alert("Error adding college. Please try again.");
+      showToast.error("Error adding college. Please try again.");
     } finally {
       setIsSubmittingCollege(false);
     }
@@ -208,7 +208,7 @@ const ViewRequestsPage = () => {
       )
     );
     setSelectedRequest(null);
-    alert("College request approved successfully!");
+    showToast.success("College request approved successfully!");
   };
 
   const handleReject = (id) => {
@@ -220,7 +220,7 @@ const ViewRequestsPage = () => {
         )
       );
       setSelectedRequest(null);
-      alert("College request rejected.");
+      showToast.success("College request rejected.");
     }
   };
 

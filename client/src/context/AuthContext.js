@@ -109,14 +109,11 @@ export const AuthProvider = ({ children }) => {
   const login = async (selectedRole, credentials) => {
     try {
       setLoading(true);
-      console.log('Attempting login with role:', selectedRole, 'credentials:', credentials);
       
       const response = await apiService.login(selectedRole, credentials);
-      console.log('Login response:', response);
       
       if (response.success) {
         const userData = response.data.user || response.data.superAdmin || response.data.admin || response.data.subAdmin || response.data.student || response.data.faculty;
-        console.log('User data received:', userData);
         
         if (userData) {
           setUser(userData);

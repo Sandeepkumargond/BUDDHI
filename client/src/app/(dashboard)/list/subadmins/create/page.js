@@ -1,5 +1,7 @@
 "use client";
 
+import { showToast } from "@/lib/toast";
+
 import { useState } from "react";
 import { subAdmins } from "@/lib/subadmindata";
 import { useRouter } from "next/navigation";
@@ -57,7 +59,7 @@ export default function CreateSubadminPage() {
 
     subAdmins.push(newSubadmin);
 
-    alert("Sub Admin Created!");
+    showToast.success("Sub Admin Created!");
     router.push("/list/subadmins");
   };
 

@@ -61,9 +61,9 @@ const SubAdminProfile = () => {
 
       // Refresh profile data
       await fetchProfile();
-      alert('Profile updated successfully!');
+      showToast.success('Profile updated successfully!');
     } catch (err) {
-      alert('Error updating profile: ' + err.message);
+      showToast.error('Error updating profile: ' + err.message);
     }
   };
 

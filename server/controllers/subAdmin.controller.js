@@ -118,7 +118,8 @@ export const loginSubAdmin = asyncHandler(async (req, res, next) => {
 
     const options = {
         httpOnly: true,
-        secure: true
+        secure: true,
+        sameSite: 'None'
     }
 
     return res
@@ -150,7 +151,8 @@ export const logoutSubAdmin = asyncHandler(async (req, res, next) => {
 
     const options = {
         httpOnly: true,
-        secure: true
+        secure: true,
+        sameSite: 'None'
     }
 
     return res
@@ -190,7 +192,8 @@ export const refreshSubAdminAccessToken = asyncHandler(async (req, res) => {
 
         const options = {
             httpOnly: true,
-            secure: true
+            secure: true,
+            sameSite: 'None'
         }
 
         const { accessToken, refreshToken: newRefreshToken } = await generateSubAdminAccessAndRefreshToken(subAdmin._id);

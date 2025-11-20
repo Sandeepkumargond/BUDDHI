@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { showToast } from "@/lib/toast";
 import AttendanceHeader from "./_components/AttendanceHeader";
 import StudentList from "./_components/StudentList";
 import ManualMarking from "./_components/ManualMarking";
@@ -71,7 +72,7 @@ export default function AttendancePage() {
       attendance: selection
     };
     saveAttendanceSnapshot(classInfo, payload);
-    alert("Attendance saved locally");
+    showToast.success("Attendance saved locally");
   };
 
   return (

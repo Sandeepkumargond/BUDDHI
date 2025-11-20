@@ -216,7 +216,7 @@ const FeePaymentPage = () => {
 
   const handlePayment = async () => {
     if (!paymentMode) {
-      alert("Please select a payment method");
+      showToast.error("Please select a payment method");
       return;
     }
 

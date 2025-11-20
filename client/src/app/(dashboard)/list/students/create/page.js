@@ -1,6 +1,9 @@
 "use client";
 
 import { useState } from "react";
+import { useAuth } from "@/context/AuthContext";
+import { apiService } from "@/lib/api";
+import { showToast } from "@/lib/toast";
 
 // SUCCESS CARD COMPONENT (NO global CSS)
 function SuccessCard({ message, show }) {
@@ -27,6 +30,7 @@ function SuccessCard({ message, show }) {
 }
 
 export default function CreateStudentPage() {
+  const { role } = useAuth();
   const [form, setForm] = useState({
     firstName: "",
     lastName: "",
@@ -74,18 +78,23 @@ export default function CreateStudentPage() {
     try {
       setLoading(true);
 
-      const res = await fetch("http://localhost:5000/api/v1/sub-admin/create-student", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify(form),
-      });
+      let data;
+      if (role === "admin") {
+        const res = await apiService.adminCreateStudent(form);
+        data = res;
+      } else if (role === "subadmin") {
+        const res = await apiService.subAdminCreateStudent(form);
+        data = res;
+      } else {
+        showToast.error("Unauthorized role");
+        setLoading(false);
+        return;
+      }
 
-      const data = await res.json();
       setLoading(false);
 
-      if (!res.ok) {
-        alert(data.message || "Something went wrong");
+      if (!data || !data.success) {
+        showToast.error(data?.message || "Something went wrong");
         return;
       }
 
@@ -115,7 +124,7 @@ export default function CreateStudentPage() {
 
     } catch (err) {
       setLoading(false);
-      alert("Server error");
+      showToast.error("Server error");
     }
   };
 
