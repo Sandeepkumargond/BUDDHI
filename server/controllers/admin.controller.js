@@ -642,3 +642,16 @@ export const adminListStudents = asyncHandler(async (req, res) => {
         )
     );
 });
+
+
+export const getAllStudents = asyncHandler(async (req, res) => {
+  const students = await Student.find().select("-password -refreshToken");
+
+  return res.status(200).json(
+    new ApiResponse(
+      200,
+      { students },
+      "All students fetched successfully"
+    )
+  );
+});

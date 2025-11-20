@@ -30,36 +30,37 @@ export default function StudentListPage() {
   /* ---------------------------------
      FETCH STUDENTS FROM BACKEND
   ---------------------------------- */
-  useEffect(() => {
-    async function fetchStudents() {
-      try {
-        const res = await fetch(
-          "http://localhost:5000/api/v1/sub-admin/students",
-          {
-            method: "GET",
-            credentials: "include",
-          }
-        );
+ useEffect(() => {
+  async function fetchStudents() {
+    try {
+      const endpoint =
+        role === "admin"
+          ? "http://localhost:5000/api/v1/admin/students"
+          : "http://localhost:5000/api/v1/sub-admin/students";
 
-        const data = await res.json();
+      const res = await fetch(endpoint, {
+        method: "GET",
+        credentials: "include",
+      });
 
-        if (!res.ok) {
-          console.error("Error fetching students:", data.message);
-          return;
-        }
+      const data = await res.json();
 
-        // Backend returns: { students: [...] }
-        setStudents(data.data.students || []);
-
-      } catch (error) {
-        console.error("Fetch error:", error);
-      } finally {
-        setLoading(false);
+      if (!res.ok) {
+        console.error("Error fetching students:", data.message);
+        return;
       }
-    }
 
-    fetchStudents();
-  }, []);
+      setStudents(data.data.students || []);
+    } catch (error) {
+      console.error("Fetch error:", error);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  if (role) fetchStudents();
+}, [role]);
+
 
   /* ----------------------------
         FILTERS & SEARCH
