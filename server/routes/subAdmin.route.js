@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { changeSubAdminPassword, createFaculty, createStudent, loginSubAdmin, logoutSubAdmin, refreshSubAdminAccessToken, updateSubAdminAccountDetails, updateSubAdminImage } from "../controllers/subAdmin.controller.js";
+import { changeSubAdminPassword, createFaculty, createStudent, loginSubAdmin, logoutSubAdmin, refreshSubAdminAccessToken, updateSubAdminAccountDetails, updateSubAdminImage, getAllStudents} from "../controllers/subAdmin.controller.js";
 import { authenticateSubAdmin } from "../middlewares/subAdmin.middleware.js";
 import { upload } from "../middlewares/multer.middleware.js";
 
@@ -39,5 +39,11 @@ router.route('/create-faculty').post(
     authenticateSubAdmin,
     createFaculty
 )
+
+router.route("/students").get(
+    authenticateSubAdmin,
+    getAllStudents
+);
+
 
 export default router;
