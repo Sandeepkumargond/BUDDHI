@@ -60,6 +60,11 @@ const studentSchema = new Schema(
             type: String,
             trim: true,
         },
+        batch: {
+            type: String,
+            trim: true,
+            default: '',
+        },
         mobile: {
             type: String,
             trim: true,

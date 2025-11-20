@@ -163,7 +163,38 @@ const facultySchema = new Schema(
             type: String,
             enum: ['faculty'],
             default: 'faculty',
-        }
+        },
+        assignedCourses: [
+            {
+                courseId: {
+                    type: Schema.Types.ObjectId,
+                    ref: 'Course',
+                    required: true
+                },
+                semester: {
+                    type: Number,
+                    required: true
+                },
+                section: {
+                    type: String,
+                    trim: true,
+                    default: ''
+                },
+                batch: {
+                    type: String,
+                    trim: true,
+                    default: ''
+                },
+                academicYear: {
+                    type: String,
+                    trim: true
+                },
+                isActive: {
+                    type: Boolean,
+                    default: true
+                }
+            }
+        ]
     },
     { timestamps: true }
 );

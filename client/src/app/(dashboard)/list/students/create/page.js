@@ -40,6 +40,8 @@ export default function CreateStudentPage() {
     program: "",
     branch: "",
     semester: "",
+    section: "",
+    batch: "",
     mobile: "",
     registrationNumber: "",
     dateOfAdmission: "",
@@ -115,6 +117,8 @@ export default function CreateStudentPage() {
         program: "",
         branch: "",
         semester: "",
+        section: "",
+        batch: "",
         mobile: "",
         registrationNumber: "",
         dateOfAdmission: "",
@@ -160,11 +164,15 @@ export default function CreateStudentPage() {
           <Select label="Branch" name="branch" value={form.branch} onChange={handleChange} options={["CSE","ECE","EEE","ME","CE"]} error={errors.branch} />
         </div>
 
-        {/* SEMESTER + MOBILE */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {/* SEMESTER + SECTION + BATCH */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <Input label="Semester" name="semester" type="number" value={form.semester} onChange={handleChange} error={errors.semester} />
-          <Input label="Mobile" name="mobile" value={form.mobile} onChange={handleChange} error={errors.mobile} />
+          <Input label="Section" name="section" value={form.section} onChange={handleChange} placeholder="e.g., A, B, C" />
+          <Input label="Batch" name="batch" value={form.batch} onChange={handleChange} placeholder="e.g., 2024" />
         </div>
+
+        {/* MOBILE */}
+        <Input label="Mobile" name="mobile" value={form.mobile} onChange={handleChange} error={errors.mobile} />
 
         {/* REG NUMBER */}
         <Input label="Registration Number" name="registrationNumber" value={form.registrationNumber} onChange={handleChange} error={errors.registrationNumber} />

@@ -46,7 +46,7 @@ const menusByRole = {
 
   admin: [
     { Icon: MdDashboard, label: "Dashboard", href: "/admin" },
-    { Icon: FaChalkboardTeacher, label: "Faculty", href: "/list/faculty" },
+    { Icon: FaChalkboardTeacher, label: "Faculty Management", href: "/admin/faculty" },
     { Icon: FaUserGraduate, label: "Students", href: "/list/students" },
     { Icon: FaMoneyBillWave, label: "Finance", href: "/list/finance" },
     { Icon: FaUserShield, label: "Sub Admins", href: "/list/subadmins" },

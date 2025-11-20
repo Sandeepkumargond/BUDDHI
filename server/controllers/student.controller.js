@@ -245,6 +245,7 @@ export const updateStudentAccountDetails = asyncHandler(async (req, res, next) =
         social,
         semester,
         section,
+        batch,
         fatherName,
         motherName
     } = req.body || {};
@@ -263,6 +264,7 @@ export const updateStudentAccountDetails = asyncHandler(async (req, res, next) =
         social: parsedSocial !== undefined ? parsedSocial : student.social,
         semester: semester !== undefined ? Number(semester) : student.semester,
         section: section !== undefined ? section : student.section,
+        batch: batch !== undefined ? batch : student.batch,
         fatherName: fatherName !== undefined ? fatherName : student.fatherName,
         motherName: motherName !== undefined ? motherName : student.motherName,
     };

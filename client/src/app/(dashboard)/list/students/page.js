@@ -158,7 +158,7 @@ export default function StudentListPage() {
             {item.firstName} {item.lastName}
           </h3>
           <p className="text-xs text-gray-500">
-            {item.branch} | Sem {item.semester}
+            {item.branch} | Sem {item.semester}{item.section ? ` | Sec ${item.section}` : ''}{item.batch ? ` | Batch ${item.batch}` : ''}
           </p>
         </div>
       </td>

@@ -357,7 +357,7 @@ export const updateSubAdminImage = asyncHandler(async (req, res, next) => {
 });
 
 export const createStudent = asyncHandler(async (req, res, next) => {
-    const { firstName, lastName, email, personalMail, gender, program, branch, semester, mobile, registrationNumber, dateOfAdmission, password, dateOfBirth } = req.body;
+    const { firstName, lastName, email, personalMail, gender, program, branch, semester, section, batch, mobile, registrationNumber, dateOfAdmission, password, dateOfBirth } = req.body;
 
     const values = { firstName, lastName, email, gender, personalMail, program, branch, semester, mobile, registrationNumber, dateOfAdmission, password };
     for (const [k, v] of Object.entries(values)) {
@@ -397,6 +397,8 @@ export const createStudent = asyncHandler(async (req, res, next) => {
         gender,
         branch,
         semester,
+        section,
+        batch,
         mobile,
         registrationNumber,
         password
@@ -417,6 +419,47 @@ export const createStudent = asyncHandler(async (req, res, next) => {
                 student: createdStudent,
             },
             "Student created successfully"
+        )
+    );
+});
+
+export const updateStudent = asyncHandler(async (req, res, next) => {
+    const { id } = req.params;
+    const { firstName, lastName, mobile, personalMail, address, semester, section, batch, fatherName, motherName } = req.body;
+
+    if (!id) {
+        throw new ApiError(400, "Student ID is required");
+    }
+
+    const student = await Student.findById(id);
+
+    if (!student) {
+        throw new ApiError(404, "Student not found");
+    }
+
+    const updateData = {};
+    if (firstName !== undefined) updateData.firstName = firstName;
+    if (lastName !== undefined) updateData.lastName = lastName;
+    if (mobile !== undefined) updateData.mobile = mobile;
+    if (personalMail !== undefined) updateData.personalMail = personalMail;
+    if (address !== undefined) updateData.address = address;
+    if (semester !== undefined) updateData.semester = Number(semester);
+    if (section !== undefined) updateData.section = section;
+    if (batch !== undefined) updateData.batch = batch;
+    if (fatherName !== undefined) updateData.fatherName = fatherName;
+    if (motherName !== undefined) updateData.motherName = motherName;
+
+    const updatedStudent = await Student.findByIdAndUpdate(
+        id,
+        { $set: updateData },
+        { new: true }
+    ).select("-password -refreshToken");
+
+    return res.status(200).json(
+        new ApiResponse(
+            200,
+            { student: updatedStudent },
+            "Student updated successfully"
         )
     );
 });

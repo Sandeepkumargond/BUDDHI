@@ -254,11 +254,35 @@ class ApiService {
   }
 
   // Faculty (admin)
+  async getAllFaculty() {
+    return this.request('/admin/get-all-faculty', { method: 'GET' });
+  }
+
+  async createFaculty(payload) {
+    return this.request('/admin/create-faculty', { method: 'POST', body: payload });
+  }
+
   async adminDeleteFaculty(id) {
     return this.request('/admin/delete-faculty', { method: 'DELETE', body: { id } });
   }
 
+  async deleteFaculty(id) {
+    return this.adminDeleteFaculty(id);
+  }
+
   // Departments (admin)
+  async getAllDepartments() {
+    return this.request('/admin/departments', { method: 'GET' });
+  }
+
+  async getCoursesByDepartment(departmentId) {
+    return this.request(`/admin/departments/${departmentId}/courses`, { method: 'GET' });
+  }
+
+  async getAllCourses() {
+    return this.request('/admin/courses', { method: 'GET' });
+  }
+
   async adminGetDepartment(code) {
     return this.request(`/admin/departments/${code}`, { method: 'GET' });
   }
@@ -277,6 +301,10 @@ class ApiService {
     return this.request('/admin/create-student', { method: 'POST', body: payload });
   }
 
+  async adminUpdateStudent(id, payload) {
+    return this.request(`/admin/update-student/${id}`, { method: 'PATCH', body: payload });
+  }
+
   async subAdminListStudents(params = {}) {
     const query = new URLSearchParams(params).toString();
     const qs = query ? `?${query}` : '';
@@ -285,6 +313,10 @@ class ApiService {
 
   async subAdminCreateStudent(payload) {
     return this.request('/sub-admin/create-student', { method: 'POST', body: payload });
+  }
+
+  async subAdminUpdateStudent(id, payload) {
+    return this.request(`/sub-admin/update-student/${id}`, { method: 'PATCH', body: payload });
   }
 
   // Departments (admin)
@@ -368,6 +400,50 @@ class ApiService {
     const base = roleBases[role];
     if (!base) throw new Error(`Invalid role: ${role}`);
     return this.request(`${base}/${id}`);
+  }
+
+  // Attendance APIs (faculty)
+  async saveAttendance(payload) {
+    return this.request('/faculty/attendance', { method: 'POST', body: payload });
+  }
+
+  async listMyAttendance(params = {}) {
+    const query = new URLSearchParams(params).toString();
+    const qs = query ? `?${query}` : '';
+    return this.request(`/faculty/attendance${qs}`, { method: 'GET' });
+  }
+
+  async getAttendanceById(id) {
+    return this.request(`/faculty/attendance/${id}`, { method: 'GET' });
+  }
+
+  async deleteAttendance(id) {
+    return this.request(`/faculty/attendance/${id}`, { method: 'DELETE' });
+  }
+
+  async getStudentsForAttendance(params = {}) {
+    const query = new URLSearchParams(params).toString();
+    const qs = query ? `?${query}` : '';
+    return this.request(`/faculty/attendance/students${qs}`, { method: 'GET' });
+  }
+
+  async getMyAssignedCourses() {
+    return this.request('/faculty/my-courses', { method: 'GET' });
+  }
+
+  // Alias for consistency
+  async facultyListMyCourses() {
+    return this.getMyAssignedCourses();
+  }
+
+  async facultyGetCourseStudents(courseId, params = {}) {
+    const query = new URLSearchParams(params).toString();
+    const qs = query ? `?${query}` : '';
+    return this.request(`/faculty/courses/${courseId}/students${qs}`, { method: 'GET' });
+  }
+
+  async assignCourseToFaculty(payload) {
+    return this.request('/admin/assign-course', { method: 'POST', body: payload });
   }
 }
 
