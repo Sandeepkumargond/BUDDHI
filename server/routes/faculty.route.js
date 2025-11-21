@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { availableMail, changeFacultyPassword, getFacultyById, getMyProfile, loginFaculty, logoutFaculty, refreshFacultyAccessToken, updateFacultyAccountDetails, updateFacultyImage } from "../controllers/faculty.controller.js";
+import { availableMail, changeFacultyPassword, getFacultyById, getMyProfile, loginFaculty, logoutFaculty, refreshFacultyAccessToken, updateFacultyAccountDetails, updateFacultyImage, updateFacultySign } from "../controllers/faculty.controller.js";
 import { authenticateFaculty } from "../middlewares/faculty.middleware.js";
 import { upload } from "../middlewares/multer.middleware.js";
 import { saveAttendance, listMyAttendance, getAttendanceById, getStudentsForAttendance, getMyAssignedCourses, deleteAttendance, getCourseStudents } from "../controllers/attendance.controller.js";
@@ -36,6 +36,12 @@ router.route('/update-image').patch(
     authenticateFaculty
     , upload.single("image"),
     updateFacultyImage
+);
+
+router.route('/update-sign').patch(
+    authenticateFaculty,
+    upload.single('sign'),
+    updateFacultySign
 );
 
 router.route('/available-mail').post(
