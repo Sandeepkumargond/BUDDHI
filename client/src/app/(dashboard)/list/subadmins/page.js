@@ -1,12 +1,42 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { subAdmins, role } from "@/lib/subadmindata";
+import { role } from "@/lib/subadmindata";
+import { apiService } from '@/lib/api';
 
 export default function SubAdminListPage() {
-  const [data, setData] = useState(subAdmins);
+  const [data, setData] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    const fetchSubAdmins = async () => {
+      try {
+        setLoading(true);
+        const res = await apiService.request('/admin/sub-admins', { method: 'GET' });
+        const list = res?.data?.subAdmins || [];
+        // Normalize to the UI shape used in this page (photo, name, department, subAdminId, phone, email)
+        const normalized = list.map(s => ({
+          subAdminId: s._id || s.subAdminId || s._doc?._id,
+          name: `${s.firstName || ''} ${s.lastName || ''}`.trim() || s.personalMail || s.email,
+          department: s.department || s.collegeName || '',
+          phone: s.mobile || s.phone || '',
+          email: s.personalMail || s.email || '',
+          photo: s.imageUrl || '/avatar.png'
+        }));
+        setData(normalized);
+      } catch (err) {
+        console.error('Failed to fetch subadmins', err);
+        setError(err.message || 'Failed to load');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchSubAdmins();
+  }, []);
 
   const [filters, setFilters] = useState({
     department: "",
@@ -46,6 +76,18 @@ export default function SubAdminListPage() {
     if (!yes) return;
     setData((prev) => prev.filter((s) => s.subAdminId !== subAdminId));
   };
+
+  if (loading) {
+    return (
+      <div className="bg-white p-4 rounded-md flex-1 m-4 text-center">Loading sub admins...</div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="bg-white p-4 rounded-md flex-1 m-4 text-center text-red-600">Error: {error}</div>
+    );
+  }
 
   return (
     <div className="bg-white p-4 rounded-md flex-1 m-4">

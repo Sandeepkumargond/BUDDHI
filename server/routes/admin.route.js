@@ -1,5 +1,6 @@
 import { Router } from "express";
-import { loginAdmin, logoutAdmin, refreshAdminAccessToken, changeAdminPassword, updateAdminAccountDetails, updateAdminImage, createStudent, updateStudent, createFaculty, createSubAdmin, deleteStudent, deleteFaculty, deleteSubAdmin, getAllFaculty, getAdminById, getAllStudents, getMyProfile } from "../controllers/admin.controller.js";
+import { loginAdmin, logoutAdmin, refreshAdminAccessToken, changeAdminPassword, updateAdminAccountDetails, updateAdminImage, createStudent, updateStudent, createFaculty, createSubAdmin, deleteStudent, deleteFaculty, deleteSubAdmin, getAllFaculty, getAllSubAdmins, getAdminById, getAllStudents, getMyProfile } from "../controllers/admin.controller.js";
+import { getSubAdminById } from "../controllers/subAdmin.controller.js";
 import { adminGetFeePaymentById, adminGetReceiptRedirect, adminListFeePayments, adminCreateFeeStructure, adminGetFeeStructureById, adminListFeeStructures, adminPublishFeeStructure } from "../controllers/feePayment.controller.js";
 import { validateAdminFeePaymentQuery, validateCreateFeeStructure } from "../middlewares/feePayment.middleware.js";
 import { authenticateAdmin } from "../middlewares/admin.middleware.js";
@@ -117,6 +118,15 @@ router.route('/fee-structure/:id/publish').patch(
     adminPublishFeeStructure
 )
 router.route('/get-all-faculty').get(getAllFaculty);
+router.route('/sub-admins').get(
+    authenticateAdmin,
+    getAllSubAdmins
+);
+
+router.route('/sub-admins/:id').get(
+    authenticateAdmin,
+    getSubAdminById
+);
 
 // Courses (admin)
 router.route('/courses').get(

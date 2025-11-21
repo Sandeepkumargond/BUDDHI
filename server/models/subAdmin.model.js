@@ -4,6 +4,12 @@ import jwt from "jsonwebtoken";
 
 const subAdmin = new Schema(
     {
+        subAdminId: {
+            type: String,
+            unique: true,
+            required: true,
+            index: true,
+        },
         firstName: {
             type: String,
             required: true,
@@ -21,6 +27,11 @@ const subAdmin = new Schema(
             lowercase: true,
             trim: true,
             index: true,
+        },
+        department: {
+            type: String,
+            required: true,
+            trim: true,
         },
         personalMail: {
             type: String,
@@ -53,7 +64,6 @@ const subAdmin = new Schema(
         ],
         collegeRegistartionNo: {
             type: String,
-            unique: true,
             required: true,
             index: true,
         },
