@@ -39,9 +39,9 @@ const FacultyProfile = () => {
       // First update account details
       const accountData = {};
       for (let [key, value] of formData.entries()) {
-        if (key !== 'image') {
-          accountData[key] = value;
-        }
+        // exclude binary fields from JSON payload
+        if (key === 'image' || key === 'sign') continue;
+        accountData[key] = value;
       }
 
       await apiService.request('/faculty/update-account', {
@@ -58,6 +58,18 @@ const FacultyProfile = () => {
           method: 'PATCH',
           body: imageData,
           headers: {}, // Remove Content-Type to let browser set it for FormData
+        });
+      }
+
+      // Update signature if provided
+      if (formData.get('sign')) {
+        const signData = new FormData();
+        signData.append('sign', formData.get('sign'));
+
+        await apiService.request('/faculty/update-sign', {
+          method: 'PATCH',
+          body: signData,
+          headers: {},
         });
       }
 

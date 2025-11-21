@@ -21,20 +21,6 @@ export const getStudentById = asyncHandler(async (req, res) => {
         )
 });
 
-export const getMyProfile = asyncHandler(async (req, res, next) => {
-    const studentId = req.user?._id;
-
-    const student = await getStudentDetailsById(studentId);
-
-    return res.status(200).json(
-        new ApiResponse(
-            200,
-            { student },
-            "Student fetched successfully"
-        )
-    );
-});
-
 export const getStudentDetailsById = async (studentId) => {
     if (!studentId) {
         throw new ApiError(400, "Student ID is required");

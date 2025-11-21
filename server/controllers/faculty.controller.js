@@ -239,10 +239,21 @@ export const updateFacultyAccountDetails = asyncHandler(async (req, res, next) =
     const {
         firstName,
         lastName,
-        mobile,
+        dateOfBirth,
         personalMail,
+        imageUrl,
+        mobile,
         address,
-        social
+        bloodGroup,
+        religion,
+        category,
+        gender,
+        aadharNo,
+        department,
+        signUrl,
+        about,
+        social,
+        specialization
     } = req.body || {};
 
     let parsedSocial = social;
@@ -250,13 +261,32 @@ export const updateFacultyAccountDetails = asyncHandler(async (req, res, next) =
         try { parsedSocial = JSON.parse(parsedSocial); } catch (e) { /* ignore */ }
     }
 
+    let parsedSpecialization = specialization;
+    if (typeof parsedSpecialization === 'string') {
+        try { parsedSpecialization = JSON.parse(parsedSpecialization); } catch (e) {
+            // allow comma separated string
+            parsedSpecialization = parsedSpecialization.split(',').map(s=>s.trim()).filter(Boolean);
+        }
+    }
+
     const updateData = {
         firstName: firstName !== undefined ? firstName : faculty.firstName,
         lastName: lastName !== undefined ? lastName : faculty.lastName,
-        mobile: mobile !== undefined ? mobile : faculty.mobile,
-        personalMail: personalMail !== undefined ? personalMail : faculty.personalMail,
-        address: address !== undefined ? address : faculty.address,
-        social: parsedSocial !== undefined ? parsedSocial : faculty.social,
+    dateOfBirth: dateOfBirth !== undefined ? dateOfBirth : faculty.dateOfBirth,
+    imageUrl: imageUrl !== undefined ? imageUrl : faculty.imageUrl,
+    mobile: mobile !== undefined ? mobile : faculty.mobile,
+    personalMail: personalMail !== undefined ? personalMail : faculty.personalMail,
+    address: address !== undefined ? address : faculty.address,
+    bloodGroup: bloodGroup !== undefined ? bloodGroup : faculty.bloodGroup,
+    religion: religion !== undefined ? religion : faculty.religion,
+    category: category !== undefined ? category : faculty.category,
+    gender: gender !== undefined ? gender : faculty.gender,
+    aadharNo: aadharNo !== undefined ? aadharNo : faculty.aadharNo,
+    department: department !== undefined ? department : faculty.department,
+    signUrl: signUrl !== undefined ? signUrl : faculty.signUrl,
+    about: about !== undefined ? about : faculty.about,
+    social: parsedSocial !== undefined ? parsedSocial : faculty.social,
+    specialization: parsedSpecialization !== undefined ? parsedSpecialization : faculty.specialization,
     };
 
     const updatedFaculty = await Faculty.findByIdAndUpdate(
@@ -317,6 +347,50 @@ export const updateFacultyImage = asyncHandler(async (req, res, next) => {
                 updatedFaculty,
             },
             "Faculty image updated successfully"
+        )
+    );
+});
+
+export const updateFacultySign = asyncHandler(async (req, res, next) => {
+    const facultyId = req.user?._id;
+
+    const faculty = await getFacultyDetailsById(facultyId);
+
+    const oldSignUrl = faculty.signUrl || "";
+    const oldSignFileId = await getFileIdFromUrl(oldSignUrl);
+
+    const signLocalPath = req.file?.path;
+
+    if (!signLocalPath) {
+        throw new ApiError(400, "Please provide a valid signature file");
+    }
+
+    const sign = await uploadImageOnImageKit(signLocalPath, `${faculty.firstName}-sign`);
+
+    if (!sign || sign.error) {
+        throw new ApiError(500, "Failed to upload signature");
+    }
+
+    const updatedFaculty = await Faculty.findByIdAndUpdate(
+        facultyId,
+        {
+            $set: { signUrl: sign.url }
+        },
+        { new: true }
+    ).select("-password -refreshToken");
+
+    // Delete old signature if exists
+    if (updatedFaculty && oldSignUrl) {
+        await deleteFromImageKit(oldSignFileId);
+    }
+
+    return res.status(200).json(
+        new ApiResponse(
+            200,
+            {
+                updatedFaculty,
+            },
+            "Faculty signature updated successfully"
         )
     );
 });

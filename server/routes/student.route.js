@@ -103,6 +103,8 @@ router.route('/registrations').get(
 router.route('/profile').get(
     authenticateStudent,
     getMyProfile
+);
+
 // Admit Card (student)
 router.route('/admit-card').get(
     authenticateStudent,

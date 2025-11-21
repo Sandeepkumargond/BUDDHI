@@ -29,7 +29,11 @@ const ProfileForm = ({ user, onSave, userType }) => {
     pwdCertificateUrl: user?.pwdCertificateUrl || '',
     signUrl: user?.signUrl || '',
     imageUrl: user?.imageUrl || '',
-    abcId: user?.abcId || ''
+    abcId: user?.abcId || '',
+    // faculty-specific
+    department: user?.department || '',
+    about: user?.about || '',
+    specialization: user?.specialization || []
   });
 
   const [isEditing, setIsEditing] = useState(false);
@@ -68,7 +72,10 @@ const ProfileForm = ({ user, onSave, userType }) => {
         pwdCertificateUrl: user?.pwdCertificateUrl || '',
         signUrl: user?.signUrl || '',
         imageUrl: user?.imageUrl || '',
-        abcId: user?.abcId || ''
+        abcId: user?.abcId || '',
+        department: user?.department || '',
+        about: user?.about || '',
+        specialization: user?.specialization || []
       }));
       setImagePreview(user?.imageUrl || null);
       setSignPreview(user?.signUrl || null);
@@ -133,20 +140,39 @@ const ProfileForm = ({ user, onSave, userType }) => {
     }
   };
 
+    // specialization handlers (faculty)
+    const handleSpecializationChange = (index, value) => {
+      const updated = [...(formData.specialization || [])];
+      updated[index] = value;
+      setFormData(prev => ({ ...prev, specialization: updated }));
+    };
+
+    const addSpecialization = () => {
+      setFormData(prev => ({ ...prev, specialization: [...(prev.specialization || []), ''] }));
+    };
+
+    const removeSpecialization = (index) => {
+      setFormData(prev => ({ ...prev, specialization: prev.specialization.filter((_, i) => i !== index) }));
+    };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     const dataToSubmit = new FormData();
 
     // Only append allowed editable fields
-    const allowedKeys = [
+    let allowedKeys = [
       'firstName', 'lastName', 'dateOfBirth', 'personalMail', 'mobile', 'address',
       'fatherName', 'motherName', 'fatherMobile', 'motherMobile', 'fatherOccupation', 'motherOccupation',
       'annualIncome', 'bloodGroup', 'religion', 'category', 'gender', 'aadharNo', 'pwd', 'pwdPercentage', 'pwdCertificateUrl', 'signUrl', 'imageUrl', 'abcId', 'email', 'social'
     ];
 
+    if (userType === 'faculty') {
+      allowedKeys = Array.from(new Set([...allowedKeys, 'department', 'about', 'specialization']));
+    }
+
     Object.keys(formData).forEach(key => {
       if (!allowedKeys.includes(key)) return;
-      if (key === 'social') {
+      if (key === 'social' || key === 'specialization') {
         dataToSubmit.append(key, JSON.stringify(formData[key] || []));
       } else {
         dataToSubmit.append(key, formData[key]);
@@ -262,6 +288,44 @@ const ProfileForm = ({ user, onSave, userType }) => {
           {renderField('Email', 'email', 'email', true, true)}
           {renderField('Personal Email', 'personalMail', 'email', true)}
           {renderField('Mobile', 'mobile', 'tel')}
+
+          {userType === 'faculty' && (
+            <>
+              {renderField('Date of Birth', 'dateOfBirth', 'date')}
+              {renderField('Department', 'department', 'text', true)}
+              {renderField('Sign URL', 'signUrl', 'text')}
+              <div className="md:col-span-2">
+                <label className="block text-sm font-medium text-gray-700 mb-1">About</label>
+                <textarea
+                  name="about"
+                  value={formData.about || ''}
+                  onChange={handleInputChange}
+                  disabled={!isEditing}
+                  className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${!isEditing ? 'bg-gray-100 cursor-not-allowed' : ''}`}
+                />
+              </div>
+              <div className="md:col-span-2">
+                <label className="block text-sm font-medium text-gray-700 mb-2">Specialization</label>
+                {formData.specialization?.map((spec, idx) => (
+                  <div key={idx} className="flex items-center space-x-2 mb-2">
+                    <input
+                      type="text"
+                      value={spec || ''}
+                      onChange={(e) => handleSpecializationChange(idx, e.target.value)}
+                      disabled={!isEditing}
+                      className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${!isEditing ? 'bg-gray-100 cursor-not-allowed' : ''}`}
+                    />
+                    {isEditing && (
+                      <button type="button" onClick={() => removeSpecialization(idx)} className="bg-red-500 text-white px-2 py-1 rounded">Remove</button>
+                    )}
+                  </div>
+                ))}
+                {isEditing && (
+                  <button type="button" onClick={addSpecialization} className="bg-green-500 text-white px-3 py-1 rounded">Add Specialization</button>
+                )}
+              </div>
+            </>
+          )}
 
           {userType === 'student' && (
             <>
