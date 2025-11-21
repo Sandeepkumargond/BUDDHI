@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
+import { showToast } from "@/lib/toast";
 import { useAuth } from "@/context/AuthContext";
 
 const Navbar = () => {
@@ -32,9 +33,11 @@ const Navbar = () => {
   const handleLogout = async () => {
     try {
       await logout();
+      showToast.success('Logged out successfully');
       router.push('/login');
     } catch (error) {
       console.error('Logout failed:', error);
+      showToast.error('Logout failed, but redirecting...');
       // Force redirect even if logout fails
       router.push('/login');
     }

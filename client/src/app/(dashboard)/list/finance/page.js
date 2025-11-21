@@ -91,7 +91,7 @@ const FinancePage = () => {
       ]
       exportToCSV(summaryData, `financial-summary-${selectedPeriod}`)
     }
-    alert("Data exported successfully!")
+    showToast.success("Data exported successfully!")
   }
 
   // Form handlers
@@ -123,13 +123,13 @@ const FinancePage = () => {
       const res = await apiService.adminCreateFeeStructure(payload)
       const msg = res?.message || "Fee structure added"
       setSubmitMsg(msg)
-      alert(msg)
+      showToast.success(msg)
       // Reset minimal state
       setFeeStructureForm({ departmentCode: "", semester: 1, academicYear: feeStructureForm.academicYear, fees: [] })
       setShowFeeStructureModal(false)
     } catch (err) {
       setSubmitMsg(err?.message || "Failed to add structure")
-      alert(err?.message || "Failed to add structure")
+      showToast.error(err?.message || "Failed to add structure")
     } finally {
       setSubmitting(false)
     }
@@ -144,7 +144,6 @@ const FinancePage = () => {
       status: "Pending",
       approvedBy: "System"
     }
-    console.log("New Expense:", newExpense)
     alert("Expense added successfully!")
     setShowExpenseModal(false)
     setExpenseForm({
@@ -159,7 +158,7 @@ const FinancePage = () => {
   }
 
   const handleCreateBudget = () => {
-    alert("Budget created successfully! This would integrate with your budget planning system.")
+    showToast.success("Budget created successfully!")
     setShowBudgetModal(false)
   }
 
@@ -173,7 +172,7 @@ const FinancePage = () => {
       "cash-flow": "Cash Flow Report generated successfully!"
     }
     
-    alert(reports[reportType] || "Report generated successfully!")
+    showToast.success(reports[reportType] || "Report generated successfully!")
     setShowReportModal(false)
   }
 

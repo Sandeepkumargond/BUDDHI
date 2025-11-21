@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { showToast } from "@/lib/toast";
 import Image from "next/image";
 import {
   noticeAudienceOptions,
@@ -30,7 +31,7 @@ export default function AddNoticePage() {
     ev.preventDefault();
     if (!validate()) return;
 
-    alert("Notice published!");
+    showToast.success("Notice published!");
 
     // Later: save notice to database
   };

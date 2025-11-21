@@ -1,14 +1,20 @@
 import { Router } from "express";
 import { authenticateStudent } from "../middlewares/student.middleware.js";
-import { availableMail, changeStudentPassword, getStudentById, getMyProfile, loginStudent, logoutStudent, refreshStudentAccessToken, updateStudentAccountDetails, updateStudentImage, updateStudentSign } from "../controllers/student.controller.js";
+import { availableMail, changeStudentPassword, getStudentById, getMyProfile, loginStudent, logoutStudent, refreshStudentAccessToken, updateStudentAccountDetails, updateStudentImage, updateStudentSign, getMyMonthlyAttendance } from "../controllers/student.controller.js";
 import { createFeePayment, listMyFeePayments, getMyFeePaymentReceipt, getMyApplicableFeeStructure, getMyApplicableFeeStructures } from "../controllers/feePayment.controller.js";
 import { validateCreateFeePayment } from "../middlewares/feePayment.middleware.js";
 import { upload } from "../middlewares/multer.middleware.js";
 import { studentGetRegistrationForm, studentListMyRegistrationForms, studentListMyRegistrations, studentSubmitRegistration } from "../controllers/registration.controller.js";
+import { studentGetMyAdmitCard } from "../controllers/admitCard.controller.js";
 
 const router = Router();
 
 router.route('/login').post(loginStudent);
+
+router.route('/profile').get(
+    authenticateStudent,
+    getMyProfile
+);
 
 router.route('/logout').post(
     authenticateStudent,
@@ -97,6 +103,16 @@ router.route('/registrations').get(
 router.route('/profile').get(
     authenticateStudent,
     getMyProfile
+// Admit Card (student)
+router.route('/admit-card').get(
+    authenticateStudent,
+    studentGetMyAdmitCard
+);
+
+// Monthly Attendance (student)
+router.route('/monthly-attendance').get(
+    authenticateStudent,
+    getMyMonthlyAttendance
 );
 
 // Keep generic id route last (no regex due to router lib constraints)

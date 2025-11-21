@@ -1,17 +1,24 @@
 import { Router } from "express";
-import { loginAdmin, logoutAdmin, refreshAdminAccessToken, changeAdminPassword, updateAdminAccountDetails, updateAdminImage, createStudent, createFaculty, createSubAdmin, deleteStudent, deleteFaculty, deleteSubAdmin, getAllFaculty, getAdminById } from "../controllers/admin.controller.js";
+import { loginAdmin, logoutAdmin, refreshAdminAccessToken, changeAdminPassword, updateAdminAccountDetails, updateAdminImage, createStudent, updateStudent, createFaculty, createSubAdmin, deleteStudent, deleteFaculty, deleteSubAdmin, getAllFaculty, getAdminById, getAllStudents, getMyProfile } from "../controllers/admin.controller.js";
 import { adminGetFeePaymentById, adminGetReceiptRedirect, adminListFeePayments, adminCreateFeeStructure, adminGetFeeStructureById, adminListFeeStructures, adminPublishFeeStructure } from "../controllers/feePayment.controller.js";
 import { validateAdminFeePaymentQuery, validateCreateFeeStructure } from "../middlewares/feePayment.middleware.js";
 import { authenticateAdmin } from "../middlewares/admin.middleware.js";
 import { upload } from "../middlewares/multer.middleware.js";
-import { adminCreateCourse, adminListDepartmentCourses, adminDeleteCourse, adminListDepartmentCoursesByCode } from "../controllers/course.controller.js";
+import { adminCreateCourse, adminListDepartmentCourses, adminDeleteCourse, adminListDepartmentCoursesByCode, adminListAllCourses } from "../controllers/course.controller.js";
 import { adminCreateRegistrationForm, adminListRegistrationForms, adminPublishRegistrationForm, adminListFormSubmissions, adminListAllRegistrations, adminDeleteRegistrationForm } from "../controllers/registration.controller.js";
+import { adminGetAdmitCardByDeptSem, adminPublishAdmitCard, adminListAdmitCards, adminDeleteAdmitCard } from "../controllers/admitCard.controller.js";
 import { adminGetDepartmentByCode, adminUpdateDepartmentHod, adminListDepartments } from "../controllers/department.controller.js";
 import { adminListStudents } from "../controllers/admin.controller.js";
+import { assignCourseToFaculty, removeCourseFromFaculty } from "../controllers/attendance.controller.js";
 
 const router = Router();
 
 router.route('/login').post(loginAdmin);
+
+router.route('/profile').get(
+    authenticateAdmin,
+    getMyProfile
+);
 
 router.route('/logout').post(
     authenticateAdmin,
@@ -39,6 +46,11 @@ router.route('/update-image').patch(
 router.route('/create-student').post(
     authenticateAdmin,
     createStudent
+)
+
+router.route('/update-student/:id').patch(
+    authenticateAdmin,
+    updateStudent
 )
 
 router.route('/create-faculty').post(
@@ -107,6 +119,11 @@ router.route('/fee-structure/:id/publish').patch(
 router.route('/get-all-faculty').get(getAllFaculty);
 
 // Courses (admin)
+router.route('/courses').get(
+    authenticateAdmin,
+    adminListAllCourses
+);
+
 router.route('/courses').post(
     authenticateAdmin,
     adminCreateCourse
@@ -150,6 +167,17 @@ router.route('/students').get(
     adminListStudents
 );
 
+// Faculty-Course Assignment (admin)
+router.route('/assign-course').post(
+    authenticateAdmin,
+    assignCourseToFaculty
+);
+
+router.route('/remove-course').post(
+    authenticateAdmin,
+    removeCourseFromFaculty
+);
+
 // Registration Forms (admin)
 router.route('/registration-forms').post(
     authenticateAdmin,
@@ -181,7 +209,34 @@ router.route('/registrations').get(
     adminListAllRegistrations
 );
 
+// Admit Cards (admin)
+router.route('/admit-cards/publish').post(
+    authenticateAdmin,
+    upload.single('signature'),
+    adminPublishAdmitCard
+);
+
+router.route('/admit-cards/by-dept/:code/semester/:semester').get(
+    authenticateAdmin,
+    adminGetAdmitCardByDeptSem
+);
+
+router.route('/admit-cards').get(
+    authenticateAdmin,
+    adminListAdmitCards
+);
+
+router.route('/admit-cards/:id').delete(
+    authenticateAdmin,
+    adminDeleteAdmitCard
+);
+
 // Keep generic id route last
 router.route('/:id').get(getAdminById);
+
+router.route('/students').get(
+    authenticateAdmin,
+    getAllStudents
+)
 
 export default router;

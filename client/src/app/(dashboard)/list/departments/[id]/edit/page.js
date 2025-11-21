@@ -2,6 +2,7 @@
 
 import { useParams, useRouter } from "next/navigation";
 import { useState } from "react";
+import { showToast } from "@/lib/toast";
 import { departmentsData } from "@/lib/roushaniData";
 
 export default function EditDepartmentPage() {
@@ -24,9 +25,7 @@ export default function EditDepartmentPage() {
   const handleSubmit = (e) => {
     e.preventDefault();
 
-    console.log("UPDATED DEPARTMENT:", form);
-
-    alert("Department updated (check console)");
+    showToast.success("Department updated successfully");
     router.push("/list/departments");
   };
 

@@ -1,33 +1,65 @@
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5000';
+// Base URL resolution: prefer explicit env, else infer from window origin (client-side) or default localhost.
+// Ensure single /api/v1 suffix.
+function resolveBaseUrl() {
+  let raw = process.env.NEXT_PUBLIC_API_BASE_URL;
+  if (!raw && typeof window !== 'undefined') {
+    raw = window.location.origin; // fallback to current origin in production if env missing
+  }
+  if (!raw) raw = 'http://localhost:5000';
+  // Strip trailing slashes
+  raw = raw.replace(/\/$/, '');
+  // If raw already ends with /api or /api/v1 leave, else append /api/v1
+  if (!/\/api(\/v1)?$/.test(raw)) raw = `${raw}/api/v1`;
+  return raw;
+}
 
 class ApiService {
   constructor() {
-    this.baseURL = `${API_BASE_URL}/api/v1`;
+    this.baseURL = resolveBaseUrl();
+    this.accessToken = null; // in-memory token fallback if cookies blocked cross-site
+  }
+
+  setAccessToken(token) {
+    this.accessToken = token;
   }
 
   async request(endpoint, options = {}) {
     const url = `${this.baseURL}${endpoint}`;
+
+    const method = (options.method || 'GET').toUpperCase();
+    const isFormData = typeof FormData !== 'undefined' && options.body instanceof FormData;
+
+    // Build headers safely based on method/body
+    const headers = { ...(options.headers || {}) };
+    // Attach bearer token if available (helps when cookies are stripped on cross-site requests)
+    if (this.accessToken && !headers['Authorization']) {
+      headers['Authorization'] = `Bearer ${this.accessToken}`;
+    }
+    if (!isFormData && method !== 'GET') {
+      headers['Content-Type'] = headers['Content-Type'] || 'application/json';
+    }
+
     const config = {
-      headers: {
-        'Content-Type': 'application/json',
-        ...options.headers,
-      },
-      credentials: 'include', // Important for cookies
-      ...options,
+      method,
+      headers,
+      credentials: 'include', // include cookies for auth
+      cache: 'no-store', // always fetch fresh data
     };
 
-    // Handle FormData separately (for file uploads)
-    if (config.body instanceof FormData) {
-      // Remove Content-Type header to let browser set it with boundary
-      delete config.headers['Content-Type'];
-    } else if (config.body && typeof config.body !== 'string') {
-      config.body = JSON.stringify(config.body);
+    // Attach body appropriately
+    if (method !== 'GET' && method !== 'HEAD') {
+      if (isFormData) {
+        config.body = options.body; // browser sets correct boundary
+      } else if (options.body && typeof options.body !== 'string') {
+        config.body = JSON.stringify(options.body);
+      } else if (typeof options.body === 'string') {
+        config.body = options.body;
+      }
     }
 
     try {
-      console.log('Making API request to:', url, 'with options:', config);
       const response = await fetch(url, config);
-      
+
       // Check if response is JSON
       const contentType = response.headers.get('content-type');
       let data;
@@ -83,10 +115,14 @@ class ApiService {
       loginData.username = credentials.email; // Use email as username if username not provided
     }
 
-    return this.request(endpoint, {
+    const res = await this.request(endpoint, {
       method: 'POST',
       body: loginData,
     });
+    // Store accessToken if present (for Authorization header on cross-site without cookies)
+    const token = res?.data?.accessToken;
+    if (token) this.setAccessToken(token);
+    return res;
   }
 
   // Refresh access token using refresh token cookie
@@ -104,9 +140,12 @@ class ApiService {
       throw new Error('Invalid role');
     }
 
-    return this.request(endpoint, {
+    const res = await this.request(endpoint, {
       method: 'POST',
     });
+    const token = res?.data?.accessToken;
+    if (token) this.setAccessToken(token);
+    return res;
   }
 
   // Create superadmin for testing
@@ -215,11 +254,35 @@ class ApiService {
   }
 
   // Faculty (admin)
+  async getAllFaculty() {
+    return this.request('/admin/get-all-faculty', { method: 'GET' });
+  }
+
+  async createFaculty(payload) {
+    return this.request('/admin/create-faculty', { method: 'POST', body: payload });
+  }
+
   async adminDeleteFaculty(id) {
     return this.request('/admin/delete-faculty', { method: 'DELETE', body: { id } });
   }
 
+  async deleteFaculty(id) {
+    return this.adminDeleteFaculty(id);
+  }
+
   // Departments (admin)
+  async getAllDepartments() {
+    return this.request('/admin/departments', { method: 'GET' });
+  }
+
+  async getCoursesByDepartment(departmentId) {
+    return this.request(`/admin/departments/${departmentId}/courses`, { method: 'GET' });
+  }
+
+  async getAllCourses() {
+    return this.request('/admin/courses', { method: 'GET' });
+  }
+
   async adminGetDepartment(code) {
     return this.request(`/admin/departments/${code}`, { method: 'GET' });
   }
@@ -232,6 +295,59 @@ class ApiService {
     const query = new URLSearchParams(params).toString();
     const qs = query ? `?${query}` : '';
     return this.request(`/admin/students${qs}`, { method: 'GET' });
+  }
+
+  async adminCreateStudent(payload) {
+    return this.request('/admin/create-student', { method: 'POST', body: payload });
+  }
+
+  async adminUpdateStudent(id, payload) {
+    return this.request(`/admin/update-student/${id}`, { method: 'PATCH', body: payload });
+  }
+
+  async subAdminListStudents(params = {}) {
+    const query = new URLSearchParams(params).toString();
+    const qs = query ? `?${query}` : '';
+    return this.request(`/sub-admin/students${qs}`, { method: 'GET' });
+  }
+
+  async subAdminCreateStudent(payload) {
+    return this.request('/sub-admin/create-student', { method: 'POST', body: payload });
+  }
+
+  async subAdminUpdateStudent(id, payload) {
+    return this.request(`/sub-admin/update-student/${id}`, { method: 'PATCH', body: payload });
+  }
+
+  // Departments (admin)
+  async adminListDepartments(params = {}) {
+    const query = new URLSearchParams(params).toString();
+    const qs = query ? `?${query}` : '';
+    return this.request(`/admin/departments${qs}`, { method: 'GET' });
+  }
+
+  // Admit Cards (admin)
+  async adminPublishAdmitCard(payload) {
+    return this.request('/admin/admit-cards/publish', { method: 'POST', body: payload });
+  }
+
+  async adminGetAdmitCardByDeptSem(code, semester) {
+    return this.request(`/admin/admit-cards/by-dept/${encodeURIComponent(code)}/semester/${encodeURIComponent(semester)}`, { method: 'GET' });
+  }
+
+  // Admit Card (student)
+  async studentGetMyAdmitCard() {
+    return this.request('/student/admit-card', { method: 'GET' });
+  }
+
+  async adminListAdmitCards(params = {}) {
+    const query = new URLSearchParams(params).toString();
+    const qs = query ? `?${query}` : '';
+    return this.request(`/admin/admit-cards${qs}`, { method: 'GET' });
+  }
+
+  async adminDeleteAdmitCard(id) {
+    return this.request(`/admin/admit-cards/${id}`, { method: 'DELETE' });
   }
 
   async getProfile(role) {
@@ -284,6 +400,122 @@ class ApiService {
     const base = roleBases[role];
     if (!base) throw new Error(`Invalid role: ${role}`);
     return this.request(`${base}/${id}`);
+  }
+
+  // Attendance APIs (faculty)
+  async saveAttendance(payload) {
+    return this.request('/faculty/attendance', { method: 'POST', body: payload });
+  }
+
+  async listMyAttendance(params = {}) {
+    const query = new URLSearchParams(params).toString();
+    const qs = query ? `?${query}` : '';
+    return this.request(`/faculty/attendance${qs}`, { method: 'GET' });
+  }
+
+  async getAttendanceById(id) {
+    return this.request(`/faculty/attendance/${id}`, { method: 'GET' });
+  }
+
+  async deleteAttendance(id) {
+    return this.request(`/faculty/attendance/${id}`, { method: 'DELETE' });
+  }
+
+  async getStudentsForAttendance(params = {}) {
+    const query = new URLSearchParams(params).toString();
+    const qs = query ? `?${query}` : '';
+    return this.request(`/faculty/attendance/students${qs}`, { method: 'GET' });
+  }
+
+  async getMyAssignedCourses() {
+    return this.request('/faculty/my-courses', { method: 'GET' });
+  }
+
+  // Alias for consistency
+  async facultyListMyCourses() {
+    return this.getMyAssignedCourses();
+  }
+
+  async facultyGetCourseStudents(courseId, params = {}) {
+    const query = new URLSearchParams(params).toString();
+    const qs = query ? `?${query}` : '';
+    return this.request(`/faculty/courses/${courseId}/students${qs}`, { method: 'GET' });
+  }
+
+  async assignCourseToFaculty(payload) {
+    return this.request('/admin/assign-course', { method: 'POST', body: payload });
+  }
+
+  async removeCourseFromFaculty(facultyId, assignmentId) {
+    return this.request('/admin/remove-course', { method: 'POST', body: { facultyId, assignmentId } });
+  }
+
+  // Monthly Attendance APIs
+  async getMonthlyAttendance(params) {
+    const query = new URLSearchParams(params).toString();
+    return this.request(`/faculty/monthly-attendance?${query}`, { method: 'GET' });
+  }
+
+  async getMyMonthlyAttendances(params = {}) {
+    const query = new URLSearchParams(params).toString();
+    const qs = query ? `?${query}` : '';
+    return this.request(`/faculty/monthly-attendance/list${qs}`, { method: 'GET' });
+  }
+
+  async updateActiveDays(attendanceId, totalActiveDays) {
+    return this.request('/faculty/monthly-attendance/active-days', {
+      method: 'PATCH',
+      body: { attendanceId, totalActiveDays }
+    });
+  }
+
+  async updateStudentAttendance(attendanceId, studentId, daysPresent) {
+    return this.request('/faculty/monthly-attendance/student', {
+      method: 'PATCH',
+      body: { attendanceId, studentId, daysPresent }
+    });
+  }
+
+  async bulkUpdateAttendance(attendanceId, updates) {
+    return this.request('/faculty/monthly-attendance/bulk-update', {
+      method: 'PATCH',
+      body: { attendanceId, updates }
+    });
+  }
+
+  async finalizeMonthlyAttendance(attendanceId) {
+    return this.request('/faculty/monthly-attendance/finalize', {
+      method: 'PATCH',
+      body: { attendanceId }
+    });
+  }
+
+  async unfinalizeMonthlyAttendance(attendanceId) {
+    return this.request('/faculty/monthly-attendance/unfinalize', {
+      method: 'PATCH',
+      body: { attendanceId }
+    });
+  }
+
+  async deleteMonthlyAttendance(attendanceId) {
+    return this.request(`/faculty/monthly-attendance/${attendanceId}`, {
+      method: 'DELETE'
+    });
+  }
+
+  async syncStudents(attendanceId) {
+    return this.request('/faculty/monthly-attendance/sync-students', {
+      method: 'PATCH',
+      body: { attendanceId }
+    });
+  }
+
+  // Student endpoints
+  async getMyMonthlyAttendance(params) {
+    const queryString = new URLSearchParams(params).toString();
+    return this.request(`/student/monthly-attendance?${queryString}`, {
+      method: 'GET'
+    });
   }
 }
 

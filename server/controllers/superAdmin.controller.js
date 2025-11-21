@@ -127,7 +127,6 @@ export const registerSuperAdmin = asyncHandler(async (req, res, next) => {
 
 export const loginSuperAdmin = asyncHandler(async (req, res, next) => {
     let { username, email, password } = req.body;
-    console.log(`username: ${username}, email: ${email}`)
 
     if (!password) {
         throw new ApiError(400, "Password is required");
@@ -163,7 +162,8 @@ export const loginSuperAdmin = asyncHandler(async (req, res, next) => {
 
     const options = {
         httpOnly: true,
-        secure: true
+        secure: true,
+        sameSite: 'None'
     }
 
     return res
@@ -195,7 +195,8 @@ export const logoutSuperAdmin = asyncHandler(async (req, res, next) => {
 
     const options = {
         httpOnly: true,
-        secure: true
+        secure: true,
+        sameSite: 'None'
     }
 
     return res
@@ -235,7 +236,8 @@ export const refreshSuperAdminAccessToken = asyncHandler(async (req, res) => {
 
         const options = {
             httpOnly: true,
-            secure: true
+            secure: true,
+            sameSite: 'None'
         }
 
         const { accessToken, refreshToken: newRefreshToken } = await generateSuperAdminAccessAndRefreshToken(superAdmin._id);
@@ -314,16 +316,20 @@ export const updateSuperAdminAccountDetails = asyncHandler(async (req, res, next
     const {
         firstName,
         lastName,
-        mobile,
+        username,
         social
     } = req.body || {};
 
+    let parsedSocial = social;
+    if (typeof parsedSocial === 'string') {
+        try { parsedSocial = JSON.parse(parsedSocial); } catch (e) { /* ignore */ }
+    }
 
     const updateData = {
         firstName: firstName !== undefined ? firstName : superAdmin.firstName,
         lastName: lastName !== undefined ? lastName : superAdmin.lastName,
-        mobile: mobile !== undefined ? mobile : superAdmin.mobile,
-        social: social !== undefined ? social : superAdmin.social,
+        username: username !== undefined ? String(username).toLowerCase() : superAdmin.username,
+        social: parsedSocial !== undefined ? parsedSocial : superAdmin.social,
     };
 
 

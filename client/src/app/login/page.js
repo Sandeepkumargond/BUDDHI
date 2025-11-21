@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
 import { FcGoogle } from "react-icons/fc";
-import { toast } from "react-hot-toast";
+import { showToast } from "@/lib/toast";
 import { useAuth } from "@/context/AuthContext";
 
 export default function SignIn() {
@@ -47,7 +47,7 @@ export default function SignIn() {
       const result = await login(formData.role, credentials);
 
       if (result.success) {
-        toast.success("Login successful! Redirecting...");
+        showToast.success("Login successful! Redirecting...");
         
         // Redirect based on role
         const dashboardRoutes = {
@@ -64,11 +64,11 @@ export default function SignIn() {
         }, 1000);
       } else {
         setError(result.error || "Login failed. Please try again.");
-        toast.error(result.error || "Login failed. Please try again.");
+        showToast.error(result.error || "Login failed. Please try again.");
       }
     } catch (error) {
       setError("An unexpected error occurred. Please try again.");
-      toast.error("An unexpected error occurred. Please try again.");
+      showToast.error("An unexpected error occurred. Please try again.");
     } finally {
       setIsLoading(false);
     }

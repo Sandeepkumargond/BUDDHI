@@ -41,6 +41,22 @@ export const getSubAdminDetailsById = async (subAdminId) => {
     return subAdmin;
 };
 
+export const getMyProfile = asyncHandler(async (req, res) => {
+    const subAdminId = req.user?._id;
+
+    const subAdmin = await getSubAdminDetailsById(subAdminId);
+
+    return res.status(200).json(
+        new ApiResponse(
+            200,
+            {
+                user: subAdmin,
+            },
+            "SubAdmin profile fetched successfully"
+        )
+    );
+});
+
 export const changePassword = asyncHandler(async (req, res, next) => {
     const subAdminId = req.user?._id;
 
@@ -118,7 +134,8 @@ export const loginSubAdmin = asyncHandler(async (req, res, next) => {
 
     const options = {
         httpOnly: true,
-        secure: true
+        secure: true,
+        sameSite: 'None'
     }
 
     return res
@@ -150,7 +167,8 @@ export const logoutSubAdmin = asyncHandler(async (req, res, next) => {
 
     const options = {
         httpOnly: true,
-        secure: true
+        secure: true,
+        sameSite: 'None'
     }
 
     return res
@@ -190,7 +208,8 @@ export const refreshSubAdminAccessToken = asyncHandler(async (req, res) => {
 
         const options = {
             httpOnly: true,
-            secure: true
+            secure: true,
+            sameSite: 'None'
         }
 
         const { accessToken, refreshToken: newRefreshToken } = await generateSubAdminAccessAndRefreshToken(subAdmin._id);
@@ -255,15 +274,21 @@ export const updateSubAdminAccountDetails = asyncHandler(async (req, res, next) 
         firstName,
         lastName,
         mobile,
+        personalMail,
         social
     } = req.body || {};
 
+    let parsedSocial = social;
+    if (typeof parsedSocial === 'string') {
+        try { parsedSocial = JSON.parse(parsedSocial); } catch (e) { /* ignore */ }
+    }
 
     const updateData = {
         firstName: firstName !== undefined ? firstName : subAdmin.firstName,
         lastName: lastName !== undefined ? lastName : subAdmin.lastName,
         mobile: mobile !== undefined ? mobile : subAdmin.mobile,
-        social: social !== undefined ? social : subAdmin.social,
+        personalMail: personalMail !== undefined ? personalMail : subAdmin.personalMail,
+        social: parsedSocial !== undefined ? parsedSocial : subAdmin.social,
     };
 
 
@@ -332,7 +357,7 @@ export const updateSubAdminImage = asyncHandler(async (req, res, next) => {
 });
 
 export const createStudent = asyncHandler(async (req, res, next) => {
-    const { firstName, lastName, email, personalMail, gender, program, branch, semester, mobile, registrationNumber, dateOfAdmission, password, dateOfBirth } = req.body;
+    const { firstName, lastName, email, personalMail, gender, program, branch, semester, section, batch, mobile, registrationNumber, dateOfAdmission, password, dateOfBirth } = req.body;
 
     const values = { firstName, lastName, email, gender, personalMail, program, branch, semester, mobile, registrationNumber, dateOfAdmission, password };
     for (const [k, v] of Object.entries(values)) {
@@ -372,6 +397,8 @@ export const createStudent = asyncHandler(async (req, res, next) => {
         gender,
         branch,
         semester,
+        section,
+        batch,
         mobile,
         registrationNumber,
         password
@@ -392,6 +419,47 @@ export const createStudent = asyncHandler(async (req, res, next) => {
                 student: createdStudent,
             },
             "Student created successfully"
+        )
+    );
+});
+
+export const updateStudent = asyncHandler(async (req, res, next) => {
+    const { id } = req.params;
+    const { firstName, lastName, mobile, personalMail, address, semester, section, batch, fatherName, motherName } = req.body;
+
+    if (!id) {
+        throw new ApiError(400, "Student ID is required");
+    }
+
+    const student = await Student.findById(id);
+
+    if (!student) {
+        throw new ApiError(404, "Student not found");
+    }
+
+    const updateData = {};
+    if (firstName !== undefined) updateData.firstName = firstName;
+    if (lastName !== undefined) updateData.lastName = lastName;
+    if (mobile !== undefined) updateData.mobile = mobile;
+    if (personalMail !== undefined) updateData.personalMail = personalMail;
+    if (address !== undefined) updateData.address = address;
+    if (semester !== undefined) updateData.semester = Number(semester);
+    if (section !== undefined) updateData.section = section;
+    if (batch !== undefined) updateData.batch = batch;
+    if (fatherName !== undefined) updateData.fatherName = fatherName;
+    if (motherName !== undefined) updateData.motherName = motherName;
+
+    const updatedStudent = await Student.findByIdAndUpdate(
+        id,
+        { $set: updateData },
+        { new: true }
+    ).select("-password -refreshToken");
+
+    return res.status(200).json(
+        new ApiResponse(
+            200,
+            { student: updatedStudent },
+            "Student updated successfully"
         )
     );
 });
@@ -452,3 +520,17 @@ export const createFaculty = asyncHandler(async (req, res, next) => {
         )
     );
 });
+
+
+export const getAllStudents = asyncHandler(async (req, res) => {
+    const students = await Student.find().select("-password -refreshToken");
+
+    return res.status(200).json(
+        new ApiResponse(
+            200,
+            { students },
+            "All students fetched successfully"
+        )
+    );
+});
+

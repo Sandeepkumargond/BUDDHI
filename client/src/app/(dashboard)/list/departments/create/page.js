@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { showToast } from "@/lib/toast";
 
 export default function CreateDepartmentPage() {
   const router = useRouter();
@@ -22,8 +23,7 @@ export default function CreateDepartmentPage() {
   const handleSubmit = (e) => {
     e.preventDefault();
 
-    console.log("DEPARTMENT CREATED:", form);
-    alert("Department created (check console)");
+    showToast.success("Department created successfully");
 
     router.push("/list/departments");
   };
