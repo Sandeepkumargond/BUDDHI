@@ -10,31 +10,68 @@ const ProfileForm = ({ user, onSave, userType }) => {
     mobile: user?.mobile || '',
     address: user?.address || '',
     social: user?.social || [],
-    username: user?.username || '',
-    collegeName: user?.collegeName || '',
-    ...user
+    semester: user?.semester || '',
+    dateOfBirth: user?.dateOfBirth ? new Date(user.dateOfBirth).toISOString().slice(0, 10) : '',
+    fatherName: user?.fatherName || '',
+    motherName: user?.motherName || '',
+    fatherMobile: user?.fatherMobile || '',
+    motherMobile: user?.motherMobile || '',
+    fatherOccupation: user?.fatherOccupation || '',
+    motherOccupation: user?.motherOccupation || '',
+    annualIncome: user?.annualIncome || '',
+    bloodGroup: user?.bloodGroup || '',
+    religion: user?.religion || '',
+    category: user?.category || '',
+    gender: user?.gender || '',
+    aadharNo: user?.aadharNo || '',
+    pwd: !!user?.pwd,
+    pwdPercentage: user?.pwdPercentage || '',
+    pwdCertificateUrl: user?.pwdCertificateUrl || '',
+    signUrl: user?.signUrl || '',
+    imageUrl: user?.imageUrl || '',
+    abcId: user?.abcId || ''
   });
 
   const [isEditing, setIsEditing] = useState(false);
   const [selectedImage, setSelectedImage] = useState(null);
   const [imagePreview, setImagePreview] = useState(user?.imageUrl || null);
+  const [selectedSign, setSelectedSign] = useState(null);
+  const [signPreview, setSignPreview] = useState(user?.signUrl || null);
 
   // Update form data when user prop changes
   useEffect(() => {
     if (user) {
-      setFormData({
+      setFormData(prev => ({
+        ...prev,
         firstName: user?.firstName || '',
         lastName: user?.lastName || '',
         email: user?.email || '',
         personalMail: user?.personalMail || user?.email || '',
         mobile: user?.mobile || '',
         address: user?.address || '',
-        social: user?.social || [],
-        username: user?.username || '',
-        collegeName: user?.collegeName || '',
-        ...user
-      });
+        semester: user?.semester || '',
+        dateOfBirth: user?.dateOfBirth ? new Date(user.dateOfBirth).toISOString().slice(0, 10) : '',
+        fatherName: user?.fatherName || '',
+        motherName: user?.motherName || '',
+        fatherMobile: user?.fatherMobile || '',
+        motherMobile: user?.motherMobile || '',
+        fatherOccupation: user?.fatherOccupation || '',
+        motherOccupation: user?.motherOccupation || '',
+        annualIncome: user?.annualIncome || '',
+        bloodGroup: user?.bloodGroup || '',
+        religion: user?.religion || '',
+        category: user?.category || '',
+        gender: user?.gender || '',
+        aadharNo: user?.aadharNo || '',
+        pwd: !!user?.pwd,
+        pwdPercentage: user?.pwdPercentage || '',
+        pwdCertificateUrl: user?.pwdCertificateUrl || '',
+        signUrl: user?.signUrl || '',
+        imageUrl: user?.imageUrl || '',
+        abcId: user?.abcId || ''
+      }));
       setImagePreview(user?.imageUrl || null);
+      setSignPreview(user?.signUrl || null);
     }
   }, [user]);
 
@@ -84,13 +121,33 @@ const ProfileForm = ({ user, onSave, userType }) => {
     }
   };
 
+  const handleSignChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setSelectedSign(file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setSignPreview(reader.result);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     const dataToSubmit = new FormData();
-    
+
+    // Only append allowed editable fields
+    const allowedKeys = [
+      'firstName', 'lastName', 'dateOfBirth', 'personalMail', 'mobile', 'address',
+      'fatherName', 'motherName', 'fatherMobile', 'motherMobile', 'fatherOccupation', 'motherOccupation',
+      'annualIncome', 'bloodGroup', 'religion', 'category', 'gender', 'aadharNo', 'pwd', 'pwdPercentage', 'pwdCertificateUrl', 'signUrl', 'imageUrl', 'abcId', 'email', 'social'
+    ];
+
     Object.keys(formData).forEach(key => {
+      if (!allowedKeys.includes(key)) return;
       if (key === 'social') {
-        dataToSubmit.append(key, JSON.stringify(formData[key]));
+        dataToSubmit.append(key, JSON.stringify(formData[key] || []));
       } else {
         dataToSubmit.append(key, formData[key]);
       }
@@ -98,6 +155,9 @@ const ProfileForm = ({ user, onSave, userType }) => {
 
     if (selectedImage) {
       dataToSubmit.append('image', selectedImage);
+    }
+    if (selectedSign) {
+      dataToSubmit.append('sign', selectedSign);
     }
 
     await onSave(dataToSubmit);
@@ -117,9 +177,8 @@ const ProfileForm = ({ user, onSave, userType }) => {
         value={formData[name] || ''}
         onChange={handleInputChange}
         disabled={!isEditing || readOnly}
-        className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-          !isEditing || readOnly ? 'bg-gray-100 cursor-not-allowed' : ''
-        }`}
+        className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${!isEditing || readOnly ? 'bg-gray-100 cursor-not-allowed' : ''
+          }`}
         required={required && isEditing}
       />
     </div>
@@ -131,11 +190,10 @@ const ProfileForm = ({ user, onSave, userType }) => {
         <h1 className="text-2xl font-bold text-gray-800">Profile</h1>
         <button
           onClick={() => setIsEditing(!isEditing)}
-          className={`px-4 py-2 rounded-md font-medium ${
-            isEditing 
-              ? 'bg-gray-500 hover:bg-gray-600 text-white' 
+          className={`px-4 py-2 rounded-md font-medium ${isEditing
+              ? 'bg-gray-500 hover:bg-gray-600 text-white'
               : 'bg-blue-500 hover:bg-blue-600 text-white'
-          }`}
+            }`}
         >
           {isEditing ? 'Cancel' : 'Edit Profile'}
         </button>
@@ -176,28 +234,82 @@ const ProfileForm = ({ user, onSave, userType }) => {
               </label>
             )}
           </div>
+          {/* Signature preview and upload */}
+          <div className="mt-4 text-center">
+            <p className="text-sm text-gray-600 mb-2">Signature</p>
+            <div className="w-48 h-24 mx-auto border rounded-md overflow-hidden bg-gray-50 mb-2">
+              {signPreview ? (
+                <img src={signPreview} alt="Signature" className="w-full h-full object-contain" />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center text-gray-400">No signature</div>
+              )}
+            </div>
+            {isEditing && (
+              <label className="inline-block px-3 py-1 bg-blue-500 text-white rounded cursor-pointer hover:bg-blue-600">
+                Upload Signature
+                <input type="file" accept="image/*" onChange={handleSignChange} className="hidden" />
+              </label>
+            )}
+          </div>
         </div>
 
         {/* Personal Information */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
           <h2 className="text-xl font-semibold text-gray-800 md:col-span-2 mb-4">Personal Information</h2>
-          
+
           {renderField('First Name', 'firstName', 'text', true)}
           {renderField('Last Name', 'lastName', 'text', true)}
           {renderField('Email', 'email', 'email', true, true)}
           {renderField('Personal Email', 'personalMail', 'email', true)}
           {renderField('Mobile', 'mobile', 'tel')}
-          
+
           {userType === 'student' && (
             <>
               {renderField('Enrollment No', 'enrollmentNo', 'number', true, true)}
               {renderField('Roll No', 'rollNo', 'number', true, true)}
-              {renderField('Semester', 'semester', 'number', true)}
-              {renderField('Section', 'section', 'text')}
+              {renderField('Semester', 'semester', 'number', true, true)}
+              {renderField('Section', 'section', 'text', false, true)}
+              {renderField('Date of Birth', 'dateOfBirth', 'date')}
+              {renderField('Gender', 'gender', 'text')}
+              {renderField('Program', 'program', 'text', false, true)}
+              {renderField('Branch', 'branch', 'text', false, true)}
               {renderField('Father Name', 'fatherName', 'text')}
               {renderField('Mother Name', 'motherName', 'text')}
+              {renderField('Father Mobile', 'fatherMobile', 'tel')}
+              {renderField('Mother Mobile', 'motherMobile', 'tel')}
+              {renderField('Father Occupation', 'fatherOccupation', 'text')}
+              {renderField('Mother Occupation', 'motherOccupation', 'text')}
+              {renderField('Annual Income', 'annualIncome', 'number')}
+              {renderField('Blood Group', 'bloodGroup', 'text')}
+              {renderField('Religion', 'religion', 'text')}
+              {renderField('Category', 'category', 'text')}
+              {renderField('Aadhar No', 'aadharNo', 'number')}
+              <div className="flex items-center space-x-4">
+                <label className="flex items-center space-x-2">
+                  <input type="checkbox" name="pwd" checked={!!formData.pwd} onChange={(e) => setFormData(prev => ({ ...prev, pwd: e.target.checked }))} disabled={!isEditing} />
+                  <span>Has PWD</span>
+                </label>
+                {renderField('PWD %', 'pwdPercentage', 'number')}
+              </div>
+              {renderField('PWD Certificate URL', 'pwdCertificateUrl', 'text')}
               <div className="md:col-span-2">
                 {renderField('Address', 'address', 'text')}
+              </div>
+              <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-3 gap-4">
+                {renderField('Is Hosteller', 'isHosteller', 'text', false, true)}
+                {renderField('Hostel Alloted', 'hostelAlloted', 'text', false, true)}
+                {renderField('Room No', 'roomNo', 'text', false, true)}
+              </div>
+              {renderField('Sign URL', 'signUrl', 'text')}
+              {renderField('ABC ID', 'abcId', 'text')}
+              {renderField('Date of Admission', 'dateOfAdmission', 'date', false, true)}
+              {renderField('Passout Year', 'passOutYear', 'number', false, true)}
+              <div className="flex items-center space-x-4">
+                <label className="flex items-center space-x-2">
+                  <input type="checkbox" name="isScholarshipHolder" checked={!!formData.isScholarshipHolder} onChange={(e) => setFormData(prev => ({ ...prev, isScholarshipHolder: e.target.checked }))} disabled />
+                  <span>Scholarship Holder</span>
+                </label>
+                {renderField('Scholarship Details', 'scholarshipDetails', 'text', false, true)}
               </div>
             </>
           )}
@@ -225,45 +337,62 @@ const ProfileForm = ({ user, onSave, userType }) => {
               </button>
             )}
           </div>
-          
-          {formData.social?.map((social, index) => (
-            <div key={index} className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-3">
-              <select
-                value={social.name || ''}
-                onChange={(e) => handleSocialChange(index, 'name', e.target.value)}
-                disabled={!isEditing}
-                className={`px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                  !isEditing ? 'bg-gray-100 cursor-not-allowed' : ''
-                }`}
-              >
-                <option value="">Select Platform</option>
-                {socialOptions.map(option => (
-                  <option key={option} value={option}>
-                    {option.charAt(0).toUpperCase() + option.slice(1)}
-                  </option>
-                ))}
-              </select>
-              <input
-                type="url"
-                placeholder="https://..."
-                value={social.url || ''}
-                onChange={(e) => handleSocialChange(index, 'url', e.target.value)}
-                disabled={!isEditing}
-                className={`md:col-span-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                  !isEditing ? 'bg-gray-100 cursor-not-allowed' : ''
-                }`}
-              />
-              {isEditing && (
-                <button
-                  type="button"
-                  onClick={() => removeSocialField(index)}
-                  className="bg-red-500 hover:bg-red-600 text-white px-3 py-2 rounded-md"
-                >
-                  Remove
-                </button>
-              )}
-            </div>
-          ))}
+
+          {formData.social?.length > 0 ? (
+            formData.social.map((social, index) => (
+              <div key={index} className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-3">
+                {isEditing ? (
+                  <>
+                    <select
+                      value={social.name || ''}
+                      onChange={(e) => handleSocialChange(index, 'name', e.target.value)}
+                      disabled={!isEditing}
+                      className={`px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${!isEditing ? 'bg-gray-100 cursor-not-allowed' : ''
+                        }`}
+                    >
+                      <option value="">Select Platform</option>
+                      {socialOptions.map(option => (
+                        <option key={option} value={option}>
+                          {option.charAt(0).toUpperCase() + option.slice(1)}
+                        </option>
+                      ))}
+                    </select>
+                    <input
+                      type="url"
+                      placeholder="https://..."
+                      value={social.url || ''}
+                      onChange={(e) => handleSocialChange(index, 'url', e.target.value)}
+                      disabled={!isEditing}
+                      className={`md:col-span-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${!isEditing ? 'bg-gray-100 cursor-not-allowed' : ''
+                        }`}
+                    />
+                    {isEditing && (
+                      <button
+                        type="button"
+                        onClick={() => removeSocialField(index)}
+                        className="bg-red-500 hover:bg-red-600 text-white px-3 py-2 rounded-md"
+                      >
+                        Remove
+                      </button>
+                    )}
+                  </>
+                ) : (
+                  <div className="mb-2">
+                    {social.url ? (
+                      <a href={social.url} target="_blank" rel="noreferrer" className="text-blue-600 hover:underline">
+                        {social.name ? social.name.charAt(0).toUpperCase() + social.name.slice(1) : 'Link'}
+                      </a>
+                    ) : (
+                      <span className="text-gray-700">{social.name || 'Link'}</span>
+                    )}
+                    {social.url && <span className="ml-2 text-gray-500">{social.url}</span>}
+                  </div>
+                )}
+              </div>
+            ))
+          ) : (
+            <p className="text-gray-500">No social links</p>
+          )}
         </div>
 
         {isEditing && (

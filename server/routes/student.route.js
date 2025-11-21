@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { authenticateStudent } from "../middlewares/student.middleware.js";
-import { availableMail, changeStudentPassword, getStudentById, loginStudent, logoutStudent, refreshStudentAccessToken, updateStudentAccountDetails, updateStudentImage } from "../controllers/student.controller.js";
+import { availableMail, changeStudentPassword, getStudentById, getMyProfile, loginStudent, logoutStudent, refreshStudentAccessToken, updateStudentAccountDetails, updateStudentImage, updateStudentSign } from "../controllers/student.controller.js";
 import { createFeePayment, listMyFeePayments, getMyFeePaymentReceipt, getMyApplicableFeeStructure, getMyApplicableFeeStructures } from "../controllers/feePayment.controller.js";
 import { validateCreateFeePayment } from "../middlewares/feePayment.middleware.js";
 import { upload } from "../middlewares/multer.middleware.js";
@@ -31,6 +31,12 @@ router.route('/update-image').patch(
     authenticateStudent
     , upload.single("image"),
     updateStudentImage
+);
+
+router.route('/update-sign').patch(
+    authenticateStudent,
+    upload.single("sign"),
+    updateStudentSign
 );
 
 router.route('/available-mail').post(
@@ -85,6 +91,12 @@ router.route('/registration-forms/:id/submit').post(
 router.route('/registrations').get(
     authenticateStudent,
     studentListMyRegistrations
+);
+
+// Expose current student's profile (keep before generic id route)
+router.route('/profile').get(
+    authenticateStudent,
+    getMyProfile
 );
 
 // Keep generic id route last (no regex due to router lib constraints)

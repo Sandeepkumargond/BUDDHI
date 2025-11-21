@@ -59,6 +59,18 @@ const StudentProfile = () => {
         });
       }
 
+      // Update signature if provided
+      if (formData.get('sign')) {
+        const signData = new FormData();
+        signData.append('sign', formData.get('sign'));
+
+        await apiService.request('/student/update-sign', {
+          method: 'PATCH',
+          body: signData,
+          headers: {},
+        });
+      }
+
       // Refresh profile data
       await fetchProfile();
       alert('Profile updated successfully!');
