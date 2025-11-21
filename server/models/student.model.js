@@ -171,6 +171,12 @@ const studentSchema = new Schema(
             type: String,
             default: null,
         },
+        social: [
+            {
+                name: { type: String, trim: true },
+                url: { type: String, trim: true }
+            }
+        ],
         abcId: {
             type: String,
             unique: true,

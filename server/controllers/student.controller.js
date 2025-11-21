@@ -21,6 +21,20 @@ export const getStudentById = asyncHandler(async (req, res) => {
         )
 });
 
+export const getMyProfile = asyncHandler(async (req, res, next) => {
+    const studentId = req.user?._id;
+
+    const student = await getStudentDetailsById(studentId);
+
+    return res.status(200).json(
+        new ApiResponse(
+            200,
+            { student },
+            "Student fetched successfully"
+        )
+    );
+});
+
 export const getStudentDetailsById = async (studentId) => {
     if (!studentId) {
         throw new ApiError(400, "Student ID is required");
@@ -237,18 +251,33 @@ export const updateStudentAccountDetails = asyncHandler(async (req, res, next) =
         throw new ApiError(404, "Student not found");
     }
 
+    // Only allow updating a limited set of fields from the frontend
     const {
         firstName,
         lastName,
-        mobile,
+        dateOfBirth,
         personalMail,
+        mobile,
         address,
         social,
-        semester,
-        section,
-        batch,
         fatherName,
-        motherName
+        motherName,
+        fatherMobile,
+        motherMobile,
+        fatherOccupation,
+        motherOccupation,
+        annualIncome,
+        bloodGroup,
+        religion,
+        category,
+        gender,
+        aadharNo,
+        pwd,
+        pwdPercentage,
+        pwdCertificateUrl,
+        signUrl,
+        imageUrl,
+        abcId,
     } = req.body || {};
 
     let parsedSocial = social;
@@ -259,15 +288,41 @@ export const updateStudentAccountDetails = asyncHandler(async (req, res, next) =
     const updateData = {
         firstName: firstName !== undefined ? firstName : student.firstName,
         lastName: lastName !== undefined ? lastName : student.lastName,
-        mobile: mobile !== undefined ? mobile : student.mobile,
+        dateOfBirth: dateOfBirth !== undefined ? dateOfBirth : student.dateOfBirth,
         personalMail: personalMail !== undefined ? personalMail : student.personalMail,
+        mobile: mobile !== undefined ? mobile : student.mobile,
         address: address !== undefined ? address : student.address,
-        social: parsedSocial !== undefined ? parsedSocial : student.social,
-        semester: semester !== undefined ? Number(semester) : student.semester,
-        section: section !== undefined ? section : student.section,
-        batch: batch !== undefined ? batch : student.batch,
         fatherName: fatherName !== undefined ? fatherName : student.fatherName,
         motherName: motherName !== undefined ? motherName : student.motherName,
+        fatherMobile: fatherMobile !== undefined ? fatherMobile : student.fatherMobile,
+        motherMobile: motherMobile !== undefined ? motherMobile : student.motherMobile,
+        fatherOccupation: fatherOccupation !== undefined ? fatherOccupation : student.fatherOccupation,
+        motherOccupation: motherOccupation !== undefined ? motherOccupation : student.motherOccupation,
+        annualIncome: annualIncome !== undefined ? annualIncome : student.annualIncome,
+        bloodGroup: bloodGroup !== undefined ? bloodGroup : student.bloodGroup,
+        religion: religion !== undefined ? religion : student.religion,
+        category: category !== undefined ? category : student.category,
+        gender: gender !== undefined ? gender : student.gender,
+        aadharNo: aadharNo !== undefined ? aadharNo : student.aadharNo,
+        pwd: pwd !== undefined ? pwd : student.pwd,
+        pwdPercentage: pwdPercentage !== undefined ? pwdPercentage : student.pwdPercentage,
+        pwdCertificateUrl: pwdCertificateUrl !== undefined ? pwdCertificateUrl : student.pwdCertificateUrl,
+        signUrl: signUrl !== undefined ? signUrl : student.signUrl,
+        social: (function(){
+            try {
+                if (social === undefined) return student.social;
+                // If social comes as a string (from FormData), parse it
+                if (typeof social === 'string') {
+                    const parsed = JSON.parse(social);
+                    return Array.isArray(parsed) ? parsed : student.social;
+                }
+                return Array.isArray(social) ? social : student.social;
+            } catch (err) {
+                return student.social;
+            }
+        })(),
+        imageUrl: imageUrl !== undefined ? imageUrl : student.imageUrl,
+        abcId: abcId !== undefined ? abcId : student.abcId,
     };
 
     const updatedStudent = await Student.findByIdAndUpdate(
@@ -283,6 +338,50 @@ export const updateStudentAccountDetails = asyncHandler(async (req, res, next) =
                 updatedStudent,
             },
             "Student account details updated successfully"
+        )
+    );
+});
+
+export const updateStudentSign = asyncHandler(async (req, res, next) => {
+    const studentId = req.user?._id;
+
+    const student = await getStudentDetailsById(studentId);
+
+    const oldSignUrl = student.signUrl || "";
+    const oldSignFileId = await getFileIdFromUrl(oldSignUrl);
+
+    const signLocalPath = req.file?.path;
+
+    if (!signLocalPath) {
+        throw new ApiError(400, "Please provide a valid signature file");
+    }
+
+    const sign = await uploadImageOnImageKit(signLocalPath, `${student.firstName}-sign`);
+
+    if (!sign || sign.error) {
+        throw new ApiError(500, "Failed to upload signature");
+    }
+
+    const updatedStudent = await Student.findByIdAndUpdate(
+        studentId,
+        {
+            $set: { signUrl: sign.url }
+        },
+        { new: true }
+    ).select("-password -refreshToken");
+
+    // Delete old signature if exists
+    if (updatedStudent && oldSignUrl) {
+        await deleteFromImageKit(oldSignFileId);
+    }
+
+    return res.status(200).json(
+        new ApiResponse(
+            200,
+            {
+                updatedStudent,
+            },
+            "Student signature updated successfully"
         )
     );
 });
