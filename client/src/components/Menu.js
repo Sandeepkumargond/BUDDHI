@@ -39,6 +39,7 @@ const menusByRole = {
   faculty: [
     { Icon: MdDashboard, label: "Dashboard", href: "/faculty" },
     { Icon: FaClipboardCheck, label: "Attendance", href: "/faculty/attendance" },
+    { Icon: FaGraduationCap, label: "Grade Management", href: "/faculty/grades" },
     { Icon: MdAssessment, label: "Marks", href: "/faculty/marks" },
     { Icon: FaBookOpen, label: "Study Materials", href: "/faculty/study-material" },
     { Icon: MdAnnouncement, label: "Class Notices", href: "/faculty/class-notices" },
@@ -51,6 +52,15 @@ const menusByRole = {
     { Icon: FaMoneyBillWave, label: "Finance", href: "/list/finance" },
     { Icon: FaUserShield, label: "Sub Admins", href: "/list/subadmins" },
     { Icon: FaBuilding, label: "Departments", href: "/list/departments" },
+    {
+      Icon: FaGraduationCap,
+      label: "Grade Management",
+      isDropdown: true,
+      subItems: [
+        { label: "View All Students", href: "/list/students/grades" },
+        { label: "Add Grade Card", href: "/list/students/grades/add" }
+      ]
+    },
     {
       Icon: FaIdCard,
       label: "Admit Card",
@@ -77,6 +87,15 @@ const menusByRole = {
     { Icon: MdDashboard, label: "Dashboard", href: "/subadmin" },
     { Icon: FaUserPlus, label: "Add Students", href: "/list/students/create" },
     { Icon: FaUserEdit, label: "View & Edit Students", href: "/list/students" },
+    {
+      Icon: FaGraduationCap,
+      label: "Grade Management",
+      isDropdown: true,
+      subItems: [
+        { label: "View All Students", href: "/list/students/grades" },
+        { label: "Add Grade Card", href: "/list/students/grades/add" }
+      ]
+    },
   ],
 
   superadmin: [

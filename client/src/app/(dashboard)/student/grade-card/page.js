@@ -1,9 +1,10 @@
 // src/app/student/grade-card/page.js
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import Image from "next/image";
-import { gradeCardStudents, computeCGPA } from "@/lib/aryan_gradecarddata";
+import { useAuth } from "@/context/AuthContext";
+import { apiService } from "@/lib/api";
 
 // color tokens used for headers
 const H1 = "#CFCEFF";
@@ -78,21 +79,113 @@ function SubjectBarChart({ subjects = [] }) {
 }
 
 export default function GradeCardPage() {
-  // as we don't have auth, pick first student by default
-  const student = gradeCardStudents[0];
+  const { user: authUser } = useAuth();
+  const [gradeCards, setGradeCards] = useState([]);
+  const [cgpa, setCgpa] = useState(0);
+  const [totalCredits, setTotalCredits] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  const currentSem = student?.currentSemester ?? 1;
-  const semOptions = (student?.semesters ?? []).map((s) => s.sem).sort((a, b) => a - b);
-
-  const [selectedSem, setSelectedSem] = useState(semOptions.length ? semOptions[semOptions.length - 1] : currentSem);
+  const semOptions = gradeCards.map((s) => s.semester).sort((a, b) => a - b);
+  const [selectedSem, setSelectedSem] = useState(semOptions.length ? semOptions[semOptions.length - 1] : 1);
 
   const semData = useMemo(() => {
-    return (student?.semesters ?? []).find((s) => Number(s.sem) === Number(selectedSem)) || null;
-  }, [student, selectedSem]);
+    return gradeCards.find((s) => Number(s.semester) === Number(selectedSem)) || null;
+  }, [gradeCards, selectedSem]);
 
-  const sgpaList = (student?.semesters ?? []).map((s) => ({ sem: s.sem, sgpa: s.sgpa ?? 0 }));
+  const sgpaList = gradeCards.map((s) => ({ sem: s.semester, sgpa: s.sgpa ?? 0 }));
 
-  const cgpa = computeCGPA(student);
+  // Fetch grade cards data
+  useEffect(() => {
+    const fetchGradeCards = async () => {
+      try {
+        setLoading(true);
+        const response = await apiService.request('/grades/my-grades');
+        
+        if (response.success && response.data) {
+          setGradeCards(response.data.gradeCards || []);
+          setCgpa(response.data.cgpa || 0);
+          setTotalCredits(response.data.totalCreditsEarned || 0);
+          
+          // Set initial selected semester to latest
+          const cards = response.data.gradeCards || [];
+          if (cards.length > 0) {
+            const latestSem = Math.max(...cards.map(c => c.semester));
+            setSelectedSem(latestSem);
+          }
+        } else {
+          setError('Failed to fetch grade cards');
+        }
+      } catch (err) {
+        console.error('Error fetching grade cards:', err);
+        setError(err.message || 'Failed to fetch grade cards');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (authUser) {
+      fetchGradeCards();
+    }
+  }, [authUser]);
+
+  // Handle loading state
+  if (loading) {
+    return (
+      <div className="p-6 space-y-6">
+        <div className="text-center">
+          <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+          <p className="mt-2 text-gray-600">Loading grade cards...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Handle error state
+  if (error) {
+    return (
+      <div className="p-6 space-y-6">
+        <div className="text-center">
+          <div className="text-red-600 mb-4">
+            <svg className="mx-auto h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          </div>
+          <h3 className="text-lg font-medium text-gray-900 mb-2">Error Loading Grade Cards</h3>
+          <p className="text-gray-600">{error}</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Handle no data state
+  if (!gradeCards || gradeCards.length === 0) {
+    return (
+      <div className="p-6 space-y-6">
+        <div className="text-center">
+          <div className="text-gray-400 mb-4">
+            <svg className="mx-auto h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+          </div>
+          <h3 className="text-lg font-medium text-gray-900 mb-2">No Grade Cards Available</h3>
+          <p className="text-gray-600">Your grade cards will appear here once they are published by your institution.</p>
+        </div>
+      </div>
+    );
+  }
+
+  const student = {
+    name: `${authUser?.firstName || ''} ${authUser?.lastName || ''}`.trim() || 'Student',
+    rollNo: authUser?.rollNo || 'N/A',
+    enrolmentNo: authUser?.enrollmentNo || 'N/A',
+    course: authUser?.program || 'B.Tech',
+    branch: authUser?.branch || 'N/A',
+    currentSemester: authUser?.semester || 1,
+    academicYear: new Date().getFullYear() + '-' + (new Date().getFullYear() + 1),
+    photo: authUser?.imageUrl || "/student.png",
+    semesters: gradeCards
+  };
 
   // summary values
   const lastSGPA = sgpaList.length ? sgpaList[sgpaList.length - 1].sgpa : 0;
@@ -181,13 +274,13 @@ export default function GradeCardPage() {
             <div className="bg-white px-3 py-2 rounded-lg border">
               <div className="text-xs text-gray-500">Total Credits</div>
               <div className="text-lg font-semibold">
-                {student.semesters.reduce((sum, s) => sum + (s.creditsEarned ?? 0), 0)}
+                {totalCredits}
               </div>
             </div>
 
             <div className="bg-white px-3 py-2 rounded-lg border">
               <div className="text-xs text-gray-500">Academic Status</div>
-              <div className="text-lg font-semibold">{student.semesters.some(s => s.status !== "Pass") ? "Backlogs" : "Regular"}</div>
+              <div className="text-lg font-semibold">{gradeCards.some(s => s.status !== "Pass") ? "Backlogs" : "Regular"}</div>
             </div>
 
             <div className="ml-6">
@@ -319,7 +412,7 @@ export default function GradeCardPage() {
           <div className="mb-4">
             <div className="text-xs text-gray-500">CGPA</div>
             <div className="text-2xl font-semibold">{cgpa}</div>
-            <div className="text-sm text-gray-600 mt-1">Total Credits Earned: {student.semesters.reduce((sum, s) => sum + (s.creditsEarned ?? 0), 0)}</div>
+            <div className="text-sm text-gray-600 mt-1">Total Credits Earned: {totalCredits}</div>
           </div>
 
           <div className="mb-3 text-sm text-gray-600">Subject-wise analysis (Total marks)</div>
