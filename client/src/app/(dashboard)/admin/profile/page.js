@@ -3,9 +3,10 @@ import { useState, useEffect } from 'react';
 import ProfileForm from '@/components/ProfileForm';
 import { useAuth } from '@/context/AuthContext';
 import { apiService } from '@/lib/api';
+import { showToast } from '@/lib/toast';
 
 const AdminProfile = () => {
-  const { user: authUser, role, isAuthenticated } = useAuth();
+  const { user: authUser, role, isAuthenticated, updateUser } = useAuth();
   const [user, setUser] = useState(authUser);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -24,6 +25,7 @@ const AdminProfile = () => {
       const response = await apiService.getProfile('admin');
       const userData = response.data?.admin || response.data?.user;
       setUser(userData);
+      updateUser(userData); // Update AuthContext
     } catch (err) {
       console.error('Failed to fetch admin profile:', err);
       setError(err.message);
@@ -61,9 +63,9 @@ const AdminProfile = () => {
 
       // Refresh profile data
       await fetchProfile();
-      alert('Profile updated successfully!');
+      showToast.success('Profile updated successfully!');
     } catch (err) {
-      alert('Error updating profile: ' + err.message);
+      showToast.error('Error updating profile: ' + err.message);
     }
   };
 

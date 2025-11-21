@@ -2,6 +2,7 @@ import asyncHandler from "../utils/asyncHandler.js";
 import ApiResponse from "../utils/ApiResponse.js";
 import ApiError from "../utils/ApiError.js";
 import { Student } from "../models/student.model.js";
+import { MonthlyAttendance } from "../models/monthlyAttendance.model.js";
 import jwt from "jsonwebtoken";
 import { deleteFromImageKit, getFileIdFromUrl, uploadImageOnImageKit } from "../utils/ImageKit.js";
 
@@ -47,6 +48,22 @@ export const getStudentDetailsById = async (studentId) => {
 
     return student;
 };
+
+export const getMyProfile = asyncHandler(async (req, res) => {
+    const studentId = req.user?._id;
+
+    const student = await getStudentDetailsById(studentId);
+
+    return res.status(200).json(
+        new ApiResponse(
+            200,
+            {
+                user: student,
+            },
+            "Student profile fetched successfully"
+        )
+    );
+});
 
 export const changeStudentPassword = asyncHandler(async (req, res, next) => {
     const studentId = req.user?._id;
@@ -130,7 +147,8 @@ export const loginStudent = asyncHandler(async (req, res, next) => {
 
     const options = {
         httpOnly: true,
-        secure: true
+        secure: true,
+        sameSite: 'None'
     }
 
     return res
@@ -162,7 +180,8 @@ export const logoutStudent = asyncHandler(async (req, res, next) => {
 
     const options = {
         httpOnly: true,
-        secure: true
+        secure: true,
+        sameSite: 'None'
     }
 
     return res
@@ -202,10 +221,11 @@ export const refreshStudentAccessToken = asyncHandler(async (req, res) => {
 
         const options = {
             httpOnly: true,
-            secure: true
+            secure: true,
+            sameSite: 'None'
         }
 
-        const { accessToken, refreshToken: newRefreshToken } = await generateStudentAccessAndRefreshToken(student?._id);
+        const { accessToken, refreshToken: newRefreshToken } = await generateStudentAccessAndRefreshToken(student._id);
 
         res
             .status(200)
@@ -260,6 +280,10 @@ export const updateStudentAccountDetails = asyncHandler(async (req, res, next) =
         abcId,
     } = req.body || {};
 
+    let parsedSocial = social;
+    if (typeof parsedSocial === 'string') {
+        try { parsedSocial = JSON.parse(parsedSocial); } catch (e) { /* ignore parse errors */ }
+    }
 
     const updateData = {
         firstName: firstName !== undefined ? firstName : student.firstName,
@@ -432,6 +456,56 @@ export const availableMail = asyncHandler(async (req, res, next) => {
             },
             "Email is available"
         )
+    );
+});
+
+// Get student's monthly attendance across all courses
+export const getMyMonthlyAttendance = asyncHandler(async (req, res) => {
+    const studentId = req.user._id;
+    const { semester, month, year } = req.query;
+
+    const filter = {
+        'students.studentId': studentId,
+        isFinalized: true // Only show finalized attendance
+    };
+
+    if (semester) filter.semester = parseInt(semester);
+    if (month) filter.month = parseInt(month);
+    if (year) filter.year = parseInt(year);
+
+    const attendanceRecords = await MonthlyAttendance.find(filter)
+        .populate('courseId', 'name code')
+        .populate('facultyId', 'firstName lastName')
+        .sort({ year: -1, month: -1 });
+
+    // Extract only the student's attendance from each record
+    const studentAttendance = attendanceRecords.map(record => {
+        const studentData = record.students.find(s => s.studentId.toString() === studentId.toString());
+        
+        return {
+            _id: record._id,
+            course: {
+                _id: record.courseId._id,
+                name: record.courseName,
+                code: record.courseCode
+            },
+            faculty: record.facultyId ? {
+                name: `${record.facultyId.firstName} ${record.facultyId.lastName}`
+            } : null,
+            semester: record.semester,
+            section: record.section,
+            batch: record.batch,
+            month: record.month,
+            year: record.year,
+            totalActiveDays: record.totalActiveDays,
+            daysPresent: studentData?.daysPresent || 0,
+            percentage: studentData?.percentage || 0,
+            isFinalized: record.isFinalized
+        };
+    });
+
+    return res.status(200).json(
+        new ApiResponse(200, { attendance: studentAttendance }, "Monthly attendance fetched successfully")
     );
 });
 

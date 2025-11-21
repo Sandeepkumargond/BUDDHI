@@ -190,7 +190,7 @@ const ManageSuperAdminsPage = () => {
       
       setSuperAdmins(prev => [...prev, newAdmin]);
       
-      alert("Super Admin created successfully!");
+      showToast.success("Super Admin created successfully!");
       
       // Reset form and close modal
       setFormData({
@@ -212,7 +212,7 @@ const ManageSuperAdminsPage = () => {
       setShowAddModal(false);
       
     } catch (error) {
-      alert("Error creating super admin. Please try again.");
+      showToast.error("Error creating super admin. Please try again.");
     } finally {
       setIsSubmitting(false);
     }
@@ -228,7 +228,7 @@ const ManageSuperAdminsPage = () => {
       setSuperAdmins(prev => prev.filter(admin => admin.id !== adminToDelete.id));
       setShowDeleteModal(false);
       setAdminToDelete(null);
-      alert("Super Admin deleted successfully!");
+      showToast.success("Super Admin deleted successfully!");
     }
   };
 

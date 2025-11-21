@@ -42,7 +42,6 @@ const connectDB = async () => {
                 if (isLegacy) {
                     try {
                         await coll.dropIndex(idx.name);
-                        console.log(`Dropped legacy txn index: ${idx.name}`);
                     } catch (e) {
                         if (e.codeName !== 'IndexNotFound') {
                             console.warn(`Could not drop legacy txn index ${idx.name}:`, e.message);

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { showToast } from "@/lib/toast";
 import {
   classNoticeDepartments,
   classNoticeSections,

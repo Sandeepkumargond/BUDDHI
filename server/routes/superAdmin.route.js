@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { changeSuperAdminPassword, createAdmin, deleteAdmin, getAllAdmins, getSuperAdminById, loginSuperAdmin, logoutSuperAdmin, refreshSuperAdminAccessToken, registerSuperAdmin, updateSuperAdminAccountDetails, updateSuperAdminImage } from "../controllers/superAdmin.controller.js";
+import { changeSuperAdminPassword, createAdmin, deleteAdmin, getAllAdmins, getMyProfile, getSuperAdminById, loginSuperAdmin, logoutSuperAdmin, refreshSuperAdminAccessToken, registerSuperAdmin, updateSuperAdminAccountDetails, updateSuperAdminImage } from "../controllers/superAdmin.controller.js";
 import { authenticateSuperAdmin } from "../middlewares/superAdmin.middleware.js";
 import { upload } from "../middlewares/multer.middleware.js"
 
@@ -9,6 +9,11 @@ const router = Router();
 router.route("/register").post(registerSuperAdmin);
 
 router.route("/login").post(loginSuperAdmin);
+
+router.route('/profile').get(
+    authenticateSuperAdmin,
+    getMyProfile
+);
 
 // secured routes
 router.route("/logout").post(

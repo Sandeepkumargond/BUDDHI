@@ -72,7 +72,6 @@ const SettingsPage = () => {
 
   const handleSave = () => {
     // Here you would typically save to backend
-    console.log("Saving settings:", settings)
     setShowSaveSuccess(true)
     setTimeout(() => setShowSaveSuccess(false), 3000)
   }

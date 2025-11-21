@@ -1,49 +1,89 @@
-const KEY_SNAP = "attendance_snapshots";
-const KEY_STUD = "attendance_students_sample";
+import { apiService } from "@/lib/api";
 
-export function loadStudentsForClass(classInfo) {
-  const sample = JSON.parse(localStorage.getItem(KEY_STUD) || "null");
-  if (sample && sample.classInfo && sample.classInfo.subject === classInfo.subject && sample.classInfo.semester === classInfo.semester) {
-    return sample.students;
+// Fetch assigned courses for the logged-in faculty
+export async function getMyAssignedCourses() {
+  try {
+    const response = await apiService.facultyListMyCourses();
+    return response.data?.courses || [];
+  } catch (error) {
+    console.error("Failed to fetch assigned courses:", error);
+    throw error;
   }
-  const students = [];
-  for (let i = 1; i <= 30; i++) {
-    const r = `${String(classInfo.semester || 1)}${String(i).padStart(3, "0")}`;
-    students.push({
-      name: `Student ${i}`,
-      rollNo: `20${String(classInfo.semester || 1)}${String(i).padStart(3,"0")}`,
-      photo: "/upload2.png",
-      attendancePercent: Math.floor(Math.random() * 30) + 70
+}
+
+// Fetch students for a specific class from backend
+export async function loadStudentsForClass(classInfo) {
+  try {
+    const { courseId, semester, section, batch } = classInfo;
+    
+    if (!courseId) {
+      console.warn('No courseId provided for loadStudentsForClass');
+      return [];
+    }
+
+    const response = await apiService.facultyGetCourseStudents(courseId, { semester, section, batch });
+    const students = response.data?.students || [];
+    
+    return students.map(s => ({
+      id: s._id,
+      name: `${s.firstName} ${s.lastName}`,
+      rollNo: s.rollNo,
+      enrollmentNo: s.enrollmentNo,
+      photo: s.imageUrl || "/avatar.png",
+      email: s.email,
+      attendancePercent: 0 // Calculate dynamically if needed
+    }));
+  } catch (error) {
+    console.error('Failed to load students:', error);
+    return [];
+  }
+}
+
+// Save attendance to backend
+export async function saveAttendanceSnapshot(classInfo, payload) {
+  try {
+    const response = await apiService.saveAttendance({
+      courseId: classInfo.courseId,
+      courseCode: classInfo.courseCode || classInfo.subject,
+      courseName: classInfo.courseName || classInfo.subject,
+      semester: classInfo.semester,
+      section: classInfo.section,
+      batch: classInfo.batch,
+      date: classInfo.date,
+      period: classInfo.period,
+      mode: classInfo.mode,
+      attendance: payload.attendance
     });
+    return response.data?.attendance?._id;
+  } catch (error) {
+    console.error('Failed to save attendance:', error);
+    throw error;
   }
-  localStorage.setItem(KEY_STUD, JSON.stringify({ classInfo, students }));
-  return students;
 }
 
-export function listAttendanceSnapshots(filter) {
-  const all = JSON.parse(localStorage.getItem(KEY_SNAP) || "[]");
-  if (!filter || !filter.subject) return all;
-  return all.filter(s => {
-    const c = s.classInfo || {};
-    return c.subject === filter.subject && (!filter.date || c.date === filter.date);
-  });
+// List attendance snapshots
+export async function listAttendanceSnapshots(filter) {
+  try {
+    const params = {};
+    if (filter?.courseId) params.courseId = filter.courseId;
+    if (filter?.semester) params.semester = filter.semester;
+    if (filter?.date) params.date = filter.date;
+
+    const response = await apiService.listMyAttendance(params);
+    return response.data?.attendance || [];
+  } catch (error) {
+    console.error('Failed to list attendance:', error);
+    return [];
+  }
 }
 
-export function saveAttendanceSnapshot(classInfo, payload) {
-  const all = JSON.parse(localStorage.getItem(KEY_SNAP) || "[]");
-  const id = `snap_${Date.now()}`;
-  all.unshift({ id, ...payload });
-  localStorage.setItem(KEY_SNAP, JSON.stringify(all));
-  return id;
-}
-
-export function updateAttendanceSnapshot(id, updated) {
-  const all = JSON.parse(localStorage.getItem(KEY_SNAP) || "[]");
-  const idx = all.findIndex(s => s.id === id);
-  if (idx >= 0) {
-    all[idx] = { ...all[idx], ...updated };
-    localStorage.setItem(KEY_SNAP, JSON.stringify(all));
+// Update attendance snapshot
+export async function updateAttendanceSnapshot(id, updated) {
+  try {
+    await apiService.saveAttendance({ ...updated, _id: id });
     return true;
+  } catch (error) {
+    console.error('Failed to update attendance:', error);
+    return false;
   }
-  return false;
 }

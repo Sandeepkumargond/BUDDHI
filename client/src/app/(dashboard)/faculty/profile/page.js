@@ -3,9 +3,10 @@ import { useState, useEffect } from 'react';
 import ProfileForm from '@/components/ProfileForm';
 import { useAuth } from '@/context/AuthContext';
 import { apiService } from '@/lib/api';
+import { showToast } from '@/lib/toast';
 
 const FacultyProfile = () => {
-  const { user: authUser, role, isAuthenticated } = useAuth();
+  const { user: authUser, role, isAuthenticated, updateUser } = useAuth();
   const [user, setUser] = useState(authUser);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -24,6 +25,7 @@ const FacultyProfile = () => {
       const response = await apiService.getProfile('faculty');
       const userData = response.data?.faculty || response.data?.user;
       setUser(userData);
+      updateUser(userData); // Update AuthContext
     } catch (err) {
       console.error('Failed to fetch faculty profile:', err);
       setError(err.message);
@@ -61,9 +63,9 @@ const FacultyProfile = () => {
 
       // Refresh profile data
       await fetchProfile();
-      alert('Profile updated successfully!');
+      showToast.success('Profile updated successfully!');
     } catch (err) {
-      alert('Error updating profile: ' + err.message);
+      showToast.error('Error updating profile: ' + err.message);
     }
   };
 

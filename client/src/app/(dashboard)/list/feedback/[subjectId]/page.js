@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { showToast } from "@/lib/toast";
 import Image from "next/image";
 import {
   studentProfileData,
@@ -22,12 +23,11 @@ export default function FeedbackFormPage() {
     );
 
     if (unanswered.length > 0) {
-      alert("Please answer all questions before submitting.");
+      showToast.error("Please answer all questions before submitting.");
       return;
     }
 
     setSubmitted(true);
-    console.log("Feedback Submitted:", responses);
   };
 
   return (

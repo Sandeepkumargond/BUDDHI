@@ -1,15 +1,85 @@
+"use client"
+
+import { use, useState, useEffect } from "react";
 import Announcements from "@/components/Announcements";
 import BigCalendar from "@/components/BigCalender";
 import FormModal from "@/components/FormModal";
 import Performance from "@/components/Performance";
-import { role, facultysData } from "@/lib/data";
 import Image from "next/image";
 import Link from "next/link";
+import { apiService } from '@/lib/api';
+import { deptartmentMap } from '@/lib/maps';
+import { role } from "@/lib/data";
 
-const SinglefacultyPage = async ({ params }) => {
-  const resolvedParams = await params;
-  const id = Number(resolvedParams?.id || 0);
-  const faculty = facultysData.find((f) => Number(f.id) === id);
+export default function SinglefacultyPage({ params }) {
+  const resolved = use(params);
+  const id = resolved?.id || resolved?._id || resolved?.facultyId;
+  console.log(id)
+
+  const [faculty, setFaculty] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    if (!id) return;
+
+    const fetchFaculty = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const res = await apiService.request(`/faculty/${id}`);
+        const f = res && res.data ? res.data : null;
+        if (!f) {
+          setFaculty(null);
+          return;
+        }
+
+        const mapped = {
+          id: f._id,
+          facultyId: f.facultyId || '',
+          firstName: f.firstName || '',
+          lastName: f.lastName || '',
+          name: `${f.firstName || ''} ${f.lastName || ''}`.trim() || f.name || '',
+          img: f.imageUrl || f.image || '/default-avatar.png',
+          photo: f.imageUrl || f.image || '/default-avatar.png',
+          email: f.email || f.personalMail || '',
+          phone: f.mobile || '',
+          department: f.department || '',
+          departmentName: deptartmentMap[f.department] ? `${deptartmentMap[f.department]} (${f.department})` : (f.department || ''),
+          bloodType: f.bloodGroup || '',
+          dateOfBirth: f.dateOfBirth ? new Date(f.dateOfBirth).toLocaleDateString() : '',
+          address: f.address || '',
+          joiningDate: f.joiningDate ? new Date(f.joiningDate).toLocaleDateString() : '',
+        };
+
+        setFaculty(mapped);
+      } catch (err) {
+        console.error('Failed to fetch faculty:', err);
+        setError(err.message || 'Failed to fetch faculty');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchFaculty();
+  }, [id]);
+
+  if (loading) {
+    return (
+      <div className="flex-1 p-4">
+        <p className="text-gray-600">Loading faculty...</p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex-1 p-4">
+        <h1 className="text-xl font-semibold text-red-600">Error</h1>
+        <p className="text-sm text-red-600">{error}</p>
+      </div>
+    );
+  }
 
   if (!faculty) {
     return (
@@ -24,16 +94,16 @@ const SinglefacultyPage = async ({ params }) => {
 
   const formData = {
     id: faculty.id,
-    username: faculty.username || (faculty.name || "").toLowerCase().replace(/\s+/g, "") || `user${faculty.id}`,
+    username: faculty.facultyId || (faculty.name || "").toLowerCase().replace(/\s+/g, "") || `user${faculty.id}`,
     email: faculty.email || "",
-    password: faculty.password || "",
+    password: "",
     firstName,
     lastName,
     phone: faculty.phone || "",
     address: faculty.address || "",
     bloodType: faculty.bloodType || "A+",
     dateOfBirth: faculty.dateOfBirth || "",
-    sex: faculty.sex || "male",
+    sex: "",
     img: faculty.img || faculty.photo || "",
     departments: faculty.department || "",
   };
@@ -63,12 +133,12 @@ const SinglefacultyPage = async ({ params }) => {
                 )}
               </div>
               <p className="text-sm text-gray-500">
-                Lorem ipsum, dolor sit amet consectetur adipisicing elit.
+                {faculty.departmentName}
               </p>
               <div className="flex items-center justify-between gap-2 flex-wrap text-xs font-medium">
                 <div className="w-full md:w-1/3 lg:w-full 2xl:w-1/3 flex items-center gap-2">
                   <Image src="/blood.png" alt="" width={14} height={14} />
-                  <span>{faculty.bloodType || "A+"}</span>
+                  <span>{faculty.bloodType || "—"}</span>
                 </div>
                 <div className="w-full md:w-1/3 lg:w-full 2xl:w-1/3 flex items-center gap-2">
                   <Image src="/date.png" alt="" width={14} height={14} />
@@ -179,6 +249,4 @@ const SinglefacultyPage = async ({ params }) => {
       </div>
     </div>
   );
-};
-
-export default SinglefacultyPage;
+}

@@ -62,3 +62,8 @@ export const adminDeleteCourse = asyncHandler(async (req, res) => {
 
   return res.status(200).json(new ApiResponse(200, {}, "Course deleted"));
 });
+
+export const adminListAllCourses = asyncHandler(async (req, res) => {
+  const courses = await Course.find({}).sort({ departmentId: 1, semester: 1, code: 1 });
+  return res.status(200).json(new ApiResponse(200, { courses }, "All courses fetched"));
+});

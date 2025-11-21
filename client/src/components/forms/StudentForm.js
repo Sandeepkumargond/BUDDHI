@@ -35,7 +35,7 @@ const StudentForm = ({ type, data }) => {
   });
 
   const onSubmit = handleSubmit((data) => {
-    console.log(data);
+    // Form submission handled by parent component
   });
 
   return (

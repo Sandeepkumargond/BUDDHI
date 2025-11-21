@@ -3,53 +3,65 @@ import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
 import { useAuth } from "@/context/AuthContext";
+// React Icons imports for sidebar items
+import { MdDashboard, MdAppRegistration, MdPayment, MdAnnouncement, MdPendingActions, MdAssessment } from "react-icons/md";
+import { FaIdCard, FaGraduationCap, FaClipboardCheck, FaCommentDots, FaBookOpen, FaMoneyBillWave, FaChalkboardTeacher, FaUserGraduate, FaUserShield, FaBuilding, FaUserPlus, FaUserEdit, FaUniversity, FaBed } from "react-icons/fa";
+import { FiSettings } from "react-icons/fi";
 
 const menusByRole = {
   student: [
-    { icon: "/home.png", label: "Dashboard", href: "/student" },
-   {
-  icon: "/home.png",
-  label: "Registration",
-  isDropdown: true,
-  subItems: [
-    { label: "Semester Registration", href: "/student/registration" },
-    { label: "View & Print Registration", href: "/list/registration/print_view" }
-  ]
-},
-    { icon: "/home.png", label: "Hostel", href: "/student/hostel" },
-    { 
-      icon: "/home.png", 
-      label: "Fee Payment", 
+    { Icon: MdDashboard, label: "Dashboard", href: "/student" },
+    {
+      Icon: MdAppRegistration,
+      label: "Registration",
+      isDropdown: true,
+      subItems: [
+        { label: "Semester Registration", href: "/student/registration" },
+        { label: "View & Print Registration", href: "/list/registration/print_view" }
+      ]
+    },
+    { Icon: FaBed, label: "Hostel", href: "/student/hostel" },
+    {
+      Icon: MdPayment,
+      label: "Fee Payment",
       isDropdown: true,
       subItems: [
         { label: "Pay Fee", href: "/list/fee/payment" },
         { label: "View and Print Receipt", href: "/list/fee/view_print" }
       ]
     },
-    { icon: "/home.png", label: "Admit Card", href: "/student/admit-card" },
-    { icon: "/home.png", label: "Grade Card", href: "/student/grade-card" },
-    { icon: "/attendance.png", label: "Attendance", href: "/student/attendance" },
-    { icon: "/home.png", label: "Feedback", href: "/list/feedback" },
-    { icon: "/setting.png", label: "Settings", href: "/student/settings" },
+    { Icon: FaIdCard, label: "Admit Card", href: "/student/admit-card" },
+    { Icon: FaGraduationCap, label: "Grade Card", href: "/student/grade-card" },
+    { Icon: FaClipboardCheck, label: "Attendance", href: "/student/attendance" },
+    { Icon: FaCommentDots, label: "Feedback", href: "/list/feedback" },
   ],
 
   faculty: [
-    { icon: "/home.png", label: "Dashboard", href: "/faculty" },
-    { icon: "/attendance.png", label: "Attendance", href: "/faculty/attendance" },
-    { icon: "/home.png", label: "Marks", href: "/faculty/marks" },
-    { icon: "/home.png", label: "Study Materials", href: "/faculty/study-material" },
-    { icon: "/home.png", label: "Class Notices", href: "/faculty/class-notices" },
+    { Icon: MdDashboard, label: "Dashboard", href: "/faculty" },
+    { Icon: FaClipboardCheck, label: "Attendance", href: "/faculty/attendance" },
+    { Icon: MdAssessment, label: "Marks", href: "/faculty/marks" },
+    { Icon: FaBookOpen, label: "Study Materials", href: "/faculty/study-material" },
+    { Icon: MdAnnouncement, label: "Class Notices", href: "/faculty/class-notices" },
   ],
 
   admin: [
-    { icon: "/home.png", label: "Dashboard", href: "/admin" },
-    { icon: "/home.png", label: "Faculty", href: "/list/faculty" },
-    { icon: "/student.png", label: "Students", href: "/list/students" },
-    { icon: "/home.png", label: "Finance", href: "/list/finance" },
-    { icon: "/home.png", label: "Sub Admins", href: "/list/subadmins" },
-    { icon: "/home.png", label: "Departments", href: "/list/departments" },
+    { Icon: MdDashboard, label: "Dashboard", href: "/admin" },
+    { Icon: FaChalkboardTeacher, label: "Faculty Management", href: "/admin/faculty" },
+    { Icon: FaUserGraduate, label: "Students", href: "/list/students" },
+    { Icon: FaMoneyBillWave, label: "Finance", href: "/list/finance" },
+    { Icon: FaUserShield, label: "Sub Admins", href: "/list/subadmins" },
+    { Icon: FaBuilding, label: "Departments", href: "/list/departments" },
     {
-      icon: "/home.png",
+      Icon: FaIdCard,
+      label: "Admit Card",
+      isDropdown: true,
+      subItems: [
+        { label: "Publish Admit Card", href: "/admin/admit-card" },
+        { label: "Published Admit Cards", href: "/admin/admit-card/published" }
+      ]
+    },
+    {
+      Icon: MdAppRegistration,
       label: "Registration",
       isDropdown: true,
       subItems: [
@@ -58,22 +70,20 @@ const menusByRole = {
         { label: "All Registrations", href: "/admin/registration/registrations" }
       ]
     },
-    { icon: "/home.png", label: "Add Notices", href: "/list/add-notice" },
-    { icon: "/setting.png", label: "Settings", href: "/settings" },
-
+    { Icon: MdAnnouncement, label: "Add Notices", href: "/list/add-notice" },
   ],
 
   subadmin: [
-    { icon: "/home.png", label: "Dashboard", href: "/subadmin" },
-    { icon: "/home.png", label: "Add Students", href: "/list/students/create" },
-    { icon: "/student.png", label: "View & Edit Students", href: "/list/students" },
+    { Icon: MdDashboard, label: "Dashboard", href: "/subadmin" },
+    { Icon: FaUserPlus, label: "Add Students", href: "/list/students/create" },
+    { Icon: FaUserEdit, label: "View & Edit Students", href: "/list/students" },
   ],
 
   superadmin: [
-    { icon: "/home.png", label: "Dashboard", href: "/superadmin" },
-    { icon: "/home.png", label: "View Requests", href: "/superadmin/requests" },
-    { icon: "/home.png", label: "View All Colleges", href: "/superadmin/colleges" },
-    { icon: "/home.png", label: "Manage Super Admins", href: "/superadmin/manage-superadmins" },
+    { Icon: MdDashboard, label: "Dashboard", href: "/superadmin" },
+    { Icon: MdPendingActions, label: "View Requests", href: "/superadmin/requests" },
+    { Icon: FaUniversity, label: "View All Colleges", href: "/superadmin/colleges" },
+    { Icon: FaUserShield, label: "Manage Super Admins", href: "/superadmin/manage-superadmins" },
   ]
 };
 
@@ -108,12 +118,12 @@ const Menu = () => {
                   onClick={() => toggleDropdown(item.label)}
                   className="w-full flex items-center justify-center lg:justify-start gap-4 text-gray-500 py-2 md:px-2 rounded-md hover:bg-[#C3EBFA]Light"
                 >
-                  <Image src={item.icon} alt={item.label} width={20} height={20} />
+                  {item.Icon ? <item.Icon className="text-xl" /> : item.icon ? <Image src={item.icon} alt={item.label} width={20} height={20} /> : null}
                   <span className="hidden lg:block flex-1 text-left">{item.label}</span>
-                  <svg 
+                  <svg
                     className={`hidden lg:block w-4 h-4 transition-transform ${openDropdowns[item.label] ? 'rotate-180' : ''}`}
-                    fill="none" 
-                    stroke="currentColor" 
+                    fill="none"
+                    stroke="currentColor"
                     viewBox="0 0 24 24"
                   >
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
@@ -138,7 +148,7 @@ const Menu = () => {
                 href={item.href}
                 className="flex items-center justify-center lg:justify-start gap-4 text-gray-500 py-2 md:px-2 rounded-md hover:bg-[#C3EBFA]Light"
               >
-                <Image src={item.icon} alt={item.label} width={20} height={20} />
+                {item.Icon ? <item.Icon className="text-xl" /> : item.icon ? <Image src={item.icon} alt={item.label} width={20} height={20} /> : null}
                 <span className="hidden lg:block">{item.label}</span>
               </Link>
             )}
