@@ -228,7 +228,10 @@ const getActiveNotices = asyncHandler(async (req, res) => {
         audience = 'all',
         limit = 20,
         page = 1,
-        category
+        category,
+        priority,
+        search,
+        sort = 'latest'
     } = req.query;
 
     const skip = (page - 1) * limit;
@@ -236,22 +239,24 @@ const getActiveNotices = asyncHandler(async (req, res) => {
     // Build query for active notices
     const query = {
         isActive: true,
-        $or: [
-            { expiryDate: null },
-            { expiryDate: { $gt: new Date() } }
+        $and: [
+            {
+                $or: [
+                    { expiryDate: null },
+                    { expiryDate: { $gt: new Date() } }
+                ]
+            }
         ]
     };
 
     // Filter by audience
     if (audience && audience !== 'all') {
-        query.$and = [
-            {
-                $or: [
-                    { audience: 'all' },
-                    { audience: audience }
-                ]
-            }
-        ];
+        query.$and.push({
+            $or: [
+                { audience: 'all' },
+                { audience: audience }
+            ]
+        });
     }
 
     // Filter by category
@@ -259,12 +264,44 @@ const getActiveNotices = asyncHandler(async (req, res) => {
         query.category = category;
     }
 
+    // Filter by priority
+    if (priority) {
+        query.priority = priority;
+    }
+
+    // Search functionality
+    if (search) {
+        query.$and.push({
+            $or: [
+                { title: { $regex: search, $options: 'i' } },
+                { content: { $regex: search, $options: 'i' } },
+                { tags: { $in: [new RegExp(search, 'i')] } }
+            ]
+        });
+    }
+
+    // Determine sort order
+    let sortCriteria = { isPinned: -1 };
+    switch (sort) {
+        case 'latest':
+            sortCriteria.publishDate = -1;
+            break;
+        case 'oldest':
+            sortCriteria.publishDate = 1;
+            break;
+        case 'priority':
+            sortCriteria.priority = 1;
+            break;
+        default:
+            sortCriteria.publishDate = -1;
+    }
+
     const notices = await Notice.find(query)
         .populate('createdBy', 'firstName lastName')
-        .sort({ isPinned: -1, publishDate: -1 })
+        .sort(sortCriteria)
         .limit(parseInt(limit))
         .skip(parseInt(skip))
-        .select('-createdBy -__v');
+        .select('-__v');
 
     const total = await Notice.countDocuments(query);
 

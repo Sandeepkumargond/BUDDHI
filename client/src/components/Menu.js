@@ -11,6 +11,7 @@ import { FiSettings } from "react-icons/fi";
 const menusByRole = {
   student: [
     { Icon: MdDashboard, label: "Dashboard", href: "/student" },
+    { Icon: MdAnnouncement, label: "Notices", href: "/student/notices" },
     {
       Icon: MdAppRegistration,
       label: "Registration",
