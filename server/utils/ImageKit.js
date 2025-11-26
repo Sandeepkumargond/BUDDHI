@@ -104,4 +104,78 @@ const uploadImageOnImageKit = async (localFilePath, userId) => {
     }
 }
 
-export { uploadImageOnImageKit, deleteFromImageKit, getFileIdFromUrl, };
+// Upload notice attachment to ImageKit
+const uploadNoticeAttachment = async (localFilePath, originalFileName) => {
+    try {
+        // console.log('🔄 uploadNoticeAttachment called with:', { localFilePath, originalFileName });
+        
+        if (!localFilePath) {
+            console.error('❌ No file path provided');
+            return { error: true, message: "No file path provided" };
+        }
+
+        // Check if file exists
+        if (!fs.existsSync(localFilePath)) {
+            console.error('❌ File does not exist at path:', localFilePath);
+            return { error: true, message: "File not found at specified path" };
+        }
+
+        // Read file and convert to base64
+        // console.log('📄 Reading file...');
+        const fileBuffer = fs.readFileSync(localFilePath);
+        const base64File = fileBuffer.toString('base64');
+        // console.log('✅ File read successfully, size:', fileBuffer.length, 'bytes');
+
+        // Generate unique filename with timestamp
+        const fileExtension = originalFileName.split('.').pop();
+        const fileName = `notice_${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExtension}`;
+        // console.log('📝 Generated filename:', fileName);
+
+        // console.log('🚀 Starting ImageKit upload...');
+        const response = await imagekit.upload({
+            file: base64File,
+            fileName: fileName,
+            folder: '/Buddhi_archives/notices/',
+            tags: ['notice', 'attachment', `original:${originalFileName}`, `uploaded:${new Date().toISOString().split('T')[0]}`]
+        });
+
+        // console.log('✅ ImageKit upload successful:', {
+        //     url: response.url,
+        //     fileId: response.fileId,
+        //     name: response.name
+        // });
+
+        // Delete local file after successful upload
+        fs.unlinkSync(localFilePath);
+        // console.log('🗑️ Local file deleted');
+
+        return {
+            error: false,
+            url: response.url,
+            fileId: response.fileId,
+            fileName: response.name,
+            size: response.size,
+            originalName: originalFileName
+        };
+
+    } catch (error) {
+        console.error('❌ ImageKit upload error:', error);
+        console.error('Error details:', {
+            message: error.message,
+            stack: error.stack
+        });
+        
+        // Delete local file even if upload fails
+        if (fs.existsSync(localFilePath)) {
+            fs.unlinkSync(localFilePath);
+            console.log('🗑️ Local file deleted after error');
+        }
+        
+        return {
+            error: true,
+            message: error.message || "Error uploading notice attachment to ImageKit"
+        };
+    }
+}
+
+export { uploadImageOnImageKit, deleteFromImageKit, getFileIdFromUrl, uploadNoticeAttachment };

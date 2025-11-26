@@ -7,7 +7,7 @@ import { deleteFromImageKit, getFileIdFromUrl, uploadImageOnImageKit } from "../
 import { Student } from "../models/student.model.js";
 import { getStudentDetailsById } from "./student.controller.js";
 import rollPrefixMap from "../configs/rollPrefixMap.js";
-import { generateEnrollmentNo, generateFacultyId, generateRollNo } from "../utils/getNextSequence.js";
+import { generateEnrollmentNo, generateFacultyId, generateRollNo, generateSubAdminId } from "../utils/getNextSequence.js";
 import { Faculty } from "../models/faculty.model.js";
 import { deptartmentMap } from "../configs/maps.js";
 import { getFacultyById, getFacultyDetailsById } from "./faculty.controller.js";
@@ -524,10 +524,10 @@ export const createFaculty = asyncHandler(async (req, res, next) => {
 });
 
 export const createSubAdmin = asyncHandler(async (req, res, next) => {
-    const { firstName, lastName, email, password, personalMail } = req.body;
+    const { firstName, lastName, email, department, password, personalMail } = req.body;
 
     if (
-        [firstName, lastName, email, password, personalMail].some((field) => !field || field?.trim() === "")
+        [firstName, lastName, email, department, password, personalMail].some((field) => !field || field?.trim() === "")
     ) {
         throw new ApiError(400, "All fields are required")
     }
@@ -541,12 +541,23 @@ export const createSubAdmin = asyncHandler(async (req, res, next) => {
     const adminId = req.user?._id;
     const admin = await getAdminDetailsById(adminId);
 
+    // validate department exists in the department map
+    if (!deptartmentMap[department]) {
+        throw new ApiError(400, `Invalid department code: ${department}`);
+    }
+
+    // generate subAdminId like <DEPT><YEAR><SEQ>
+    const currentYear = new Date().getFullYear();
+    const subAdminId = await generateSubAdminId(department, currentYear, 3);
+
     const subAdmin = await SubAdmin.create({
+        subAdminId,
         firstName: firstName.trim(),
         lastName: lastName.trim(),
         email: email.toLowerCase(),
         personalMail,
         password,
+        department,
         collegeName: admin.collegeName,
         collegeRegistartionNo: admin.collegeRegistartionNo,
         abbreviation: admin.abbreviation,
@@ -692,6 +703,20 @@ export const getAllFaculty = asyncHandler(async (req, res, next) => {
                 faculty: facultyList,
             },
             "Faculty list fetched successfully"
+        )
+    );
+});
+
+export const getAllSubAdmins = asyncHandler(async (req, res, next) => {
+    const subAdmins = await SubAdmin.find().select("-password -refreshToken");
+
+    return res.status(200).json(
+        new ApiResponse(
+            200,
+            {
+                subAdmins,
+            },
+            "SubAdmins fetched successfully"
         )
     );
 });

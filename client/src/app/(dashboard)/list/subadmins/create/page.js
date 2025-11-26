@@ -3,12 +3,14 @@
 import { showToast } from "@/lib/toast";
 
 import { useState } from "react";
-import { subAdmins } from "@/lib/subadmindata";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
+import { apiService } from '@/lib/api';
+import { useAuth } from '@/context/AuthContext';
 
 export default function CreateSubadminPage() {
   const router = useRouter();
+  const { user: authUser } = useAuth();
 
   const [uploadedPhoto, setUploadedPhoto] = useState(null);
 
@@ -21,6 +23,11 @@ export default function CreateSubadminPage() {
     password: "",
   });
 
+  const [autoEmail, setAutoEmail] = useState(true);
+  const [autoPassword, setAutoPassword] = useState(true);
+  const [createdCredentials, setCreatedCredentials] = useState(null);
+  const [createdSubadmin, setCreatedSubadmin] = useState(null);
+
   const handlePhotoUpload = (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -32,35 +39,62 @@ export default function CreateSubadminPage() {
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    // build payload
+    const firstName = form.firstname.trim();
+    const lastName = form.lastname.trim();
+    const department = form.department;
 
-    const nextId = `SA${String(subAdmins.length + 1).padStart(3, "0")}`;
+    if (!firstName || !lastName || !department) {
+      showToast.error('First name, last name and department are required');
+      return;
+    }
 
-    const newSubadmin = {
-      subAdminId: nextId,
-      name: `${form.firstname} ${form.lastname}`,
-      email: form.email,
-      phone: form.phone,
-      department: form.department,
+  // generate email if requested
+  let emailToUse = form.email.trim();
+  // use authUser from the component scope (hooks can only be called at top-level of the component)
+  const abbreviation = authUser?.abbreviation || 'college';
 
-      photo:
-        uploadedPhoto ||
-        "https://images.pexels.com/photos/220453/pexels-photo-220453.jpeg?auto=compress&cs=tinysrgb&w=1200",
+    if (autoEmail) {
+      const localPart = `${firstName}.${lastName}`.toLowerCase().replace(/[^a-z0-9\.]/g, '');
+      emailToUse = `${localPart}@${abbreviation.toLowerCase()}.edu`;
+    }
 
-      status: "active",
-      dob: "",
-      gender: "",
-      city: "",
-      state: "",
-      address: "",
-      pincode: "",
-      permissions: [],
-      createdAt: new Date().toISOString(),
-    };
+    // generate password if requested
+    let passwordToUse = form.password;
+    if (autoPassword || !passwordToUse) {
+      // simple random password generator
+      const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()';
+      passwordToUse = Array.from({ length: 10 }).map(() => chars[Math.floor(Math.random() * chars.length)]).join('');
+    }
 
-    subAdmins.push(newSubadmin);
+    // call backend
+    (async () => {
+      try {
+        const payload = {
+          firstName,
+          lastName,
+          email: emailToUse,
+          personalMail: emailToUse,
+          department,
+          password: passwordToUse,
+        };
 
-    showToast.success("Sub Admin Created!");
-    router.push("/list/subadmins");
+        const res = await apiService.request('/admin/create-subAdmin', {
+          method: 'POST',
+          body: payload,
+        });
+
+        const created = res?.data || res;
+        setCreatedSubadmin(created);
+        setCreatedCredentials({ email: emailToUse, password: passwordToUse });
+        showToast.success('Sub Admin created successfully');
+        // optionally navigate to list after a short delay
+        setTimeout(() => router.push('/list/subadmins'), 1200);
+      } catch (err) {
+        console.error('Failed to create subadmin', err);
+        showToast.error('Failed to create subadmin: ' + (err.message || err));
+      }
+    })();
   };
 
   return (
@@ -106,14 +140,6 @@ export default function CreateSubadminPage() {
             onChange={(e) => setForm({ ...form, lastname: e.target.value })}
           />
         </div>
-        <input
-          required
-          type="text"
-          placeholder="Sub Admin ID"
-          className="border p-2 rounded w-full"
-          value={form.phone}
-          onChange={(e) => setForm({ ...form, phone: e.target.value })}
-        />
 
         <select
           required
@@ -124,11 +150,25 @@ export default function CreateSubadminPage() {
           <option value="">Select Department</option>
           <option value="CSE">CSE</option>
           <option value="ECE">ECE</option>
-          <option value="MECH">MECH</option>
+          <option value="ME">ME</option>
+          <option value="CE">CE</option>
+          <option value="EE">EE</option>
+          <option value="Architecture">Architecture</option>
+          <option value="Chemical">Chemical</option>
+          <option value="Biotech">Biotech</option>
+          <option value="IT">IT</option>
         </select>
 
+        <div className="flex items-center gap-3">
+          <label className="inline-flex items-center">
+            <input type="checkbox" checked={autoEmail} onChange={(e) => setAutoEmail(e.target.checked)} className="mr-2" />
+            Auto-generate email
+          </label>
+        </div>
+
         <input
-          required
+          required={!autoEmail}
+          disabled={autoEmail}
           type="email"
           placeholder="Email"
           className="border p-2 rounded w-full"
@@ -145,14 +185,30 @@ export default function CreateSubadminPage() {
           onChange={(e) => setForm({ ...form, phone: e.target.value })}
         />
 
+        <div className="flex items-center gap-3">
+          <label className="inline-flex items-center">
+            <input type="checkbox" checked={autoPassword} onChange={(e) => setAutoPassword(e.target.checked)} className="mr-2" />
+            Auto-generate password
+          </label>
+        </div>
+
         <input
-          required
+          required={!autoPassword}
+          disabled={autoPassword}
           type="password"
           placeholder="Password"
           className="border p-2 rounded w-full"
           value={form.password}
           onChange={(e) => setForm({ ...form, password: e.target.value })}
         />
+
+        {createdCredentials && (
+          <div className="bg-green-50 border-green-200 p-3 rounded">
+            <p className="font-semibold">Generated Credentials</p>
+            <p>Email: <span className="font-mono">{createdCredentials.email}</span></p>
+            <p>Password: <span className="font-mono">{createdCredentials.password}</span></p>
+          </div>
+        )}
 
         <button
           type="submit"

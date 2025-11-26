@@ -85,3 +85,25 @@ export async function generateFacultyId(departmentCode, year = new Date().getFul
 
     return `${yr}_${departmentCode}_${seq}`;
 }
+
+/**
+ * Generate the next sub-admin ID for a department.
+ * Format: <DEPT><YEAR><SEQ_PADDED>
+ * Example: CSE2025001
+ */
+export async function generateSubAdminId(departmentCode, year = new Date().getFullYear(), pad = 3) {
+    if (!departmentCode) throw new Error('departmentCode is required to generate sub-admin id');
+
+    const yr = String(year);
+    const counterKey = `subadmin_${departmentCode}_${yr}`;
+
+    const result = await Counter.findOneAndUpdate(
+        { _id: counterKey },
+        { $inc: { seq: 1 } },
+        { new: true, upsert: true }
+    ).lean();
+
+    const seq = String(result.seq).padStart(pad, '0');
+
+    return `${departmentCode}${yr}${seq}`;
+}

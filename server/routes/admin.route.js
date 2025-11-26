@@ -1,10 +1,11 @@
 import { Router } from "express";
-import { loginAdmin, logoutAdmin, refreshAdminAccessToken, changeAdminPassword, updateAdminAccountDetails, updateAdminImage, createStudent, updateStudent, createFaculty, createSubAdmin, deleteStudent, deleteFaculty, deleteSubAdmin, getAllFaculty, getAdminById, getAllStudents, getMyProfile } from "../controllers/admin.controller.js";
+import { loginAdmin, logoutAdmin, refreshAdminAccessToken, changeAdminPassword, updateAdminAccountDetails, updateAdminImage, createStudent, updateStudent, createFaculty, createSubAdmin, deleteStudent, deleteFaculty, deleteSubAdmin, getAllFaculty, getAllSubAdmins, getAdminById, getAllStudents, getMyProfile } from "../controllers/admin.controller.js";
+import { getSubAdminById } from "../controllers/subAdmin.controller.js";
 import { adminGetFeePaymentById, adminGetReceiptRedirect, adminListFeePayments, adminCreateFeeStructure, adminGetFeeStructureById, adminListFeeStructures, adminPublishFeeStructure } from "../controllers/feePayment.controller.js";
 import { validateAdminFeePaymentQuery, validateCreateFeeStructure } from "../middlewares/feePayment.middleware.js";
 import { authenticateAdmin } from "../middlewares/admin.middleware.js";
 import { upload } from "../middlewares/multer.middleware.js";
-import { adminCreateCourse, adminListDepartmentCourses, adminDeleteCourse, adminListDepartmentCoursesByCode, adminListAllCourses } from "../controllers/course.controller.js";
+import { adminCreateCourse, adminListDepartmentCourses, adminDeleteCourse, adminListDepartmentCoursesByCode, adminListAllCourses, getCoursesForGradeCard } from "../controllers/course.controller.js";
 import { adminCreateRegistrationForm, adminListRegistrationForms, adminPublishRegistrationForm, adminListFormSubmissions, adminListAllRegistrations, adminDeleteRegistrationForm } from "../controllers/registration.controller.js";
 import { adminGetAdmitCardByDeptSem, adminPublishAdmitCard, adminListAdmitCards, adminDeleteAdmitCard } from "../controllers/admitCard.controller.js";
 import { adminGetDepartmentByCode, adminUpdateDepartmentHod, adminListDepartments } from "../controllers/department.controller.js";
@@ -117,6 +118,15 @@ router.route('/fee-structure/:id/publish').patch(
     adminPublishFeeStructure
 )
 router.route('/get-all-faculty').get(getAllFaculty);
+router.route('/sub-admins').get(
+    authenticateAdmin,
+    getAllSubAdmins
+);
+
+router.route('/sub-admins/:id').get(
+    authenticateAdmin,
+    getSubAdminById
+);
 
 // Courses (admin)
 router.route('/courses').get(
@@ -143,6 +153,12 @@ router.route('/departments/:code/courses-by-code').get(
 router.route('/courses/:id').delete(
     authenticateAdmin,
     adminDeleteCourse
+);
+
+// Get courses for grade card dropdown
+router.route('/courses/grade-card/options').get(
+    authenticateAdmin,
+    getCoursesForGradeCard
 );
 
 // Departments (admin)
