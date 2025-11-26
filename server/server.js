@@ -33,6 +33,7 @@ import studentRoutes from "./routes/student.route.js";
 import facultyRoutes from "./routes/faculty.route.js";
 import subAdminRoutes from "./routes/subAdmin.route.js";
 import gradeCardRoutes from "./routes/gradeCard.route.js";
+import noticeRoutes from "./routes/notice.route.js";
 import ApiError from "./utils/ApiError.js";
 
 // route declarations
@@ -43,6 +44,7 @@ app.use("/api/v1/student", studentRoutes);
 app.use("/api/v1/faculty", facultyRoutes);
 app.use("/api/v1/sub-admin", subAdminRoutes);
 app.use("/api/v1/grades", gradeCardRoutes);
+app.use("/api/v1/notices", noticeRoutes);
 
 // Centralized error handler to ensure JSON responses instead of default HTML
 app.use((err, req, res, next) => {

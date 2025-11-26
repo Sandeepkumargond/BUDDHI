@@ -251,29 +251,35 @@ const getAllStudentsWithGrades = asyncHandler(async (req, res) => {
         },
         {
             $addFields: {
+                totalCreditsSum: { $sum: "$gradeCards.creditsEarned" },
+                totalWeightedPoints: {
+                    $sum: {
+                        $map: {
+                            input: "$gradeCards",
+                            as: "card",
+                            in: { $multiply: ["$$card.sgpa", "$$card.creditsEarned"] }
+                        }
+                    }
+                }
+            }
+        },
+        {
+            $addFields: {
                 cgpa: {
                     $cond: {
-                        if: { $gt: [{ $size: "$gradeCards" }, 0] },
-                        then: {
-                            $divide: [
-                                {
-                                    $sum: {
-                                        $map: {
-                                            input: "$gradeCards",
-                                            as: "card",
-                                            in: { $multiply: ["$$card.sgpa", "$$card.creditsEarned"] }
-                                        }
-                                    }
-                                },
-                                {
-                                    $sum: "$gradeCards.creditsEarned"
-                                }
+                        if: { 
+                            $and: [
+                                { $gt: [{ $size: "$gradeCards" }, 0] },
+                                { $gt: ["$totalCreditsSum", 0] }
                             ]
+                        },
+                        then: {
+                            $divide: ["$totalWeightedPoints", "$totalCreditsSum"]
                         },
                         else: 0
                     }
                 },
-                totalCredits: { $sum: "$gradeCards.creditsEarned" },
+                totalCredits: "$totalCreditsSum",
                 semestersCompleted: { $size: "$gradeCards" }
             }
         },

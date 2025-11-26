@@ -32,6 +32,25 @@ export default function AddEditGradeCardPage() {
     external: 0
   });
 
+  const [availableCourses, setAvailableCourses] = useState([]);
+  const [loadingCourses, setLoadingCourses] = useState(false);
+
+  // Fetch available courses
+  const fetchCourses = async (semester = null) => {
+    try {
+      setLoadingCourses(true);
+      const queryParams = semester ? `?semester=${semester}` : '';
+      const response = await apiService.request(`/admin/courses/grade-card/options${queryParams}`);
+      if (response.success && response.data) {
+        setAvailableCourses(response.data.courses || []);
+      }
+    } catch (err) {
+      console.error('Error fetching courses:', err);
+    } finally {
+      setLoadingCourses(false);
+    }
+  };
+
   useEffect(() => {
     const fetchStudent = async () => {
       try {
@@ -60,8 +79,16 @@ export default function AddEditGradeCardPage() {
 
     if (studentId && (role === 'admin' || role === 'sub-admin')) {
       fetchStudent();
+      fetchCourses(); // Fetch all courses initially
     }
   }, [studentId, role]);
+
+  // Fetch courses when semester changes
+  useEffect(() => {
+    if (formData.semester) {
+      fetchCourses(formData.semester);
+    }
+  }, [formData.semester]);
 
   const handleInputChange = (field, value) => {
     setFormData(prev => ({
@@ -77,9 +104,40 @@ export default function AddEditGradeCardPage() {
     }));
   };
 
+  const handleCourseSelection = (courseValue) => {
+    if (!courseValue) {
+      setNewSubject(prev => ({
+        ...prev,
+        code: '',
+        name: '',
+        credits: 3
+      }));
+      return;
+    }
+
+    // Parse the course value: "code|name|credits"
+    const [code, name, credits] = courseValue.split('|');
+    setNewSubject(prev => ({
+      ...prev,
+      code: code || '',
+      name: name || '',
+      credits: parseInt(credits) || 3
+    }));
+  };
+
   const addSubject = () => {
     if (!newSubject.code || !newSubject.name) {
-      alert('Subject code and name are required');
+      alert('Please select a subject from the dropdown');
+      return;
+    }
+
+    // Check if subject already exists
+    const subjectExists = formData.subjects.some(
+      subject => subject.code === newSubject.code
+    );
+
+    if (subjectExists) {
+      alert('This subject is already added to the grade card');
       return;
     }
 
@@ -88,6 +146,7 @@ export default function AddEditGradeCardPage() {
       subjects: [...prev.subjects, { ...newSubject }]
     }));
 
+    // Reset the form
     setNewSubject({
       code: '',
       name: '',
@@ -283,26 +342,31 @@ export default function AddEditGradeCardPage() {
         {/* Add Subject */}
         <div className="bg-white p-6 rounded-lg border">
           <h3 className="text-lg font-semibold mb-4">Add Subject</h3>
-          <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Subject Code</label>
-              <input
-                type="text"
-                value={newSubject.code}
-                onChange={(e) => handleSubjectChange('code', e.target.value)}
-                placeholder="CS101"
+          <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+            <div className="md:col-span-2">
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Subject *
+              </label>
+              <select
+                value={newSubject.code && newSubject.name ? `${newSubject.code}|${newSubject.name}|${newSubject.credits}` : ''}
+                onChange={(e) => handleCourseSelection(e.target.value)}
                 className="w-full border border-gray-300 rounded-lg px-3 py-2"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Subject Name</label>
-              <input
-                type="text"
-                value={newSubject.name}
-                onChange={(e) => handleSubjectChange('name', e.target.value)}
-                placeholder="Data Structures"
-                className="w-full border border-gray-300 rounded-lg px-3 py-2"
-              />
+                disabled={loadingCourses}
+              >
+                <option value="">
+                  {loadingCourses ? 'Loading subjects...' : 'Select Subject'}
+                </option>
+                {availableCourses.map((course) => (
+                  <option key={course._id} value={course.value}>
+                    {course.displayText} ({course.credits} credits)
+                  </option>
+                ))}
+              </select>
+              {formData.semester && availableCourses.length === 0 && !loadingCourses && (
+                <p className="text-sm text-gray-500 mt-1">
+                  No subjects found for semester {formData.semester}
+                </p>
+              )}
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Type</label>
@@ -317,44 +381,47 @@ export default function AddEditGradeCardPage() {
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Credits</label>
-              <input
-                type="number"
-                value={newSubject.credits}
-                onChange={(e) => handleSubjectChange('credits', parseInt(e.target.value))}
-                min="1"
-                max="6"
-                className="w-full border border-gray-300 rounded-lg px-3 py-2"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Internal</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Internal (0-40)</label>
               <input
                 type="number"
                 value={newSubject.internal}
                 onChange={(e) => handleSubjectChange('internal', parseInt(e.target.value))}
                 min="0"
-                max="100"
+                max="40"
                 className="w-full border border-gray-300 rounded-lg px-3 py-2"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">External</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">External (0-60)</label>
               <input
                 type="number"
                 value={newSubject.external}
                 onChange={(e) => handleSubjectChange('external', parseInt(e.target.value))}
                 min="0"
-                max="100"
+                max="60"
                 className="w-full border border-gray-300 rounded-lg px-3 py-2"
               />
             </div>
           </div>
+
+          {/* Display selected subject details */}
+          {newSubject.code && newSubject.name && (
+            <div className="mt-4 p-3 bg-gray-50 rounded-lg">
+              <h4 className="font-medium text-gray-900">Selected Subject:</h4>
+              <div className="text-sm text-gray-600 mt-1">
+                <span className="font-medium">Code:</span> {newSubject.code} | 
+                <span className="font-medium ml-2">Name:</span> {newSubject.name} | 
+                <span className="font-medium ml-2">Credits:</span> {newSubject.credits}
+              </div>
+            </div>
+          )}
+
           <div className="mt-4">
             <button
               type="button"
               onClick={addSubject}
-              className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700"
+              disabled={!newSubject.code || !newSubject.name}
+              className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Add Subject
             </button>

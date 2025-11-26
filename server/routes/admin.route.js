@@ -5,7 +5,7 @@ import { adminGetFeePaymentById, adminGetReceiptRedirect, adminListFeePayments, 
 import { validateAdminFeePaymentQuery, validateCreateFeeStructure } from "../middlewares/feePayment.middleware.js";
 import { authenticateAdmin } from "../middlewares/admin.middleware.js";
 import { upload } from "../middlewares/multer.middleware.js";
-import { adminCreateCourse, adminListDepartmentCourses, adminDeleteCourse, adminListDepartmentCoursesByCode, adminListAllCourses } from "../controllers/course.controller.js";
+import { adminCreateCourse, adminListDepartmentCourses, adminDeleteCourse, adminListDepartmentCoursesByCode, adminListAllCourses, getCoursesForGradeCard } from "../controllers/course.controller.js";
 import { adminCreateRegistrationForm, adminListRegistrationForms, adminPublishRegistrationForm, adminListFormSubmissions, adminListAllRegistrations, adminDeleteRegistrationForm } from "../controllers/registration.controller.js";
 import { adminGetAdmitCardByDeptSem, adminPublishAdmitCard, adminListAdmitCards, adminDeleteAdmitCard } from "../controllers/admitCard.controller.js";
 import { adminGetDepartmentByCode, adminUpdateDepartmentHod, adminListDepartments } from "../controllers/department.controller.js";
@@ -153,6 +153,12 @@ router.route('/departments/:code/courses-by-code').get(
 router.route('/courses/:id').delete(
     authenticateAdmin,
     adminDeleteCourse
+);
+
+// Get courses for grade card dropdown
+router.route('/courses/grade-card/options').get(
+    authenticateAdmin,
+    getCoursesForGradeCard
 );
 
 // Departments (admin)

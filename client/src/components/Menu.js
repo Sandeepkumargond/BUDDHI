@@ -80,7 +80,7 @@ const menusByRole = {
         { label: "All Registrations", href: "/admin/registration/registrations" }
       ]
     },
-    { Icon: MdAnnouncement, label: "Add Notices", href: "/list/add-notice" },
+    { Icon: MdAnnouncement, label: "Notice Management", href: "/list/notices" },
   ],
 
   subadmin: [

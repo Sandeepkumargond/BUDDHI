@@ -67,3 +67,33 @@ export const adminListAllCourses = asyncHandler(async (req, res) => {
   const courses = await Course.find({}).sort({ departmentId: 1, semester: 1, code: 1 });
   return res.status(200).json(new ApiResponse(200, { courses }, "All courses fetched"));
 });
+
+// Get courses for dropdown selection (formatted for grade card)
+export const getCoursesForGradeCard = asyncHandler(async (req, res) => {
+  const { semester } = req.query;
+
+  let query = {};
+  if (semester) {
+    query.semester = parseInt(semester);
+  }
+
+  const courses = await Course.find(query)
+    .select('name code credits semester departmentId')
+    .sort({ semester: 1, code: 1 });
+
+  // Format courses for dropdown display
+  const formattedCourses = courses.map(course => ({
+    _id: course._id,
+    code: course.code,
+    name: course.name,
+    credits: course.credits,
+    semester: course.semester,
+    departmentId: course.departmentId,
+    displayText: `${course.code} - ${course.name}`,
+    value: `${course.code}|${course.name}|${course.credits}`
+  }));
+
+  return res.status(200).json(
+    new ApiResponse(200, { courses: formattedCourses }, "Courses for grade card retrieved successfully")
+  );
+});
