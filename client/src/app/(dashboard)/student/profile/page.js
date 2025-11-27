@@ -106,8 +106,34 @@ const StudentProfile = () => {
     );
   }
 
+  // Get BUDDHI score and status
+  const buddhiScore = user?.buddhiScore || 50;
+  
+  const getStatusText = (score) => {
+    if (score < 40) return "At-Risk";
+    if (score < 60) return "On the Verge";
+    return "Normal";
+  };
+
+  const getStatusColor = (score) => {
+    if (score < 40) return { bg: 'bg-red-500', text: 'text-white' };
+    if (score < 60) return { bg: 'bg-yellow-500', text: 'text-white' };
+    return { bg: 'bg-green-500', text: 'text-white' };
+  };
+
+  const statusColor = getStatusColor(buddhiScore);
+
   return (
-    <div className="p-4">
+    <div className="p-4 space-y-6">
+      {/* BUDDHI Status Badge */}
+      <div className="flex items-center gap-3">
+        <span className="text-gray-700 font-medium">BUDDHI Status:</span>
+        <span className={`px-4 py-2 rounded-lg font-semibold ${statusColor.bg} ${statusColor.text}`}>
+          {getStatusText(buddhiScore)}
+        </span>
+      </div>
+
+      {/* Profile Form */}
       <ProfileForm 
         user={user} 
         onSave={handleSave} 

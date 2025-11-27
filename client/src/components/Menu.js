@@ -39,6 +39,7 @@ const menusByRole = {
 
   faculty: [
     { Icon: MdDashboard, label: "Dashboard", href: "/faculty" },
+    { Icon: FaUserGraduate, label: "Students", href: "/faculty/students" },
     { Icon: FaClipboardCheck, label: "Attendance", href: "/faculty/attendance" },
     { Icon: FaGraduationCap, label: "Grade Management", href: "/faculty/grades" },
     { Icon: MdAssessment, label: "Marks", href: "/faculty/marks" },
