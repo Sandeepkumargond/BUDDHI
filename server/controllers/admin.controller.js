@@ -750,3 +750,75 @@ export const getAllStudents = asyncHandler(async (req, res) => {
     )
   );
 });
+
+export const getDashboardStats = asyncHandler(async (req, res) => {
+  try {
+    // Get basic counts
+    const [studentCount, facultyCount, subAdminCount, adminCount] = await Promise.all([
+      Student.countDocuments(),
+      Faculty.countDocuments(),
+      SubAdmin.countDocuments(),
+      Admin.countDocuments()
+    ]);
+
+    // Get detailed student statistics
+    const [maleStudentCount, femaleStudentCount] = await Promise.all([
+      Student.countDocuments({ 
+        gender: { $in: ['Male', 'male', 'M', 'm'] } 
+      }),
+      Student.countDocuments({ 
+        gender: { $in: ['Female', 'female', 'F', 'f'] } 
+      })
+    ]);
+
+    // Get students by semester distribution
+    const semesterStats = await Student.aggregate([
+      {
+        $group: {
+          _id: "$semester",
+          count: { $sum: 1 }
+        }
+      },
+      { $sort: { _id: 1 } }
+    ]);
+
+    // Get students by branch distribution
+    const branchStats = await Student.aggregate([
+      {
+        $group: {
+          _id: "$branch",
+          count: { $sum: 1 }
+        }
+      },
+      { $sort: { count: -1 } }
+    ]);
+
+    const stats = {
+      student: studentCount,
+      faculty: facultyCount,
+      subAdmin: subAdminCount,
+      admin: adminCount,
+      staff: subAdminCount + adminCount, // Combining subAdmins and admins as staff
+      studentGender: {
+        male: maleStudentCount,
+        female: femaleStudentCount,
+        total: studentCount
+      },
+      studentDistribution: {
+        semester: semesterStats,
+        branch: branchStats
+      }
+    };
+
+    return res.status(200).json(
+      new ApiResponse(
+        200,
+        stats,
+        "Dashboard statistics fetched successfully"
+      )
+    );
+  } catch (error) {
+    console.error("Dashboard stats error:", error);
+    throw new ApiError(500, "Failed to fetch dashboard statistics");
+  }
+});
