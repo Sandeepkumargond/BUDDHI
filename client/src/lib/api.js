@@ -517,6 +517,13 @@ class ApiService {
       method: 'GET'
     });
   }
+
+  // Dashboard endpoints
+  async getDashboardStats() {
+    return this.request('/admin/dashboard-stats', {
+      method: 'GET'
+    });
+  }
 }
 
 export const apiService = new ApiService();

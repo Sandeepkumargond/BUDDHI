@@ -18,7 +18,7 @@ const menusByRole = {
       isDropdown: true,
       subItems: [
         { label: "Semester Registration", href: "/student/registration" },
-        { label: "View & Print Registration", href: "/list/registration/print_view" }
+        { label: "View & Print Registration", href: "/student/registration/print_view" }
       ]
     },
     { Icon: FaBed, label: "Hostel", href: "/student/hostel" },
@@ -27,14 +27,14 @@ const menusByRole = {
       label: "Fee Payment",
       isDropdown: true,
       subItems: [
-        { label: "Pay Fee", href: "/list/fee/payment" },
-        { label: "View and Print Receipt", href: "/list/fee/view_print" }
+        { label: "Pay Fee", href: "/student/fee/payment" },
+        { label: "View and Print Receipt", href: "/student/fee/view_print" }
       ]
     },
     { Icon: FaIdCard, label: "Admit Card", href: "/student/admit-card" },
     { Icon: FaGraduationCap, label: "Grade Card", href: "/student/grade-card" },
     { Icon: FaClipboardCheck, label: "Attendance", href: "/student/attendance" },
-    { Icon: FaCommentDots, label: "Feedback", href: "/list/feedback" },
+    { Icon: FaCommentDots, label: "Feedback", href: "/student/feedback" },
   ],
 
   faculty: [
@@ -49,17 +49,17 @@ const menusByRole = {
   admin: [
     { Icon: MdDashboard, label: "Dashboard", href: "/admin" },
     { Icon: FaChalkboardTeacher, label: "Faculty Management", href: "/admin/faculty" },
-    { Icon: FaUserGraduate, label: "Students", href: "/list/students" },
-    { Icon: FaMoneyBillWave, label: "Finance", href: "/list/finance" },
-    { Icon: FaUserShield, label: "Sub Admins", href: "/list/subadmins" },
-    { Icon: FaBuilding, label: "Departments", href: "/list/departments" },
+    { Icon: FaUserGraduate, label: "Students", href: "/admin_subadmin/students" },
+    { Icon: FaMoneyBillWave, label: "Finance", href: "/admin/finance" },
+    { Icon: FaUserShield, label: "Sub Admins", href: "/admin/subadmins" },
+    { Icon: FaBuilding, label: "Departments", href: "/admin/departments" },
     {
       Icon: FaGraduationCap,
       label: "Grade Management",
       isDropdown: true,
       subItems: [
-        { label: "View All Students", href: "/list/students/grades" },
-        { label: "Add Grade Card", href: "/list/students/grades/add" }
+        { label: "View All Students", href: "/admin_subadmin/students/grades" },
+        { label: "Add Grade Card", href: "/admin_subadmin/students/grades/add" }
       ]
     },
     {
@@ -81,22 +81,24 @@ const menusByRole = {
         { label: "All Registrations", href: "/admin/registration/registrations" }
       ]
     },
-    { Icon: MdAnnouncement, label: "Notice Management", href: "/list/notices" },
+    {
+      Icon: FaBed,
+      label: "Hostel Management",
+      isDropdown: true,
+      subItems: [
+        { label: "Manage Hostels", href: "/admin/hostel" },
+        { label: "Hostel Requests", href: "/admin/hostel/requests" },
+        { label: "Allotments", href: "/admin/hostel/allotments" }
+      ]
+    },
+    { Icon: MdAnnouncement, label: "Notice Management", href: "/admin/notices" },
   ],
 
   subadmin: [
     { Icon: MdDashboard, label: "Dashboard", href: "/subadmin" },
-    { Icon: FaUserPlus, label: "Add Students", href: "/list/students/create" },
-    { Icon: FaUserEdit, label: "View & Edit Students", href: "/list/students" },
-    {
-      Icon: FaGraduationCap,
-      label: "Grade Management",
-      isDropdown: true,
-      subItems: [
-        { label: "View All Students", href: "/list/students/grades" },
-        { label: "Add Grade Card", href: "/list/students/grades/add" }
-      ]
-    },
+    { Icon: FaUserPlus, label: "Add Students", href: "/admin_subadmin/students/create" },
+    { Icon: FaUserEdit, label: "View & Edit Students", href: "/admin_subadmin/students" },
+    
   ],
 
   superadmin: [
