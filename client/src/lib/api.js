@@ -517,6 +517,20 @@ class ApiService {
       method: 'GET'
     });
   }
+
+  // Dashboard endpoints
+  async getDashboardStats() {
+    return this.request('/admin/dashboard-stats', {
+      method: 'GET'
+    });
+  }
+
+  // Study Material endpoints
+  async getFacultyCourses() {
+    return this.request('/study-materials/faculty/courses', {
+      method: 'GET'
+    });
+  }
 }
 
 export const apiService = new ApiService();

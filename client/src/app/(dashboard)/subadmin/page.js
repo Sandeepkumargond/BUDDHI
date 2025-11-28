@@ -21,7 +21,7 @@ const SubAdminDashboard = () => {
       title: "New Student Admission",
       description: "Register a new student for admission",
       icon: "/student.png",
-      href: "/list/students/create",
+      href: "/admin_subadmin/students/create",
       color: "bg-blue-100 text-blue-800",
       buttonColor: "bg-blue-600 hover:bg-blue-700"
     },
@@ -29,7 +29,7 @@ const SubAdminDashboard = () => {
       title: "View All Students",
       description: "View and manage student records",
       icon: "/class.png",
-      href: "/list/students",
+      href: "/admin_subadmin/students",
       color: "bg-green-100 text-green-800",
       buttonColor: "bg-green-600 hover:bg-green-700"
     },
@@ -195,7 +195,7 @@ const SubAdminDashboard = () => {
         <div className="bg-white p-6 rounded-lg shadow-sm border">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-xl font-semibold">Recent Admissions</h2>
-            <Link href="/list/students" className="text-blue-600 hover:text-blue-800 text-sm font-medium">
+            <Link href="/admin_subadmin/students" className="text-blue-600 hover:text-blue-800 text-sm font-medium">
               View All →
             </Link>
           </div>
@@ -228,7 +228,7 @@ const SubAdminDashboard = () => {
             <div className="text-center py-8">
               <Image src="/nodata.png" alt="" width={60} height={60} className="mx-auto mb-3 opacity-50" />
               <p className="text-gray-500">No recent admissions</p>
-              <Link href="/list/students/create">
+              <Link href="/admin_subadmin/students/create">
                 <button className="mt-2 bg-blue-600 text-white px-4 py-2 rounded text-sm hover:bg-blue-700">
                   Add First Student
                 </button>

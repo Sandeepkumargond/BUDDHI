@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { loginAdmin, logoutAdmin, refreshAdminAccessToken, changeAdminPassword, updateAdminAccountDetails, updateAdminImage, createStudent, updateStudent, createFaculty, createSubAdmin, deleteStudent, deleteFaculty, deleteSubAdmin, getAllFaculty, getAllSubAdmins, getAdminById, getAllStudents, getMyProfile } from "../controllers/admin.controller.js";
+import { loginAdmin, logoutAdmin, refreshAdminAccessToken, changeAdminPassword, updateAdminAccountDetails, updateAdminImage, createStudent, updateStudent, createFaculty, createSubAdmin, deleteStudent, deleteFaculty, deleteSubAdmin, getAllFaculty, getAllSubAdmins, getAdminById, getAllStudents, getMyProfile, getDashboardStats } from "../controllers/admin.controller.js";
 import { getSubAdminById } from "../controllers/subAdmin.controller.js";
 import { adminGetFeePaymentById, adminGetReceiptRedirect, adminListFeePayments, adminCreateFeeStructure, adminGetFeeStructureById, adminListFeeStructures, adminPublishFeeStructure } from "../controllers/feePayment.controller.js";
 import { validateAdminFeePaymentQuery, validateCreateFeeStructure } from "../middlewares/feePayment.middleware.js";
@@ -247,12 +247,17 @@ router.route('/admit-cards/:id').delete(
     adminDeleteAdmitCard
 );
 
-// Keep generic id route last
-router.route('/:id').get(getAdminById);
-
 router.route('/students').get(
     authenticateAdmin,
     getAllStudents
 )
+
+router.route('/dashboard-stats').get(
+    authenticateAdmin,
+    getDashboardStats
+);
+
+// Keep generic id route last
+router.route('/:id').get(getAdminById);
 
 export default router;

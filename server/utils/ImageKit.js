@@ -178,4 +178,129 @@ const uploadNoticeAttachment = async (localFilePath, originalFileName) => {
     }
 }
 
-export { uploadImageOnImageKit, deleteFromImageKit, getFileIdFromUrl, uploadNoticeAttachment };
+// Upload study material to ImageKit
+const uploadStudyMaterial = async (file, metadata = {}) => {
+    try {
+        console.log('🔄 uploadStudyMaterial called with:', { 
+            filePath: file.path, 
+            originalName: file.originalname,
+            size: file.size,
+            metadata 
+        });
+        
+        if (!file.path) {
+            console.error('❌ No file path provided');
+            return { error: true, message: "No file path provided" };
+        }
+
+        // Check if file exists
+        if (!fs.existsSync(file.path)) {
+            console.error('❌ File does not exist at path:', file.path);
+            return { error: true, message: "File not found at specified path" };
+        }
+
+        // Read file and convert to base64
+        console.log('📄 Reading study material file...');
+        const fileBuffer = fs.readFileSync(file.path);
+        const base64File = fileBuffer.toString('base64');
+        console.log('✅ File read successfully, size:', fileBuffer.length, 'bytes');
+
+        // Generate unique filename with metadata
+        const fileExtension = file.originalname.split('.').pop();
+        const sanitizedTitle = metadata.title ? metadata.title.replace(/[^a-zA-Z0-9]/g, '_') : 'material';
+        const fileName = `${sanitizedTitle}_${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExtension}`;
+        console.log('📝 Generated filename:', fileName);
+
+        // Prepare tags for better organization
+        const tags = [
+            'study_material',
+            metadata.subject && `subject:${metadata.subject}`,
+            metadata.courseCode && `course:${metadata.courseCode}`,
+            metadata.semester && `semester:${metadata.semester}`,
+            metadata.branch && `branch:${metadata.branch}`,
+            metadata.materialType && `type:${metadata.materialType}`,
+            `uploaded:${new Date().toISOString().split('T')[0]}`,
+            `original:${file.originalname}`
+        ].filter(Boolean);
+
+        console.log('🚀 Starting ImageKit upload for study material...');
+        const response = await imagekit.upload({
+            file: base64File,
+            fileName: fileName,
+            folder: '/Buddhi_archives/study_materials/',
+            tags: tags
+        });
+
+        console.log('✅ ImageKit upload successful:', {
+            url: response.url,
+            fileId: response.fileId,
+            name: response.name,
+            size: response.size
+        });
+
+        // Delete local file after successful upload
+        fs.unlinkSync(file.path);
+        console.log('🗑️ Local file deleted');
+
+        return {
+            error: false,
+            url: response.url,
+            fileId: response.fileId,
+            fileName: response.name,
+            fileSize: response.size,
+            originalName: file.originalname
+        };
+
+    } catch (error) {
+        console.error('❌ ImageKit study material upload error:', error);
+        console.error('Error details:', {
+            message: error.message,
+            stack: error.stack
+        });
+        
+        // Delete local file even if upload fails
+        if (file.path && fs.existsSync(file.path)) {
+            fs.unlinkSync(file.path);
+            console.log('🗑️ Local file deleted after error');
+        }
+        
+        return {
+            error: true,
+            message: error.message || "Error uploading study material to ImageKit"
+        };
+    }
+};
+
+// Delete study material from ImageKit
+const deleteStudyMaterial = async (fileId) => {
+    try {
+        console.log('🗑️ Deleting study material from ImageKit:', fileId);
+        
+        if (!fileId) {
+            return { error: true, message: "No fileId provided" };
+        }
+
+        await imagekit.deleteFile(fileId);
+        console.log('✅ Study material deleted from ImageKit successfully');
+
+        return {
+            error: false,
+            message: "Study material deleted successfully"
+        };
+    } catch (error) {
+        console.error('❌ Error deleting study material:', error);
+        return {
+            error: true,
+            message: error.message || "Error deleting study material from ImageKit"
+        };
+    }
+};
+
+export { 
+    uploadImageOnImageKit, 
+    deleteFromImageKit, 
+    getFileIdFromUrl, 
+    uploadNoticeAttachment,
+    uploadStudyMaterial,
+    deleteStudyMaterial 
+};

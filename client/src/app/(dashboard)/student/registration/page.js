@@ -42,7 +42,7 @@ export default function StudentRegistrationPage() {
       const res = await apiService.studentSubmitRegistration(formId);
       setMessage(res?.message || "Submitted");
       // Redirect to fee payment after successful submission
-      router.push("/list/fee/payment");
+      router.push("/student/fee/payment");
     } catch (err) {
       setMessage(err?.message || "Submit failed");
     } finally {
