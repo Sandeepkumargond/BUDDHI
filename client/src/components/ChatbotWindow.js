@@ -41,25 +41,26 @@ export default function ChatbotWindow() {
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
-          padding: "12px 14px",
-          background: "linear-gradient(135deg, #ffe7ef, #e8f9f2)",
-          borderBottom: "1px solid #f0f0f0",
+          padding: "12px 16px",
+          background: "#f8fafc", // slate-50
+          borderBottom: "1px solid #e5e7eb",
         }}
       >
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
           <div style={{
             width: 28,
             height: 28,
-            borderRadius: 14,
-            background: "#21c18f",
+            borderRadius: 6,
+            background: "#0ea5e9", // sky-600
             color: "white",
             display: "grid",
             placeItems: "center",
             fontWeight: 700,
-          }}>MY</div>
+            letterSpacing: 0.2,
+          }}>BA</div>
           <div>
-            <div style={{ fontWeight: 600 }}>Buddhi Assistant</div>
-            <div style={{ fontSize: 12, color: "#6b7280" }}>Ask about courses, attendance, fees, exams</div>
+            <div style={{ fontWeight: 600, color: "#0f172a" }}>Buddhi Assistant</div>
+            <div style={{ fontSize: 12, color: "#64748b" }}>Ask about courses, attendance, fees, exams</div>
           </div>
         </div>
         <button
@@ -82,7 +83,7 @@ export default function ChatbotWindow() {
       </div>
 
       {/* Messages */}
-      <div ref={listRef} style={{ flex: 1, overflowY: "auto", padding: 12, background: "#fafafa" }}>
+      <div ref={listRef} style={{ flex: 1, overflowY: "auto", padding: 12, background: "#fcfdff" }}>
         {messages.length === 0 ? (
           <div style={{ color: "#6b7280", fontSize: 14 }}>
             Welcome! Describe your issue or question.
@@ -96,12 +97,12 @@ export default function ChatbotWindow() {
             }}>
               <div style={{
                 maxWidth: "80%",
-                padding: "8px 10px",
+                padding: "10px 12px",
                 borderRadius: 12,
-                background: m.role === "user" ? "#21c18f" : "#ffffff",
-                color: m.role === "user" ? "white" : "#111827",
+                background: m.role === "user" ? "#0ea5e9" : "#ffffff",
+                color: m.role === "user" ? "white" : "#0f172a",
                 border: m.role === "user" ? "none" : "1px solid #e5e7eb",
-                boxShadow: m.role === "user" ? "none" : "0 2px 6px rgba(0,0,0,0.06)",
+                boxShadow: m.role === "user" ? "0 2px 6px rgba(2, 6, 23, 0.06)" : "0 2px 6px rgba(2, 6, 23, 0.06)",
                 whiteSpace: "pre-wrap",
               }}>
                 {m.text}
@@ -125,23 +126,26 @@ export default function ChatbotWindow() {
         <input
           value={input}
           onChange={(e) => setInput(e.target.value)}
-          placeholder="Ask Buddhi about attendance, grades, fees, or exams..."
+          placeholder="Ask about attendance, grades, fees, or exams..."
           style={{
             flex: 1,
-            borderRadius: 999,
-            border: "1px solid #d1d5db",
-            padding: "10px 14px",
+            borderRadius: 8,
+            border: "1px solid #cbd5e1",
+            padding: "10px 12px",
             outline: "none",
+            fontSize: 14,
+            color: "#0f172a",
+            background: "#ffffff",
           }}
         />
         <button
           type="submit"
           style={{
-            borderRadius: 999,
-            background: "#21c18f",
+            borderRadius: 8,
+            background: "#0ea5e9",
             color: "white",
             border: "none",
-            padding: "10px 16px",
+            padding: "10px 14px",
             cursor: "pointer",
           }}
         >
