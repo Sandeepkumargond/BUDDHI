@@ -2,8 +2,9 @@ services:
   - type: web
     name: ml-microservice
     env: python
-    buildCommand: pip install -r ml_service/requirements.txt
-    startCommand: uvicorn ml_service.app:app --host 0.0.0.0 --port $PORT
+    rootDir: ml_service
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app:app --host 0.0.0.0 --port $PORT
     envVars:
       - key: PERPLEXITY_API_KEY
         sync: false
