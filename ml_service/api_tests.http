@@ -40,7 +40,7 @@ Content-Type: application/json
 
 ###
 
-### AI Counselor Chat
+### AI Counselor Chat (Initial Query)
 POST http://localhost:8000/chat
 Content-Type: application/json
 
@@ -52,4 +52,24 @@ Content-Type: application/json
         "risk_label": "critical",
         "Fees_Status": "Pending"
     }
+}
+
+###
+
+### AI Counselor Chat (With History)
+POST http://localhost:8000/chat
+Content-Type: application/json
+
+{
+    "query": "What is the syllabus for Engineering Mathematics?",
+    "student_context": {
+        "Enrollment_ID": "STU98765",
+        "CGPA": 4.2,
+        "risk_label": "critical",
+        "Fees_Status": "Pending"
+    },
+    "history": [
+        {"role": "user", "content": "What is Engineering Mathematics?"},
+        {"role": "assistant", "content": "Engineering Mathematics is a branch of applied mathematics concerning mathematical methods and techniques that are typically used in engineering and industry."}
+    ]
 }

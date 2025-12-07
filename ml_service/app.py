@@ -48,7 +48,11 @@ except Exception as e:
 
 # Data Models
 
-from typing import List
+from typing import List, Optional, Dict
+
+class ChatMessage(BaseModel):
+    role: str
+    content: str
 
 # Data Models
 class StudentData(BaseModel):
@@ -62,6 +66,7 @@ class StudentData(BaseModel):
 class ChatRequest(BaseModel):
     query: str
     student_context: dict
+    history: List[ChatMessage] = []
 
 class RiskResponse(BaseModel):
     Enrollment_ID: str
@@ -170,9 +175,15 @@ Answer the student's query below keeping this context in mind.
 """
 
     messages = [
-        {"role": "system", "content": SYSTEM_PROMPT},
-        {"role": "user", "content": request.query}
+        {"role": "system", "content": SYSTEM_PROMPT}
     ]
+
+    # Append History
+    for msg in request.history:
+        messages.append({"role": msg.role, "content": msg.content})
+
+    # Append Current Query
+    messages.append({"role": "user", "content": request.query})
 
     try:
         response = client.chat.completions.create(
