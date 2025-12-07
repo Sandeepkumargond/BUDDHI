@@ -168,6 +168,8 @@ const downloadReceipt = () => {
 
   const addComplaint = () => {
     if (!complaint.trim()) return;
+    // Ensure complaints array exists
+    if (!Array.isArray(student.complaints)) student.complaints = [];
 
     student.complaints.push({
       id: Date.now(),
@@ -335,10 +337,10 @@ const downloadReceipt = () => {
           </h2>
         </div>
         <div className="space-y-3" style={{ color: "#0f172a" }}>
-          {student.complaints.length === 0 && (
+          {(Array.isArray(student.complaints) ? student.complaints.length === 0 : true) && (
             <p style={{ color: "#64748b" }}>No complaints filed yet.</p>
           )}
-          {student.complaints.map((c) => (
+          {(Array.isArray(student.complaints) ? student.complaints : []).map((c) => (
             <div
               key={c.id}
               className="rounded-lg p-3 flex justify-between items-center"

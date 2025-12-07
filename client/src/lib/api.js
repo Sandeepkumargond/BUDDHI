@@ -17,6 +17,7 @@ class ApiService {
   constructor() {
     this.baseURL = resolveBaseUrl();
     this.accessToken = null; // in-memory token fallback if cookies blocked cross-site
+    try { console.info('[apiService] Base URL:', this.baseURL); } catch {}
   }
 
   setAccessToken(token) {
@@ -58,6 +59,7 @@ class ApiService {
     }
 
     try {
+      try { console.debug('[apiService] Request', { url, method, headers }); } catch {}
       const response = await fetch(url, config);
 
       // Check if response is JSON
@@ -78,12 +80,16 @@ class ApiService {
         if (rawMessage.toLowerCase().includes('invalid refresh token')) {
           throw new Error('Session invalid. Please log in again.');
         }
-        throw new Error(rawMessage);
+        const err = new Error(rawMessage);
+        err.status = response.status;
+        err.endpoint = endpoint;
+        err.url = url;
+        throw err;
       }
 
       return data;
     } catch (error) {
-      console.error('API request failed:', error);
+      console.error('API request failed:', { message: error?.message, status: error?.status, url: error?.url, endpoint: error?.endpoint });
       throw error;
     }
   }
