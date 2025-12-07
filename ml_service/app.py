@@ -47,13 +47,16 @@ except Exception as e:
     print(f"Error loading model: {e}")
 
 # Data Models
+
+from typing import List
+
+# Data Models
 class StudentData(BaseModel):
     CGPA: float
     Attendance_Pct: int
     Books_Issued: int
     Book_Genre_Preference: str
     Fees_Status: str
-    Survey_Drop_Thought: str
     Enrollment_ID: str = "Unknown"
 
 class ChatRequest(BaseModel):
@@ -61,60 +64,83 @@ class ChatRequest(BaseModel):
     student_context: dict
 
 class RiskResponse(BaseModel):
+    Enrollment_ID: str
     risk_level: str
     is_at_risk: bool
 
 class ChatResponse(BaseModel):
     response: str
 
-@app.post("/predict_risk", response_model=RiskResponse)
-def predict_risk(student: StudentData):
+@app.post("/predict_risk", response_model=List[RiskResponse])
+def predict_risk(students: List[StudentData]):
     if not model or not metadata:
         raise HTTPException(status_code=503, detail="Model not loaded. Please run train_model.py first.")
     
-    try:
-        # Prepare Input
+    # Batch Processing
+    # For now, iterating. Can be optimized to batch tensors if throughput is critical.
+    
+    response_list = []
+    
+    # Tensors lists
+    all_num_features = []
+    all_cat_features = []
+    
+    # Pre-process batch
+    for student in students:
         # Numerical
         num_features = [student.CGPA, student.Attendance_Pct, student.Books_Issued]
-        scaler = metadata['scaler']
-        # Reshape to (1, -1) for scaler
-        num_scaled = scaler.transform([num_features])
-        x_num_t = torch.FloatTensor(num_scaled)
+        all_num_features.append(num_features)
         
         # Categorical
-        cat_features = [student.Book_Genre_Preference, student.Fees_Status, student.Survey_Drop_Thought]
-        x_cat_list = []
-        for i, cat_val in enumerate(cat_features):
+        # ORDER MUST MATCH 'categorical_features' in metadata
+        # Removed 'Survey_Drop_Thought'
+        cat_features_input = [student.Book_Genre_Preference, student.Fees_Status]
+        
+        student_cat_encoded = []
+        for i, cat_val in enumerate(cat_features_input):
             cat_name = metadata['categorical_features'][i]
             le = metadata['label_encoders'][cat_name]
             
-            # Handle unknown categories safely
             try:
-                # Need to pass iterable
                 encoded = le.transform([cat_val])[0]
             except ValueError:
-                # Fallback to 0 if unknown (assuming 0 is a valid class, or risk error. 
-                # Better approach: check 'classes_', if not found use mode or special UNK)
-                # For this demo, using 0 is acceptable risk.
                 encoded = 0
-            x_cat_list.append(encoded)
-            
-        x_cat_t = torch.LongTensor([x_cat_list]) # (1, num_cats)
+            student_cat_encoded.append(encoded)
+        all_cat_features.append(student_cat_encoded)
+        
+    try:
+        # Vectorized Prediction
+        if not all_num_features:
+             return []
+             
+        # Scale Numerical
+        scaler = metadata['scaler']
+        num_scaled = scaler.transform(all_num_features)
+        x_num_t = torch.FloatTensor(num_scaled)
+        
+        # Categorical Tensor
+        x_cat_t = torch.LongTensor(all_cat_features)
         
         # Predict
         with torch.no_grad():
             outputs = model(x_num_t, x_cat_t)
-            _, predicted_idx = torch.max(outputs, 1)
+            _, predicted_indices = torch.max(outputs, 1)
             
         target_le = metadata['target_encoder']
-        prediction_label = target_le.inverse_transform([predicted_idx.item()])[0]
+        prediction_labels = target_le.inverse_transform(predicted_indices.numpy())
         
-        is_at_risk = prediction_label in ['critical', 'on_the_verge_of_drop']
-        
-        return {
-            "risk_level": prediction_label,
-            "is_at_risk": is_at_risk
-        }
+        # Construct Response
+        for i, student in enumerate(students):
+            prediction_label = prediction_labels[i]
+            is_at_risk = prediction_label in ['critical', 'on_the_verge_of_drop']
+            
+            response_list.append({
+                "Enrollment_ID": student.Enrollment_ID,
+                "risk_level": prediction_label,
+                "is_at_risk": is_at_risk
+            })
+            
+        return response_list
         
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

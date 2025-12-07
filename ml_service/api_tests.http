@@ -1,0 +1,55 @@
+### Risk Prediction (Batch - Safe Student)
+POST http://localhost:8000/predict_risk
+Content-Type: application/json
+
+[
+    {
+        "CGPA": 8.5,
+        "Attendance_Pct": 90,
+        "Books_Issued": 12,
+        "Book_Genre_Preference": "Technical",
+        "Fees_Status": "Paid",
+        "Enrollment_ID": "STU12345"
+    }
+]
+
+###
+
+### Risk Prediction (Batch - Mixed Students)
+POST http://localhost:8000/predict_risk
+Content-Type: application/json
+
+[
+    {
+        "CGPA": 4.2,
+        "Attendance_Pct": 45,
+        "Books_Issued": 0,
+        "Book_Genre_Preference": "Fiction",
+        "Fees_Status": "Pending",
+        "Enrollment_ID": "STU98765"
+    },
+    {
+        "CGPA": 9.0,
+        "Attendance_Pct": 95,
+        "Books_Issued": 8,
+        "Book_Genre_Preference": "Technical",
+        "Fees_Status": "Paid",
+        "Enrollment_ID": "STU11111"
+    }
+]
+
+###
+
+### AI Counselor Chat
+POST http://localhost:8000/chat
+Content-Type: application/json
+
+{
+    "query": "I am worried about my grades, what should I do?",
+    "student_context": {
+        "Enrollment_ID": "STU98765",
+        "CGPA": 4.2,
+        "risk_label": "critical",
+        "Fees_Status": "Pending"
+    }
+}

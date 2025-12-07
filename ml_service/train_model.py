@@ -37,8 +37,8 @@ def train():
             print(f"Warning: {col} not in dataset. Available: {data.columns}")
     
     # Categorical
-    # Based on CSV view: 'Book_Genre_Preference', 'Fees_Status', 'Survey_Drop_Thought'
-    categorical_features = ['Book_Genre_Preference', 'Fees_Status', 'Survey_Drop_Thought']
+    # 'Book_Genre_Preference', 'Fees_Status'
+    categorical_features = ['Book_Genre_Preference', 'Fees_Status']
     
     # Drop irrelevant
     # 'Enrollment_ID', 'Semester' (Maybe logic depends on semester, but keeping it simple as per original), 'Risk_Category'
