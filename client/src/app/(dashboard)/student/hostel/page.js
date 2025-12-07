@@ -1,16 +1,138 @@
 "use client";
 
 import { studentHostelData } from "@/lib/aryan_hosteldata";
+import { useAuth } from "@/context/AuthContext";
+import { apiService } from "@/lib/api";
+import { useEffect } from "react";
+import { fetchHostels, submitHostelApplication, fetchStudentHostelAllocation } from "@/lib/hostelApi";
 import Image from "next/image";
 import { useState } from "react"; 
 
 export default function HostelPage() {
-  const student = studentHostelData[0]; // TEMP → replace with auth user later
-  
+  const { user, role, checkAuthStatus } = useAuth();
+  const [profile, setProfile] = useState(null);
+
+  const normalizeStudent = (raw) => {
+    if (!raw) return null;
+    // Backend model fields mapping → UI fields expected here
+    const fullName = [raw.firstName, raw.lastName].filter(Boolean).join(" ") || raw.name || "";
+    const enrollmentNo = raw.enrollmentNo ?? raw.enrolmentNo ?? raw.enrollmentNumber ?? raw.registrationNumber;
+    const rollNo = raw.rollNo ?? raw.rollNumber ?? raw.roll ?? "";
+    const dob = raw.dateOfBirth ? new Date(raw.dateOfBirth).toLocaleDateString() : (raw.dob || "");
+
+    // Hostel allocation info may reside in separate properties
+    const hostel = raw.hostel || {
+      hostelName: raw.hostelAlloted || undefined,
+      roomNumber: raw.roomNo || undefined,
+    };
+
+    return {
+      ...raw,
+      name: fullName,
+      enrolmentNo: enrollmentNo,
+      rollNo,
+      dob,
+      photo: raw.imageUrl || raw.photo || "/avatar.png",
+      hostel,
+    };
+  };
+
+  const fallbackStudent = studentHostelData[0];
+  const student = normalizeStudent(profile && role === 'student' ? profile : (user && role === 'student' ? user : null)) || fallbackStudent;
+
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      try {
+        // If not authenticated student, try to fetch profile directly
+        if (!user || role !== 'student') {
+          // Attempt auth bootstrap
+          await checkAuthStatus();
+        }
+        const res = await apiService.getProfile('student');
+        const data = res.data?.student || res.data?.user || res.data;
+        if (mounted && data) setProfile(data);
+      } catch (e) {
+        // keep fallback to dummy data
+        console.warn('Student profile fetch failed:', e?.message || e);
+      }
+    })();
+    return () => { mounted = false; };
+  }, []);
   const [complaint, setComplaint] = useState("");
   const [activeTab, setActiveTab] = useState("Profile");
 
   const [showForm, setShowForm] = useState(false);
+  const [hostels, setHostels] = useState([]);
+  const [applyOpen, setApplyOpen] = useState(false);
+  const [choice1Hostel, setChoice1Hostel] = useState("");
+  const [choice1Room, setChoice1Room] = useState("");
+  const [choice2Hostel, setChoice2Hostel] = useState("");
+  const [choice2Room, setChoice2Room] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [hostelAllocationData, setHostelAllocationData] = useState(null);
+
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      try {
+        const hs = await fetchHostels();
+        if (mounted) setHostels(hs);
+      } catch (e) {
+        console.error("Failed to load hostels", e);
+      }
+    })();
+    return () => { mounted = false; };
+  }, []);
+
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      try {
+        const allocation = await fetchStudentHostelAllocation();
+        if (mounted) {
+          console.log("Hostel Allocation fetched:", allocation);
+          if (allocation) {
+            setHostelAllocationData(allocation);
+            // Update profile with complete allocation details
+            setProfile(prev => {
+              const updated = prev || {};
+              return {
+                ...updated,
+                hostelAlloted: allocation.hostelName,
+                roomNo: allocation.roomNumber,
+                hostel: {
+                  ...(updated.hostel || {}),
+                  hostelName: allocation.hostelName,
+                  roomNumber: allocation.roomNumber,
+                  roomType: allocation.roomType,
+                  block: allocation.hostelDetails?.block || '-',
+                  floor: allocation.hostelDetails?.floor || '-',
+                  bedNumber: allocation.hostelDetails?.bedNumber || '-',
+                  occupancy: allocation.hostelDetails?.occupancy || '-',
+                  attachedWashroom: allocation.hostelDetails?.attachedWashroom,
+                  hostelFee: allocation.hostelDetails?.feePerMonth || '-',
+                  paymentStatus: allocation.hostelDetails?.paymentStatus || 'Unpaid',
+                  lastPaymentDate: allocation.hostelDetails?.lastPaymentDate || '-',
+                  wardenName: allocation.hostelDetails?.warden || '-',
+                  wardenPhone: allocation.hostelDetails?.contact || '-',
+                  wardenEmail: allocation.hostelDetails?.email || '-',
+                  allocationDate: allocation.allottedDate ? new Date(allocation.allottedDate).toLocaleDateString() : '-',
+                  admissionYear: allocation.hostelDetails?.admissionYear || '-',
+                  roomStatus: 'Allocated'
+                }
+              };
+            });
+          } else {
+            console.log("No hostel allocation found for student");
+          }
+        }
+      } catch (e) {
+        console.warn("Failed to load hostel allocation", e?.message || e);
+      }
+    })();
+    return () => { mounted = false; };
+  }, []);
 
 const downloadReceipt = () => {
   const receiptContent = `
@@ -282,6 +404,90 @@ const downloadReceipt = () => {
                 style={{ background: "#6366f1" }}
               >
                 Submit
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* HOSTEL APPLICATION POPUP */}
+      {applyOpen && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center">
+          <div className="bg-white p-6 rounded-xl w-[28rem] shadow-lg">
+            <h3 className="font-bold mb-3">Hostel Application</h3>
+            <div className="space-y-3">
+              <div>
+                <label className="block text-sm mb-1">Choice 1: Hostel</label>
+                <select className="border w-full p-2 rounded" value={choice1Hostel} onChange={(e)=>setChoice1Hostel(e.target.value)}>
+                  <option value="">Select hostel</option>
+                  {hostels.map(h => (
+                    <option key={h.id || h._id} value={h.name}>{h.name}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm mb-1">Choice 1: Room (optional)</label>
+                <input className="border w-full p-2 rounded" value={choice1Room} onChange={(e)=>setChoice1Room(e.target.value)} placeholder="e.g., 12" />
+              </div>
+              <div>
+                <label className="block text-sm mb-1">Choice 2: Hostel (optional)</label>
+                <select className="border w-full p-2 rounded" value={choice2Hostel} onChange={(e)=>setChoice2Hostel(e.target.value)}>
+                  <option value="">Select hostel</option>
+                  {hostels.map(h => (
+                    <option key={h.id || h._id} value={h.name}>{h.name}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm mb-1">Choice 2: Room (optional)</label>
+                <input className="border w-full p-2 rounded" value={choice2Room} onChange={(e)=>setChoice2Room(e.target.value)} placeholder="e.g., 34" />
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-3 mt-4">
+              <button onClick={()=>setApplyOpen(false)} className="px-4 py-2 rounded bg-gray-300">Cancel</button>
+              <button
+                onClick={async ()=>{
+                  // Check if already allocated
+                  if (hostelAllocationData || student.hostelAlloted) {
+                    alert('You have already been allocated a hostel. You cannot apply again.');
+                    setApplyOpen(false);
+                    return;
+                  }
+                  
+                  setSubmitting(true);
+                  try {
+                    const choices = [];
+                    if (choice1Hostel) choices.push({ hostelName: choice1Hostel, roomNumber: choice1Room || undefined, priority: 1 });
+                    if (choice2Hostel) choices.push({ hostelName: choice2Hostel, roomNumber: choice2Room || undefined, priority: 2 });
+                    const payload = {
+                      studentId: student.enrolmentNo || student.rollNo || "UNKNOWN",
+                      studentName: student.name,
+                      course: student.course || "",
+                      semester: student.semester || "",
+                      cgpa: student.cgpa || 0,
+                      roomType: (student.hostel?.roomType || "Shared").replace(/^(single)$/i,'Single').replace(/^(shared)$/i,'Shared').replace(/^(triple)$/i,'Triple'),
+                      reason: "Student self-application",
+                      emergencyContact: student.alternatePhone || "",
+                      parentName: student.fatherName || "",
+                      address: student.address || "",
+                      choices
+                    };
+                    const res = await submitHostelApplication(payload);
+                    alert(`Allocated: ${res.allottedHostel} Room ${res.allottedRoom}`);
+                    // Refresh allocation data
+                    setApplyOpen(false);
+                    window.location.reload();
+                  } catch (err) {
+                    alert(err.message || 'Failed to submit application');
+                  } finally {
+                    setSubmitting(false);
+                  }
+                }}
+                disabled={submitting || hostelAllocationData || student.hostelAlloted}
+                className={`px-4 py-2 rounded text-white ${(submitting || hostelAllocationData || student.hostelAlloted) ? 'bg-gray-400' : 'bg-blue-600'}`}
+              >
+                {submitting ? 'Submitting...' : 'Submit Application'}
               </button>
             </div>
           </div>

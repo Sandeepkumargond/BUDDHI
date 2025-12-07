@@ -1,10 +1,22 @@
 "use client";
 import React, { useState, useEffect } from 'react';
 import { FaPlus, FaEdit, FaTrash, FaEye, FaBed, FaUsers } from 'react-icons/fa';
-import { initialHostels } from '@/lib/hostelData';
+import { fetchHostels, adminSaveHostel } from '@/lib/hostelApi';
 
 const HostelManagement = () => {
-  const [hostels, setHostels] = useState(initialHostels);
+  const [hostels, setHostels] = useState([]);
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      try {
+        const data = await fetchHostels();
+        if (mounted) setHostels(data);
+      } catch (e) {
+        console.error('Failed to load hostels', e);
+      }
+    })();
+    return () => { mounted = false; };
+  }, []);
   const [showAddForm, setShowAddForm] = useState(false);
   const [editingHostel, setEditingHostel] = useState(null);
   const [formData, setFormData] = useState({
@@ -24,36 +36,59 @@ const HostelManagement = () => {
     }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    
-    if (editingHostel) {
-      // Update existing hostel
-      setHostels(prev => prev.map(hostel => 
-        hostel.id === editingHostel.id 
-          ? { 
-              ...hostel, 
-              ...formData, 
-              totalRooms: parseInt(formData.totalRooms),
-              availableRooms: parseInt(formData.totalRooms) - hostel.occupiedRooms
-            }
-          : hostel
-      ));
-    } else {
-      // Add new hostel
-      const newHostel = {
-        id: Math.max(...hostels.map(h => h.id)) + 1,
-        ...formData,
+    try {
+      const payload = {
+        name: formData.name,
+        type: formData.type,
         totalRooms: parseInt(formData.totalRooms),
-        occupiedRooms: 0,
-        availableRooms: parseInt(formData.totalRooms),
-        feePerMonth: 8000,
-        image: "/hostel-default.jpg"
+        warden: formData.warden,
+        contact: formData.contact,
+        address: formData.address,
       };
-      setHostels(prev => [...prev, newHostel]);
+      const saved = await adminSaveHostel(payload);
+      setHostels(prev => {
+        const existsIdx = prev.findIndex(h => (h.name === saved.name));
+        if (existsIdx >= 0) {
+          const copy = [...prev];
+          copy[existsIdx] = {
+            id: saved.id || saved._id,
+            name: saved.name,
+            type: saved.type,
+            totalRooms: saved.totalRooms,
+            occupiedRooms: saved.occupiedRooms,
+            availableRooms: (saved.totalRooms - saved.occupiedRooms),
+            warden: saved.warden,
+            contact: saved.contact,
+            address: saved.address,
+            feePerMonth: saved.feePerMonth,
+            image: saved.image,
+          };
+          return copy;
+        }
+        return [
+          ...prev,
+          {
+            id: saved.id || saved._id,
+            name: saved.name,
+            type: saved.type,
+            totalRooms: saved.totalRooms,
+            occupiedRooms: saved.occupiedRooms,
+            availableRooms: (saved.totalRooms - saved.occupiedRooms),
+            warden: saved.warden,
+            contact: saved.contact,
+            address: saved.address,
+            feePerMonth: saved.feePerMonth,
+            image: saved.image || "/hostel-default.jpg",
+          }
+        ];
+      });
+      resetForm();
+    } catch (err) {
+      console.error('Failed to save hostel', err);
+      alert(err.message || 'Failed to save hostel');
     }
-    
-    resetForm();
   };
 
   const resetForm = () => {
