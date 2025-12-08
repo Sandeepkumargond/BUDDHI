@@ -1,5 +1,6 @@
 import { Router } from "express";
 import { createOrUpdateHostel, listHostels, submitHostelApplication, listApplications, getStudentHostelAllocation, updateHostelAllocation, removeHostelAllocation, deleteHostel } from "../controllers/hostel.controller.js";
+import { submitComplaint, getMyComplaints, getAllComplaints, getComplaintStats, updateComplaintStatus, getComplaintDetail, deleteComplaint, bulkUpdateComplaints } from "../controllers/hostelComplaint.controller.js";
 import { authenticateAdmin } from "../middlewares/admin.middleware.js";
 import { authenticateStudent } from "../middlewares/student.middleware.js";
 
@@ -28,6 +29,32 @@ router.delete("/admin/hostel/allocation", authenticateAdmin, removeHostelAllocat
 
 // Admin: Delete hostel
 router.delete("/admin/hostels", authenticateAdmin, deleteHostel);
+
+// ============= COMPLAINT ROUTES =============
+
+// Student: Submit a complaint
+router.post("/student/complaint", authenticateStudent, submitComplaint);
+
+// Student: Get my complaints
+router.get("/student/complaints", authenticateStudent, getMyComplaints);
+
+// Admin: Get all complaints (with filters)
+router.get("/admin/complaints", authenticateAdmin, getAllComplaints);
+
+// Admin: Get complaint statistics
+router.get("/admin/complaints/stats", authenticateAdmin, getComplaintStats);
+
+// Admin/Student: Get complaint details
+router.get("/complaint/:complaintId", getComplaintDetail);
+
+// Admin: Update complaint status
+router.put("/admin/complaint/:complaintId", authenticateAdmin, updateComplaintStatus);
+
+// Admin: Delete complaint
+router.delete("/admin/complaint/:complaintId", authenticateAdmin, deleteComplaint);
+
+// Admin: Bulk update complaints
+router.put("/admin/complaints/bulk-update", authenticateAdmin, bulkUpdateComplaints);
 
 // Debug: Get all applications (remove in production)
 router.get("/debug/all-applications", async (req, res) => {

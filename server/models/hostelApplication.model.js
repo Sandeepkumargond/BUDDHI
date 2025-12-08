@@ -4,6 +4,7 @@ const choiceSchema = new mongoose.Schema(
   {
     hostelName: { type: String, required: true },
     roomNumber: { type: String },
+    floor: { type: Number },
     priority: { type: Number, default: 1 },
   },
   { _id: false }
