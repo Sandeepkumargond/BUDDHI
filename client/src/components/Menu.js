@@ -5,7 +5,7 @@ import { useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 // React Icons imports for sidebar items
 import { MdDashboard, MdAppRegistration, MdPayment, MdAnnouncement, MdPendingActions, MdAssessment, MdFeedback } from "react-icons/md";
-import { FaIdCard, FaGraduationCap, FaClipboardCheck, FaCommentDots, FaBookOpen, FaMoneyBillWave, FaChalkboardTeacher, FaUserGraduate, FaUserShield, FaBuilding, FaUserPlus, FaUserEdit, FaUniversity, FaBed, FaUserTie, FaBriefcase } from "react-icons/fa";
+import { FaIdCard, FaGraduationCap, FaClipboardCheck, FaCommentDots, FaBookOpen, FaMoneyBillWave, FaChalkboardTeacher, FaUserGraduate, FaUserShield, FaBuilding, FaUserPlus, FaUserEdit, FaUniversity, FaBed, FaUserTie, FaBriefcase, FaCalendarAlt } from "react-icons/fa";
 import { FiSettings } from "react-icons/fi";
 
 const menusByRole = {
@@ -38,6 +38,7 @@ const menusByRole = {
     { Icon: FaCommentDots, label: "Feedback", href: "/student/feedback" },
     { Icon: FaChalkboardTeacher, label: "Faculties", href: "/student/faculties" },
     { Icon: FaBriefcase, label: "Opportunities", href: "/student/opportunities" },
+    { Icon: FaCalendarAlt, label: "Leave", href: "/student/leaves" },
   ],
 
   faculty: [
@@ -48,6 +49,7 @@ const menusByRole = {
     { Icon: MdAssessment, label: "Marks", href: "/faculty/marks" },
     { Icon: FaBookOpen, label: "Study Materials", href: "/faculty/study-material" },
     { Icon: MdAnnouncement, label: "Class Notices", href: "/faculty/class-notices" },
+    { Icon: FaCalendarAlt, label: "Leave", href: "/faculty/leaves" },
   ],
 
   admin: [
@@ -114,6 +116,7 @@ const menusByRole = {
         { label: "Razorpay", href: "/admin/settings/razorpay" }
       ]
     },
+    { Icon: FaCalendarAlt, label: "Leave Management", href: "/admin/leaves" },
 
   ],
 

@@ -882,6 +882,82 @@ class ApiService {
       body: { isApproved }
     });
   }
+
+  // Leave Management
+  async applyLeave(formData) {
+    return this.request('/leaves/student/apply', {
+      method: 'POST',
+      body: formData
+    });
+  }
+
+  async applyLeaveFaculty(formData) {
+    return this.request('/leaves/faculty/apply', {
+      method: 'POST',
+      body: formData
+    });
+  }
+
+  async getMyLeaves(status = '', page = 1, limit = 20) {
+    let url = '/leaves/student/my-leaves?';
+    if (status) url += `status=${status}&`;
+    url += `page=${page}&limit=${limit}`;
+    return this.request(url, { method: 'GET' });
+  }
+
+  async getMyLeavesFaculty(status = '', page = 1, limit = 20) {
+    let url = '/leaves/faculty/my-leaves?';
+    if (status) url += `status=${status}&`;
+    url += `page=${page}&limit=${limit}`;
+    return this.request(url, { method: 'GET' });
+  }
+
+  async getLeaveById(leaveId) {
+    return this.request(`/leaves/student/${leaveId}`, {
+      method: 'GET'
+    });
+  }
+
+  async getLeaveByIdFaculty(leaveId) {
+    return this.request(`/leaves/faculty/${leaveId}`, {
+      method: 'GET'
+    });
+  }
+
+  async cancelLeave(leaveId) {
+    return this.request(`/leaves/student/${leaveId}/cancel`, {
+      method: 'DELETE'
+    });
+  }
+
+  async cancelLeaveFaculty(leaveId) {
+    return this.request(`/leaves/faculty/${leaveId}/cancel`, {
+      method: 'DELETE'
+    });
+  }
+
+  // Admin Leave Management
+  async getAllLeaves(status = '', applicantType = '', search = '', page = 1, limit = 20) {
+    let url = '/leaves/admin/all?';
+    if (status && status !== '') url += `status=${status}&`;
+    if (applicantType && applicantType !== '') url += `applicantType=${applicantType}&`;
+    if (search && search !== '') url += `search=${search}&`;
+    url += `page=${page}&limit=${limit}`;
+    return this.request(url, { method: 'GET' });
+  }
+
+  async reviewLeave(leaveId, status, adminRemarks = '') {
+    return this.request(`/leaves/admin/${leaveId}/review`, {
+      method: 'PATCH',
+      body: { status, adminRemarks }
+    });
+  }
+
+  async deleteLeave(leaveId) {
+    return this.request(`/leaves/admin/${leaveId}`, {
+      method: 'DELETE'
+    });
+  }
 }
 
 export const apiService = new ApiService();
