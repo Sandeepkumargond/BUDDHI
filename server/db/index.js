@@ -116,7 +116,7 @@ const connectDB = async () => {
             console.warn('Department seeding warning:', e.message);
         }
 
-        // Optional: Seed a demo schedule for the first student/faculty to visualize timetable
+        // Optional: Seed schedules from existing faculty assignments (DB-driven)
         try {
             const seedFlag = (process.env.SEED_SCHEDULE || 'true').toLowerCase() === 'true';
             if (seedFlag) {
@@ -124,28 +124,38 @@ const connectDB = async () => {
                 const { Student } = await import('../models/student.model.js');
                 const { Faculty } = await import('../models/faculty.model.js');
                 const { Course } = await import('../models/course.model.js');
-
-                const student = await Student.findOne().select('branch semester section').lean();
-                const faculty = await Faculty.findOne().select('_id').lean();
-                if (student && faculty) {
-                    const group = {
-                        branch: String(student.branch || 'CSE'),
-                        semester: Number(student.semester || 5),
-                        section: String(student.section || 'A')
-                    };
-                    const existing = await Schedule.countDocuments(group);
-                    if (existing === 0) {
-                        let course = await Course.findOne({ code: 'DEMO-ALG' });
-                        if (!course) {
-                            course = await Course.create({ name: 'Algorithms', code: 'DEMO-ALG', credits: 4, semester: group.semester, departmentId: 1 });
-                        }
-                        const slots = [
-                            { dayOfWeek: 2, startMins: 10*60, endMins: 11*60, room: 'R-101' },
-                            { dayOfWeek: 3, startMins: 13*60, endMins: 14*60, room: 'R-201' },
-                        ].map(s => ({ ...group, ...s, course: course._id, faculty: faculty._id, createdBy: faculty._id }));
-                        await Schedule.insertMany(slots);
-                        console.log('Seeded demo schedule for', group.branch, 'sem', group.semester, 'section', group.section);
+                // For each faculty with active assigned courses, create a simple weekly slot if none exist
+                const faculties = await Faculty.find({ 'assignedCourses.isActive': true }).lean();
+                const dayTemplate = [1, 2, 3, 4, 5]; // Mon-Fri
+                const startTimes = [9 * 60, 10 * 60 + 30, 12 * 60, 14 * 60];
+                for (const fac of faculties) {
+                    const active = (fac.assignedCourses || []).filter(a => a.isActive && a.courseId);
+                    if (active.length === 0) continue;
+                    // Skip if this faculty already has any schedule slots
+                    const hasSlots = await Schedule.exists({ faculty: fac._id });
+                    if (hasSlots) continue;
+                    let i = 0;
+                    for (const a of active) {
+                        const course = await Course.findById(a.courseId).lean();
+                        if (!course) continue;
+                        const dayOfWeek = dayTemplate[i % dayTemplate.length];
+                        const startMins = startTimes[i % startTimes.length];
+                        const endMins = startMins + 60;
+                        await Schedule.create({
+                            course: course._id,
+                            faculty: fac._id,
+                            branch: fac.department || 'CSE',
+                            semester: Number(a.semester) || (course.semester || 5),
+                            section: a.section || 'A',
+                            room: `R-${200 + i}`,
+                            dayOfWeek,
+                            startMins,
+                            endMins,
+                            createdBy: fac._id,
+                        });
+                        i++;
                     }
+                    console.log(`Seeded schedule from assignments for faculty ${fac._id}`);
                 }
             }
         } catch (e) {
