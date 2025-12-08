@@ -113,17 +113,17 @@ export default function DonationsPage() {
 
       {/* Stats Card */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-        <div className="bg-gradient-to-r from-purple-500 to-purple-600 text-white p-6 rounded-lg shadow-lg">
-          <h3 className="text-sm opacity-90 mb-2">Total Donated</h3>
-          <p className="text-3xl font-bold">₹{totalDonated.toLocaleString()}</p>
+        <div className="p-6 rounded-lg shadow-lg" style={{ backgroundColor: '#AEE7F7' }}>
+          <h3 className="text-sm text-gray-700 mb-2">Total Donated</h3>
+          <p className="text-3xl font-bold text-gray-900">₹{totalDonated.toLocaleString()}</p>
         </div>
-        <div className="bg-gradient-to-r from-green-500 to-green-600 text-white p-6 rounded-lg shadow-lg">
-          <h3 className="text-sm opacity-90 mb-2">Completed</h3>
-          <p className="text-3xl font-bold">{donations.filter(d => d.status === 'completed').length}</p>
+        <div className="p-6 rounded-lg shadow-lg" style={{ backgroundColor: '#C9CCFF' }}>
+          <h3 className="text-sm text-gray-700 mb-2">Completed</h3>
+          <p className="text-3xl font-bold text-gray-900">{donations.filter(d => d.status === 'completed').length}</p>
         </div>
-        <div className="bg-gradient-to-r from-yellow-500 to-yellow-600 text-white p-6 rounded-lg shadow-lg">
-          <h3 className="text-sm opacity-90 mb-2">Pending</h3>
-          <p className="text-3xl font-bold">{donations.filter(d => d.status === 'pending').length}</p>
+        <div className="p-6 rounded-lg shadow-lg" style={{ backgroundColor: '#F9DB66' }}>
+          <h3 className="text-sm text-gray-700 mb-2">Pending</h3>
+          <p className="text-3xl font-bold text-gray-900">{donations.filter(d => d.status === 'pending').length}</p>
         </div>
       </div>
 
@@ -135,10 +135,11 @@ export default function DonationsPage() {
         </div>
       ) : (
         <div className="grid grid-cols-1 gap-4">
-          {donations.map((donation) => (
+          {donations.map((donation, index) => {
+            return (
             <div
               key={donation._id}
-              className="bg-white dark:bg-gray-800 border rounded-lg p-6 shadow-md"
+              className="bg-white border rounded-lg p-6 shadow-md"
             >
               <div className="flex justify-between items-start mb-4">
                 <div className="flex-1">
@@ -195,7 +196,8 @@ export default function DonationsPage() {
                 )}
               </div>
             </div>
-          ))}
+          );
+          })}
         </div>
       )}
 

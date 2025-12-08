@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { apiService } from "@/lib/api";
 import { toast } from "react-toastify";
-import { FaPlus, FaEdit, FaTrash, FaToggleOn, FaToggleOff, FaUserCheck, FaCheckCircle } from "react-icons/fa";
+import { FaPlus, FaEdit, FaTrash, FaPowerOff, FaCheckCircle, FaClock } from "react-icons/fa";
 
 export default function ReferralsPage() {
   const { user } = useAuth();
@@ -177,31 +177,39 @@ export default function ReferralsPage() {
                 <div className="flex gap-2">
                   <button
                     onClick={() => handleToggleActive(referral)}
-                    className="text-blue-600 hover:text-blue-800"
+                    className={`px-3 py-1 text-xs font-semibold rounded border transition-colors ${
+                      referral.isActive 
+                        ? "bg-green-50 text-green-700 border-green-300 hover:bg-green-100" 
+                        : "bg-gray-50 text-gray-500 border-gray-300 hover:bg-gray-100"
+                    }`}
                     title={referral.isActive ? "Deactivate" : "Activate"}
                   >
-                    {referral.isActive ? <FaToggleOn size={20} /> : <FaToggleOff size={20} />}
+                    {referral.isActive ? "Active" : "Inactive"}
                   </button>
                   <button
                     onClick={() => handleToggleApproved(referral)}
-                    className="text-blue-600 hover:text-blue-800"
+                    className={`px-3 py-1 text-xs font-semibold rounded border transition-colors ${
+                      referral.isApproved
+                        ? "bg-blue-50 text-blue-700 border-blue-300 hover:bg-blue-100"
+                        : "bg-yellow-50 text-yellow-700 border-yellow-300 hover:bg-yellow-100"
+                    }`}
                     title={referral.isApproved ? "Mark pending" : "Approve"}
                   >
-                    <FaCheckCircle size={18} />
+                    {referral.isApproved ? "Approved" : "Pending"}
                   </button>
                   <button
                     onClick={() => handleEdit(referral)}
-                    className="text-green-600 hover:text-green-800"
+                    className="px-3 py-1 text-xs font-semibold rounded border bg-blue-50 text-blue-700 border-blue-300 hover:bg-blue-100 transition-colors"
                     title="Edit"
                   >
-                    <FaEdit />
+                    Edit
                   </button>
                   <button
                     onClick={() => handleDelete(referral._id)}
-                    className="text-red-600 hover:text-red-800"
+                    className="px-3 py-1 text-xs font-semibold rounded border bg-red-50 text-red-700 border-red-300 hover:bg-red-100 transition-colors"
                     title="Delete"
                   >
-                    <FaTrash />
+                    Delete
                   </button>
                 </div>
               </div>
@@ -219,7 +227,7 @@ export default function ReferralsPage() {
 
               <div className="flex items-center justify-between border-t dark:border-gray-700 pt-4">
                 <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
-                  <FaUserCheck />
+                  <FaCheckCircle />
                   <span>Interested Students: {referral.interestedStudents?.length || 0}</span>
                 </div>
                 {referral.contactEmail && (
