@@ -5,7 +5,7 @@ import { useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 // React Icons imports for sidebar items
 import { MdDashboard, MdAppRegistration, MdPayment, MdAnnouncement, MdPendingActions, MdAssessment, MdFeedback } from "react-icons/md";
-import { FaIdCard, FaGraduationCap, FaClipboardCheck, FaCommentDots, FaBookOpen, FaMoneyBillWave, FaChalkboardTeacher, FaUserGraduate, FaUserShield, FaBuilding, FaUserPlus, FaUserEdit, FaUniversity, FaBed } from "react-icons/fa";
+import { FaIdCard, FaGraduationCap, FaClipboardCheck, FaCommentDots, FaBookOpen, FaMoneyBillWave, FaChalkboardTeacher, FaUserGraduate, FaUserShield, FaBuilding, FaUserPlus, FaUserEdit, FaUniversity, FaBed, FaUserTie, FaBriefcase } from "react-icons/fa";
 import { FiSettings } from "react-icons/fi";
 
 const menusByRole = {
@@ -37,6 +37,7 @@ const menusByRole = {
     { Icon: FaClipboardCheck, label: "Attendance", href: "/student/attendance" },
     { Icon: FaCommentDots, label: "Feedback", href: "/student/feedback" },
     { Icon: FaChalkboardTeacher, label: "Faculties", href: "/student/faculties" },
+    { Icon: FaBriefcase, label: "Opportunities", href: "/student/opportunities" },
   ],
 
   faculty: [
@@ -53,6 +54,7 @@ const menusByRole = {
     { Icon: MdDashboard, label: "Dashboard", href: "/admin" },
     { Icon: FaChalkboardTeacher, label: "Faculty Management", href: "/admin/faculty" },
     { Icon: FaUserGraduate, label: "Students", href: "/admin_subadmin/students" },
+    { Icon: FaUserTie, label: "Alumni", href: "/admin/alumni" },
     { Icon: FaMoneyBillWave, label: "Finance", href: "/admin/finance" },
     { Icon: FaUserShield, label: "Sub Admins", href: "/admin/subadmins" },
     { Icon: FaBuilding, label: "Departments", href: "/admin/departments" },
@@ -113,6 +115,14 @@ const menusByRole = {
       ]
     },
 
+  ],
+
+  alumni: [
+    { Icon: MdDashboard, label: "Dashboard", href: "/alumni" },
+    { Icon: FaBriefcase, label: "Internships", href: "/alumni/internships" },
+    { Icon: FaUserTie, label: "Referrals", href: "/alumni/referrals" },
+    { Icon: FaMoneyBillWave, label: "Donations", href: "/alumni/donations" },
+    { Icon: FaUserGraduate, label: "Profile", href: "/alumni/profile" },
   ],
 
   subadmin: [
