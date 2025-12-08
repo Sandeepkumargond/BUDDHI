@@ -64,7 +64,8 @@ export const AuthProvider = ({ children }) => {
               profileRes.data?.admin || 
               profileRes.data?.subAdmin || 
               profileRes.data?.student || 
-              profileRes.data?.faculty;
+              profileRes.data?.faculty || 
+              profileRes.data?.alumni;
             
             if (userData) {
               setUser(userData);
@@ -95,7 +96,8 @@ export const AuthProvider = ({ children }) => {
             profileRes.data?.admin || 
             profileRes.data?.subAdmin || 
             profileRes.data?.student || 
-            profileRes.data?.faculty;
+            profileRes.data?.faculty || 
+            profileRes.data?.alumni;
           
           if (userData) {
             setUser(userData);
@@ -133,7 +135,7 @@ export const AuthProvider = ({ children }) => {
         const profileData = await apiService.getProfile(savedRole);
         console.log('Profile data received:', profileData);
         
-        const userData = profileData.data?.user || profileData.data?.superAdmin || profileData.data?.admin || profileData.data?.subAdmin || profileData.data?.student || profileData.data?.faculty;
+        const userData = profileData.data?.user || profileData.data?.superAdmin || profileData.data?.admin || profileData.data?.subAdmin || profileData.data?.student || profileData.data?.faculty || profileData.data?.alumni;
         
         if (userData) {
           setUser(userData);
@@ -162,7 +164,7 @@ export const AuthProvider = ({ children }) => {
       const response = await apiService.login(selectedRole, credentials);
       
       if (response.success) {
-        const userData = response.data.user || response.data.superAdmin || response.data.admin || response.data.subAdmin || response.data.student || response.data.faculty;
+        const userData = response.data.user || response.data.superAdmin || response.data.admin || response.data.subAdmin || response.data.student || response.data.faculty || response.data.alumni;
         
         if (userData) {
           setUser(userData);

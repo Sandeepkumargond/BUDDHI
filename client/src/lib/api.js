@@ -126,7 +126,8 @@ class ApiService {
       'admin': '/admin/login',
       'subadmin': '/sub-admin/login',
       'student': '/student/login',
-      'faculty': '/faculty/login'
+      'faculty': '/faculty/login',
+      'alumni': '/alumni/login'
     };
 
     const endpoint = roleEndpoints[role];
@@ -157,7 +158,8 @@ class ApiService {
       'admin': '/admin/refresh-access-token',
       'subadmin': '/sub-admin/refresh-access-token',
       'student': '/student/refresh-access-token',
-      'faculty': '/faculty/refresh-access-token'
+      'faculty': '/faculty/refresh-access-token',
+      'alumni': '/alumni/refresh-access-token'
     };
 
     const endpoint = roleEndpoints[role];
@@ -187,7 +189,8 @@ class ApiService {
       'admin': '/admin/logout',
       'subadmin': '/sub-admin/logout',
       'student': '/student/logout',
-      'faculty': '/faculty/logout'
+      'faculty': '/faculty/logout',
+      'alumni': '/alumni/logout'
     };
 
     const endpoint = roleEndpoints[role];
@@ -405,7 +408,8 @@ class ApiService {
       'admin': '/admin/profile',
       'subadmin': '/sub-admin/profile', 
       'student': '/student/profile',
-      'faculty': '/faculty/profile'
+      'faculty': '/faculty/profile',
+      'alumni': '/alumni/profile'
     };
 
     const endpoint = roleEndpoints[role];
@@ -720,6 +724,162 @@ class ApiService {
   async getFacultyFeedbackDetails(facultyId) {
     return this.request(`/feedback/admin/faculty/${facultyId}/feedback`, {
       method: 'GET'
+    });
+  }
+
+  // ============ Alumni Methods ============
+
+  // Alumni Authentication
+  async loginAlumni(credentials) {
+    return this.request('/alumni/login', {
+      method: 'POST',
+      body: credentials
+    });
+  }
+
+  async logoutAlumni() {
+    return this.request('/alumni/logout', {
+      method: 'POST'
+    });
+  }
+
+  // Alumni Profile
+  async getAlumniProfile() {
+    return this.request('/alumni/profile', {
+      method: 'GET'
+    });
+  }
+
+  async updateAlumniProfile(data) {
+    return this.request('/alumni/profile/update', {
+      method: 'PATCH',
+      body: data
+    });
+  }
+
+  // Alumni Internship Management
+  async addInternshipOpportunity(data) {
+    return this.request('/alumni/internships/add', {
+      method: 'POST',
+      body: data
+    });
+  }
+
+  async updateInternshipOpportunity(internshipId, data) {
+    return this.request(`/alumni/internships/${internshipId}`, {
+      method: 'PATCH',
+      body: data
+    });
+  }
+
+  async deleteInternshipOpportunity(internshipId) {
+    return this.request(`/alumni/internships/${internshipId}`, {
+      method: 'DELETE'
+    });
+  }
+
+  // Alumni Referral Management
+  async addReferral(data) {
+    return this.request('/alumni/referrals/add', {
+      method: 'POST',
+      body: data
+    });
+  }
+
+  async updateReferral(referralId, data) {
+    return this.request(`/alumni/referrals/${referralId}`, {
+      method: 'PATCH',
+      body: data
+    });
+  }
+
+  async deleteReferral(referralId) {
+    return this.request(`/alumni/referrals/${referralId}`, {
+      method: 'DELETE'
+    });
+  }
+
+  // Alumni Donation Management
+  async addDonation(data) {
+    return this.request('/alumni/donations/add', {
+      method: 'POST',
+      body: data
+    });
+  }
+
+  // Public Alumni Endpoints (for students)
+  async getAllInternshipOpportunities(filters = {}) {
+    const params = new URLSearchParams(filters).toString();
+    return this.request(`/alumni/internships?${params}`, {
+      method: 'GET'
+    });
+  }
+
+  async getAllReferrals(filters = {}) {
+    const params = new URLSearchParams(filters).toString();
+    return this.request(`/alumni/referrals?${params}`, {
+      method: 'GET'
+    });
+  }
+
+  // Admin Alumni Management
+  async registerAlumni(data) {
+    return this.request('/alumni/admin/register', {
+      method: 'POST',
+      body: data
+    });
+  }
+
+  async listAllAlumni(filters = {}) {
+    const params = new URLSearchParams(filters).toString();
+    return this.request(`/alumni/admin/list?${params}`, {
+      method: 'GET'
+    });
+  }
+
+  async getAlumniById(alumniId) {
+    return this.request(`/alumni/admin/${alumniId}`, {
+      method: 'GET'
+    });
+  }
+
+  async updateAlumniStatus(alumniId, data) {
+    return this.request(`/alumni/admin/${alumniId}/status`, {
+      method: 'PATCH',
+      body: data
+    });
+  }
+
+  async deleteAlumniById(alumniId) {
+    return this.request(`/alumni/admin/${alumniId}`, {
+      method: 'DELETE'
+    });
+  }
+
+  async getDonationStats() {
+    return this.request('/alumni/admin/stats/donations', {
+      method: 'GET'
+    });
+  }
+
+  async updateDonationStatus(alumniId, donationId, data) {
+    return this.request(`/alumni/admin/${alumniId}/donations/${donationId}/status`, {
+      method: 'PATCH',
+      body: data
+    });
+  }
+
+  async approveInternship(alumniId, internshipId, isApproved) {
+    return this.request(`/alumni/admin/${alumniId}/internships/${internshipId}/approval`, {
+      method: 'PATCH',
+      body: { isApproved }
+    });
+  }
+
+  async approveReferral(alumniId, referralId, isApproved) {
+    return this.request(`/alumni/admin/${alumniId}/referrals/${referralId}/approval`, {
+      method: 'PATCH',
+      body: { isApproved }
     });
   }
 }
