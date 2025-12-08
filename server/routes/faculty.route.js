@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { availableMail, changeFacultyPassword, getFacultyById, getMyProfile, loginFaculty, logoutFaculty, refreshFacultyAccessToken, updateFacultyAccountDetails, updateFacultyImage, updateFacultySign } from "../controllers/faculty.controller.js";
+import { availableMail, changeFacultyPassword, getFacultyById, getMyProfile, listPublicFaculties, loginFaculty, logoutFaculty, refreshFacultyAccessToken, updateFacultyAccountDetails, updateFacultyImage, updateFacultySign } from "../controllers/faculty.controller.js";
 import { authenticateFaculty } from "../middlewares/faculty.middleware.js";
 import { upload } from "../middlewares/multer.middleware.js";
 import { saveAttendance, listMyAttendance, getAttendanceById, getStudentsForAttendance, getMyAssignedCourses, deleteAttendance, getCourseStudents } from "../controllers/attendance.controller.js";
@@ -47,6 +47,9 @@ router.route('/update-sign').patch(
 router.route('/available-mail').post(
     availableMail
 );
+
+// Public listing for students
+router.route('/public').get(listPublicFaculties);
 
 // Attendance routes
 router.route('/attendance').post(
@@ -131,6 +134,7 @@ router.route('/monthly-attendance/:attendanceId').delete(
 );
 
 // Parametric route MUST come last to avoid catching specific route names
-router.route("/:id").get(getFacultyById);
+// Parametric route (ObjectId validated in controller); keep after /public to avoid collisions
+router.route('/:id').get(getFacultyById);
 
 export default router;

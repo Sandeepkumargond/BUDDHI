@@ -4,9 +4,14 @@ import ApiError from "../utils/ApiError.js";
 import { Faculty } from "../models/faculty.model.js";
 import jwt from "jsonwebtoken";
 import { deleteFromImageKit, getFileIdFromUrl, uploadImageOnImageKit } from "../utils/ImageKit.js";
+import mongoose from "mongoose";
 
 export const getFacultyById = asyncHandler(async (req, res) => {
     const facultyId = req.params.id;
+
+    if (!mongoose.isValidObjectId(facultyId)) {
+        throw new ApiError(400, "Invalid faculty id");
+    }
 
     const faculty = await getFacultyDetailsById(facultyId);
 
@@ -420,6 +425,50 @@ export const availableMail = asyncHandler(async (req, res, next) => {
             },
             "Email is available"
         )
+    );
+});
+
+// Public listing for students to view faculties
+export const listPublicFaculties = asyncHandler(async (req, res) => {
+    const { branch, search, limit = 50, page = 1 } = req.query;
+    const filter = {};
+
+    if (branch) filter.department = branch;
+    if (search) {
+        const regex = new RegExp(search, "i");
+        filter.$or = [
+            { firstName: regex },
+            { lastName: regex },
+            { email: regex },
+            { department: regex },
+            { specialization: regex }
+        ];
+    }
+
+    const skip = (parseInt(page) - 1) * parseInt(limit);
+
+    const [faculties, total, branches] = await Promise.all([
+        Faculty.find(filter)
+            .select("firstName lastName email department designation specialization imageUrl about")
+            .sort({ department: 1, firstName: 1 })
+            .limit(parseInt(limit))
+            .skip(skip)
+            .lean(),
+        Faculty.countDocuments(filter),
+        Faculty.distinct("department")
+    ]);
+
+    return res.status(200).json(
+        new ApiResponse(200, {
+            faculties,
+            branches,
+            pagination: {
+                total,
+                page: parseInt(page),
+                limit: parseInt(limit),
+                pages: Math.ceil(total / parseInt(limit))
+            }
+        }, "Faculties fetched successfully")
     );
 });
 

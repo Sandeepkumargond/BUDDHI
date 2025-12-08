@@ -56,8 +56,10 @@ export default function DepartmentDetailsPage() {
 
   // Derived data
   const [faculties, setFaculties] = useState([]);
+  const [feedbackAnalytics, setFeedbackAnalytics] = useState([]);
   
-  // Fetch department details from backend on mount
+  // Fetch faculty list from backend for this department
+  // Fetch department details from backend
   useEffect(() => {
     let mounted = true;
     (async () => {
@@ -115,6 +117,41 @@ export default function DepartmentDetailsPage() {
     })();
     return () => { mounted = false; };
   }, [localDept?.code, refreshTrigger]);
+
+  // Fetch feedback analytics for faculty ratings
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      try {
+        console.log('[DepartmentDetails] Fetching feedback analytics');
+        const res = await apiService.getFacultyFeedbackAnalytics();
+        const analytics = res?.data?.analytics || [];
+        if (mounted) {
+          console.log('[DepartmentDetails] Got analytics:', analytics);
+          setFeedbackAnalytics(analytics);
+        }
+      } catch (e) {
+        console.error('[DepartmentDetails] Failed to fetch analytics:', e.message);
+        if (mounted) setFeedbackAnalytics([]);
+      }
+    })();
+    return () => { mounted = false; };
+  }, []);
+
+  // Merge ratings into faculties when analytics updates
+  useEffect(() => {
+    if (feedbackAnalytics.length === 0 || faculties.length === 0) return;
+    
+    const updatedFaculties = faculties.map((faculty) => {
+      const analytic = feedbackAnalytics.find((a) => a.facultyId === faculty.id);
+      return {
+        ...faculty,
+        rating: analytic?.averageRating || null,
+      };
+    });
+    
+    setFaculties(updatedFaculties);
+  }, [feedbackAnalytics]);
 
   const [students, setStudents] = useState([]);
   useEffect(() => {
@@ -195,6 +232,7 @@ export default function DepartmentDetailsPage() {
     { header: "Designation", accessor: "designation", className: "hidden md:table-cell" },
     { header: "Email", accessor: "email", className: "hidden lg:table-cell" },
     { header: "Phone", accessor: "phone", className: "hidden lg:table-cell" },
+    { header: "Rating", accessor: "rating", className: "hidden md:table-cell" },
     { header: "Actions", accessor: "action" },
   ];
 
@@ -229,6 +267,12 @@ export default function DepartmentDetailsPage() {
       <td className="hidden md:table-cell p-4">{f.designation}</td>
       <td className="hidden lg:table-cell p-4">{f.email}</td>
       <td className="hidden lg:table-cell p-4">{f.phone}</td>
+      <td className="hidden md:table-cell p-4">
+        <div className="flex items-center gap-1">
+          <span className="text-yellow-500">★</span>
+          <span className="font-medium">{f.rating ? f.rating.toFixed(1) : 'N/A'}</span>
+        </div>
+      </td>
       <td className="p-4">
         <div className="flex items-center gap-2">
           <button className="text-sm px-3 py-1 rounded-md border border-gray-200 hover:bg-gray-50" onClick={() => openFacultyModal(f.id)}>View</button>
@@ -502,6 +546,23 @@ export default function DepartmentDetailsPage() {
                   <h3 className="text-lg font-semibold text-gray-700">Faculty</h3>
                   <p className="text-sm text-gray-500">Manage faculty members in this department.</p>
                 </div>
+                <button
+                  onClick={async () => {
+                    try {
+                      console.log('[DepartmentDetails] Refreshing ratings...');
+                      const res = await apiService.getFacultyFeedbackAnalytics();
+                      const analytics = res?.data?.analytics || [];
+                      console.log('[DepartmentDetails] Refreshed analytics:', analytics);
+                      setFeedbackAnalytics(analytics);
+                    } catch (e) {
+                      console.error('[DepartmentDetails] Failed to refresh ratings:', e.message);
+                      toast.error('Failed to refresh ratings');
+                    }
+                  }}
+                  className="px-4 py-2 rounded-lg bg-blue-100 text-blue-600 text-sm hover:bg-blue-200 transition font-medium"
+                >
+                  🔄 Refresh Ratings
+                </button>
               </div>
 
               <div className="bg-white rounded-xl border border-gray-100 overflow-hidden">
@@ -701,6 +762,11 @@ export default function DepartmentDetailsPage() {
                   <div className="text-gray-700">{Array.isArray(facultyDetails.designation) ? facultyDetails.designation.join(', ') : facultyDetails.designation}</div>
                   <div className="text-gray-500">Account Status</div>
                   <div className="text-gray-700">{facultyDetails.accountStatus}</div>
+                  <div className="text-gray-500">Rating</div>
+                  <div className="text-gray-700 flex items-center gap-2">
+                    <span className="text-yellow-500">★</span>
+                    <span>{facultyDetails.rating ? facultyDetails.rating.toFixed(1) : 'N/A'}</span>
+                  </div>
                 </div>
               </div>
             )}

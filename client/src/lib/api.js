@@ -89,7 +89,26 @@ class ApiService {
 
       return data;
     } catch (error) {
-      console.error('API request failed:', { message: error?.message, status: error?.status, url: error?.url, endpoint: error?.endpoint });
+      // Enhanced error logging
+      let message = error?.message;
+      if (!message || message === '') {
+        if (error instanceof TypeError) {
+          message = `Network error: Unable to reach ${url} - Check if server is running`;
+        } else {
+          message = 'Unknown error occurred';
+        }
+      }
+      
+      const errorInfo = {
+        message,
+        status: error?.status,
+        url: error?.url || url,
+        endpoint: error?.endpoint || endpoint,
+        type: error?.constructor?.name || typeof error
+      };
+      console.error('API request failed:', message);
+      console.error('Error details:', errorInfo);
+      console.error('Full error object:', error);
       throw error;
     }
   }
@@ -230,6 +249,10 @@ class ApiService {
     return this.request(`/admin/courses/${id}`, { method: 'DELETE' });
   }
 
+  async getAllCourses() {
+    return this.request('/admin/courses', { method: 'GET' });
+  }
+
   // Registration (admin)
   async adminCreateRegistrationForm(payload) {
     return this.request('/admin/registration-forms', { method: 'POST', body: payload });
@@ -262,6 +285,10 @@ class ApiService {
   // Faculty (admin)
   async getAllFaculty() {
     return this.request('/admin/get-all-faculty', { method: 'GET' });
+  }
+
+  async getAllFaculties() {
+    return this.getAllFaculty();
   }
 
   async createFaculty(payload) {
@@ -547,6 +574,13 @@ class ApiService {
     });
   }
 
+  // Public faculties (student view)
+  async listPublicFaculties(params = {}) {
+    const query = new URLSearchParams(params).toString();
+    const qs = query ? `?${query}` : '';
+    return this.request(`/faculty/public${qs}`, { method: 'GET' });
+  }
+
   // Faculty class notices
   async getFacultyClassNotices(params = {}) {
     const query = new URLSearchParams(params).toString();
@@ -565,6 +599,126 @@ class ApiService {
   // Study Material endpoints
   async getFacultyCourses() {
     return this.request('/study-materials/faculty/courses', {
+      method: 'GET'
+    });
+  }
+
+  // Feedback endpoints
+  async submitFeedback(feedbackData) {
+    return this.request('/student/submit-feedback', {
+      method: 'POST',
+      body: feedbackData
+    });
+  }
+
+  async getFacultyFeedback(facultyId, academicYear = null) {
+    const params = new URLSearchParams({ facultyId });
+    if (academicYear) params.append('academicYear', academicYear);
+    return this.request(`/faculty/${facultyId}/feedback?${params.toString()}`, {
+      method: 'GET'
+    });
+  }
+
+  async getAllFeedback(page = 1, limit = 10) {
+    return this.request(`/admin/feedback?page=${page}&limit=${limit}`, {
+      method: 'GET'
+    });
+  }
+
+  async deleteFeedback(feedbackId) {
+    return this.request(`/admin/feedback/${feedbackId}`, {
+      method: 'DELETE'
+    });
+  }
+
+  async getFacultyRating(facultyId) {
+    return this.request(`/faculty/${facultyId}/rating`, {
+      method: 'GET'
+    });
+  }
+
+  async getFacultyRatings() {
+    return this.request('/admin/faculty-ratings', {
+      method: 'GET'
+    });
+  }
+
+  // Feedback Form endpoints
+  async createFeedbackForm(formData) {
+    return this.request('/feedback/admin/feedback-forms', {
+      method: 'POST',
+      body: formData
+    });
+  }
+
+  async getAllFeedbackForms(filters = {}) {
+    const params = new URLSearchParams(filters).toString();
+    return this.request(`/feedback/admin/feedback-forms?${params}`, {
+      method: 'GET'
+    });
+  }
+
+  async getFeedbackFormById(formId) {
+    return this.request(`/feedback/student/feedback-forms/${formId}`, {
+      method: 'GET'
+    });
+  }
+
+  async getFeedbackFormByIdAdmin(formId) {
+    return this.request(`/feedback/admin/feedback-forms/${formId}`, {
+      method: 'GET'
+    });
+  }
+
+  async updateFeedbackForm(formId, formData) {
+    return this.request(`/feedback/admin/feedback-forms/${formId}`, {
+      method: 'PATCH',
+      body: formData
+    });
+  }
+
+  async deleteFeedbackForm(formId) {
+    return this.request(`/feedback/admin/feedback-forms/${formId}`, {
+      method: 'DELETE'
+    });
+  }
+
+  async activateFeedbackForm(formId) {
+    return this.request(`/feedback/admin/feedback-forms/${formId}/activate`, {
+      method: 'PATCH'
+    });
+  }
+
+  async closeFeedbackForm(formId) {
+    return this.request(`/feedback/admin/feedback-forms/${formId}/close`, {
+      method: 'PATCH'
+    });
+  }
+
+  async getFeedbackFormsForStudent(filters = {}) {
+    const params = new URLSearchParams(filters).toString();
+    return this.request(`/feedback/student/feedback-forms?${params}`, {
+      method: 'GET'
+    });
+  }
+
+  async submitFeedbackForm(feedbackData) {
+    return this.request('/feedback/student/feedback-forms/submit', {
+      method: 'POST',
+      body: feedbackData
+    });
+  }
+
+  // Faculty feedback analytics
+  async getFacultyFeedbackAnalytics(filters = {}) {
+    const queryStr = new URLSearchParams(filters).toString();
+    return this.request(`/feedback/admin/faculty-analytics${queryStr ? '?' + queryStr : ''}`, {
+      method: 'GET'
+    });
+  }
+
+  async getFacultyFeedbackDetails(facultyId) {
+    return this.request(`/feedback/admin/faculty/${facultyId}/feedback`, {
       method: 'GET'
     });
   }

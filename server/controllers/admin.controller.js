@@ -367,22 +367,12 @@ export const createStudent = asyncHandler(async (req, res, next) => {
     }
 
 
-    // Build OR conditions only for non-empty values
-    const orConditions = [];
-    if (email) orConditions.push({ email });
-    if (personalMail) orConditions.push({ personalMail });
-    if (registrationNumber) orConditions.push({ registrationNumber });
+    const existingStudent = await Student.findOne(
+        { $or: [{ email }, { personalMail }, { registrationNumber }] }
+    );
 
-    if (orConditions.length > 0) {
-        const existingStudent = await Student.findOne({ $or: orConditions });
-        if (existingStudent) {
-            // Provide specific error message
-            let conflictField = '';
-            if (existingStudent.email === email) conflictField = 'email';
-            else if (existingStudent.personalMail === personalMail) conflictField = 'personal email';
-            else if (existingStudent.registrationNumber === registrationNumber) conflictField = 'registration number';
-            throw new ApiError(400, `Student with this ${conflictField} already exists`);
-        }
+    if (existingStudent) {
+        throw new ApiError(400, "Student with provided email, personal mail or registration number already exists");
     }
 
     if (!rollPrefixMap[program] || !rollPrefixMap[program][branch]) {
