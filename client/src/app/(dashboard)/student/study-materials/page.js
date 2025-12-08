@@ -2,8 +2,10 @@
 
 import { useEffect, useState } from "react";
 import { apiService } from "@/lib/api";
+import { useAuth } from "@/context/AuthContext";
 
 export default function StudentStudyMaterialsPage() {
+  const { user } = useAuth();
   const [semester, setSemester] = useState("");
   const [course, setCourse] = useState("");
   const [courseOptions, setCourseOptions] = useState([]);
@@ -60,8 +62,14 @@ export default function StudentStudyMaterialsPage() {
       const query = new URLSearchParams(params).toString();
       const res = await apiService.request(`/study-materials/student${query ? `?${query}` : ""}`);
       const list = res?.data?.materials || res?.materials || [];
-      // Server already applies filters and audience targeting; just set safely
-      setMaterials(Array.isArray(list) ? list : []);
+      // Annotate with submitted state based on server-side submissions for current user
+      const uid = user?._id || user?.id;
+      const annotated = Array.isArray(list) ? list.map((m) => {
+        const subs = Array.isArray(m.submissions) ? m.submissions : [];
+        const hasMine = uid ? subs.some((s) => String(s.studentId) === String(uid)) : false;
+        return { ...m, _submitted: hasMine };
+      }) : [];
+      setMaterials(annotated);
     } catch (err) {
       setError(err?.message || "Failed to fetch materials");
     } finally {
@@ -93,7 +101,8 @@ export default function StudentStudyMaterialsPage() {
     if (!file) return alert("Please choose a file");
     try {
       const fd = new FormData();
-      fd.append("materialId", item.id || item._id);
+      const id = item.id || item._id;
+      fd.append("materialId", id);
       // Only assignments/homework are submittable; infer from materialType
       const submitType = (item.materialType === 'assignment') ? 'assignment' : (item.materialType === 'homework' ? 'homework' : 'assignment');
       fd.append("type", submitType);
@@ -101,6 +110,8 @@ export default function StudentStudyMaterialsPage() {
       // You can attach optional text answers, links, etc.
       const res = await apiService.request("/study-materials/student/submit", { method: "POST", body: fd });
       alert(res?.message || "Submitted successfully");
+      // Mark locally as submitted in state; disable the button and clear selected file
+      setMaterials((prev) => prev.map((m) => ((m.id || m._id) === id) ? { ...m, _submitted: true, _selectedFile: undefined } : m));
     } catch (err) {
       alert(err?.message || "Submission failed");
     }
@@ -108,6 +119,7 @@ export default function StudentStudyMaterialsPage() {
 
   const MaterialRow = ({ item }) => {
     const isInteractive = item.materialType === "assignment" || item.materialType === "homework";
+    const submitted = item._submitted === true;
     return (
       <div className="rounded-xl p-4 bg-white" style={{ border: "1px solid #e5e7eb", boxShadow: "0 6px 18px rgba(2,6,23,0.06)" }}>
         <div className="flex justify-between items-center">
@@ -137,13 +149,24 @@ export default function StudentStudyMaterialsPage() {
 
         {isInteractive && (
           <div className="mt-4">
-            <label className="block text-sm mb-2">Submit your {item.type}</label>
-            <input type="file" className="border rounded p-2 w-full" onChange={(e) => item._selectedFile = e.target.files?.[0]} />
+            <label className="block text-sm mb-2">{submitted ? 'Submission status: Submitted' : `Submit your ${item.materialType}`}</label>
+            {!submitted && (
+              <input
+                type="file"
+                className="border rounded p-2 w-full"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  const id = item.id || item._id;
+                  setMaterials((prev) => prev.map((m) => ((m.id || m._id) === id) ? { ...m, _selectedFile: file } : m));
+                }}
+              />
+            )}
             <div className="flex justify-end mt-2">
-              <button onClick={() => handleSubmit(item, item._selectedFile)}
+              <button onClick={() => !submitted && handleSubmit(item, item._selectedFile)}
+                      disabled={submitted}
                       className="px-4 py-2 rounded-md text-white"
-                      style={{ background: "#22c55e" }}>
-                Submit
+                      style={{ background: submitted ? "#94a3b8" : "#22c55e" }}>
+                {submitted ? 'Submitted' : 'Submit'}
               </button>
             </div>
           </div>
