@@ -6,9 +6,9 @@ const DonutProgress = ({ size = 112, percentage = 0, label = "", count = 0 }) =>
       return "#FF4D4D"; // Red
     }
     if (lowerLabel.includes("verge")) {
-      return "#FFC107"; // Yellow
+      return "#F9DB66"; // Light yellow
     }
-    return "#4CAF50"; // Green (normal)
+    return "#90EE90"; // Light green (normal)
   };
 
   const color = getColorFromLabel(label);

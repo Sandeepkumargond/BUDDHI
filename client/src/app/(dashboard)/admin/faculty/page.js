@@ -14,18 +14,43 @@ export default function FacultyManagement() {
   const [showAssignModal, setShowAssignModal] = useState(false);
   const [selectedFaculty, setSelectedFaculty] = useState(null);
   const [expandedFacultyId, setExpandedFacultyId] = useState(null);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filterDepartment, setFilterDepartment] = useState('all');
+  const [feedbackAnalytics, setFeedbackAnalytics] = useState([]);
 
   useEffect(() => {
     fetchFaculty();
     fetchDepartments();
     fetchAllCourses();
+    fetchFeedbackAnalytics();
   }, []);
+
+  useEffect(() => {
+    // Update faculty list with ratings when analytics changes
+    if (feedbackAnalytics && feedbackAnalytics.length > 0) {
+      console.log('[FacultyManagement] Updating faculty list with analytics');
+      setFacultyList(prevList => 
+        prevList.map(f => {
+          const analytics = feedbackAnalytics.find(a => 
+            a.facultyId === f._id.toString() || a.facultyId === f._id
+          );
+          return {
+            ...f,
+            rating: analytics?.averageRating || null,
+            feedbackSubmissions: analytics?.totalSubmissions || 0
+          };
+        })
+      );
+    }
+  }, [feedbackAnalytics]);
 
   const fetchFaculty = async () => {
     setLoading(true);
     try {
       const response = await apiService.getAllFaculty();
-      setFacultyList(response.data?.faculty || []);
+      let faculty = response.data?.faculty || [];
+      
+      setFacultyList(faculty);
     } catch (error) {
       showToast.error("Failed to fetch faculty");
     } finally {
@@ -48,6 +73,19 @@ export default function FacultyManagement() {
       setCourses(response.data?.courses || []);
     } catch (error) {
       console.error("Failed to fetch courses:", error);
+    }
+  };
+
+  const fetchFeedbackAnalytics = async () => {
+    try {
+      console.log('[FacultyManagement] Fetching feedback analytics...');
+      const response = await apiService.getFacultyFeedbackAnalytics();
+      console.log('[FacultyManagement] Analytics response:', response);
+      const analytics = response.data?.analytics || response?.analytics || [];
+      console.log('[FacultyManagement] Setting analytics:', analytics);
+      setFeedbackAnalytics(analytics);
+    } catch (error) {
+      console.error("Failed to fetch feedback analytics:", error.message || error);
     }
   };
 
@@ -132,23 +170,91 @@ export default function FacultyManagement() {
     setShowAssignModal(true);
   };
 
+  // Get unique departments from faculty data for the filter
+  const uniqueDepartments = [...new Set(facultyList.map(f => f.department))].filter(Boolean).sort();
+
+  // Filter faculty based on search term and department
+  const filteredFacultyList = facultyList.filter((faculty) => {
+    const matchesSearch = searchTerm === '' || 
+      faculty.firstName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      faculty.lastName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      faculty.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      faculty.facultyId.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    let matchesDepartment = filterDepartment === 'all';
+    if (filterDepartment !== 'all') {
+      // Match department by name string directly
+      matchesDepartment = faculty.department === filterDepartment;
+    }
+    
+    return matchesSearch && matchesDepartment;
+  });
+
   return (
     <div className="p-6">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold">Faculty Management</h1>
-        <button
-          onClick={() => setShowAddModal(true)}
-          className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
-        >
-          + Add Faculty
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={() => {
+              console.log('🔄 Manually refreshing analytics...');
+              fetchFeedbackAnalytics();
+            }}
+            className="px-4 py-2 bg-yellow-100 text-yellow-800 rounded-lg hover:bg-yellow-200 font-medium text-sm"
+            title="Manually refresh faculty ratings"
+          >
+            🔄 Refresh Ratings
+          </button>
+          <button
+            onClick={() => setShowAddModal(true)}
+            className="px-4 py-2 bg-[#C3EBFA] text-gray-600 rounded-lg hover:bg-[#A8DBF2] font-medium"
+          >
+            + Add Faculty
+          </button>
+        </div>
+      </div>
+
+      {/* Search and Filter Section */}
+      <div className="bg-white rounded-lg shadow p-4 mb-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Search Faculty</label>
+            <input
+              type="text"
+              placeholder="Search by name, ID, or email..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Filter by Department</label>
+            <select
+              value={filterDepartment}
+              onChange={(e) => setFilterDepartment(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="all">All Departments</option>
+              {uniqueDepartments.map((dept) => (
+                <option key={dept} value={dept}>
+                  {dept}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="flex items-end">
+            <div className="text-sm text-gray-600 font-medium">
+              Showing {filteredFacultyList.length} of {facultyList.length} faculty
+            </div>
+          </div>
+        </div>
       </div>
 
       {loading ? (
         <div className="text-center py-12">Loading faculty...</div>
-      ) : facultyList.length === 0 ? (
+      ) : filteredFacultyList.length === 0 ? (
         <div className="text-center py-12 text-gray-500">
-          No faculty members found. Add one to get started.
+          {facultyList.length === 0 ? 'No faculty members found. Add one to get started.' : 'No faculty members match your search criteria.'}
         </div>
       ) : (
         <div className="bg-white rounded-lg shadow overflow-hidden">
@@ -160,11 +266,12 @@ export default function FacultyManagement() {
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Email</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Department</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Assigned Courses</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Rating</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
-              {facultyList.map((faculty) => (
+              {filteredFacultyList.map((faculty) => (
                 <>
                   <tr key={faculty._id} className="hover:bg-gray-50">
                     <td className="px-6 py-4 whitespace-nowrap text-sm">{faculty.facultyId}</td>
@@ -192,6 +299,12 @@ export default function FacultyManagement() {
                       >
                         {faculty.assignedCourses?.filter(c => c.isActive).length || 0} course(s)
                       </button>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm">
+                      <div className="flex items-center gap-2">
+                        <span className="text-yellow-500">★</span>
+                        <span className="font-medium">{faculty.rating ? faculty.rating.toFixed(1) : 'N/A'}</span>
+                      </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm space-x-2">
                       <button

@@ -344,13 +344,13 @@ export default function AdminAdmitCardPublishPage() {
                   </div>
                 </div>
                 <div className="flex lg:justify-end">
-                  <button type="button" className="px-3 py-2 bg-red-600 text-white rounded" onClick={() => removeRow(idx)}>
+                  <button type="button" className="px-3 py-2 bg-red-200 text-red-700 rounded hover:bg-red-300" onClick={() => removeRow(idx)}>
                     Remove
                   </button>
                 </div>
               </div>
             ))}
-            <button type="button" className="px-4 py-2 bg-gray-700 text-white rounded" onClick={addRow}>
+            <button type="button" className="px-4 py-2 bg-[#C3EBFA] text-gray-600 rounded hover:bg-[#A8DBF2]" onClick={addRow}>
               + Add Row
             </button>
           </div>
@@ -391,7 +391,7 @@ export default function AdminAdmitCardPublishPage() {
 
         <div className="flex gap-3">
           <button onClick={onPreview} className="px-4 py-2 bg-blue-600 text-white rounded">Preview</button>
-          <button onClick={onPublish} disabled={!isValid || publishing} className={`px-4 py-2 rounded text-white ${(!isValid || publishing) ? 'bg-green-400 cursor-not-allowed' : 'bg-green-600 hover:bg-green-700'}`}>
+          <button onClick={onPublish} disabled={!isValid || publishing} className={`px-4 py-2 rounded ${(!isValid || publishing) ? 'bg-green-200 text-green-600 cursor-not-allowed' : 'bg-green-200 text-green-700 hover:bg-green-300'}`}>
             {publishing ? 'Publishing…' : 'Publish'}
           </button>
         </div>

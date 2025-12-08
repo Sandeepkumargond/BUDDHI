@@ -6,6 +6,7 @@ const roomSchema = new mongoose.Schema(
     occupied: { type: Boolean, default: false },
     student: { type: mongoose.Schema.Types.ObjectId, ref: "Student", default: null },
     floor: { type: Number, default: 0 },
+    floorLabel: { type: String, enum: ["Ground", "First", "Second", "Third", "Fourth", "Fifth", "Sixth", "Seventh", "Eighth", "Ninth", "Tenth"], default: "Ground" },
   },
   { _id: false }
 );

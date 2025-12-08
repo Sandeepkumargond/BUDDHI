@@ -539,7 +539,7 @@ export default function AttendancePage() {
                 <button
                   onClick={loadMonthlyAttendance}
                   disabled={!classInfo.courseId || monthlyLoading}
-                  className="w-full px-6 py-4 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed font-semibold text-lg shadow-lg hover:shadow-xl transition-all"
+                  className="w-full px-6 py-4 bg-[#C3EBFA] text-gray-600 rounded-lg hover:bg-[#A8DBF2] disabled:bg-gray-300 disabled:cursor-not-allowed font-semibold text-lg shadow-lg hover:shadow-xl transition-all"
                 >
                   {monthlyLoading ? "Loading Attendance..." : "Load Monthly Attendance →"}
                 </button>

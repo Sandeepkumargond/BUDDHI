@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 // React Icons imports for sidebar items
-import { MdDashboard, MdAppRegistration, MdPayment, MdAnnouncement, MdPendingActions, MdAssessment } from "react-icons/md";
+import { MdDashboard, MdAppRegistration, MdPayment, MdAnnouncement, MdPendingActions, MdAssessment, MdFeedback } from "react-icons/md";
 import { FaIdCard, FaGraduationCap, FaClipboardCheck, FaCommentDots, FaBookOpen, FaMoneyBillWave, FaChalkboardTeacher, FaUserGraduate, FaUserShield, FaBuilding, FaUserPlus, FaUserEdit, FaUniversity, FaBed } from "react-icons/fa";
 import { FiSettings } from "react-icons/fi";
 
@@ -93,6 +93,25 @@ const menusByRole = {
       ]
     },
     { Icon: MdAnnouncement, label: "Notice Management", href: "/admin/notices" },
+    {
+      Icon: MdFeedback,
+      label: "Feedback Forms",
+      isDropdown: true,
+      subItems: [
+        { label: "All Forms", href: "/admin/feedback-forms" },
+        { label: "Create Form", href: "/admin/feedback-forms/create" }
+      ]
+    },
+    {
+      Icon: FiSettings,
+      label: "Settings",
+      isDropdown: true,
+      subItems: [
+        { label: "General", href: "/admin/settings" },
+        { label: "Razorpay", href: "/admin/settings/razorpay" }
+      ]
+    },
+
   ],
 
   subadmin: [

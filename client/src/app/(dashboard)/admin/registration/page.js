@@ -134,7 +134,7 @@ export default function AdminRegistrationFormPage() {
           )}
         </div>
 
-        <button type="submit" disabled={loading} className="px-4 py-2 bg-green-600 text-white rounded">
+        <button type="submit" disabled={loading} className="px-4 py-2 bg-green-200 text-green-700 rounded hover:bg-green-300">
           {loading ? 'Creating…' : 'Create Draft Form'}
         </button>
       </form>
