@@ -7,6 +7,37 @@ export default function FacultyMaterialSubmissions({ materialId }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
+  const fileHref = (raw) => {
+    if (!raw) return "#";
+    let p = String(raw);
+    // absolute URL -> return as is
+    if (/^https?:\/\//i.test(p)) return p;
+    // normalize backslashes (Windows)
+    p = p.replace(/\\\\/g, "/").replace(/\\/g, "/");
+    // ensure leading slash for 'public' paths
+    if (p.startsWith("public")) p = `/${p}`;
+    // if it's under /public, prefix with backend origin
+    if (p.startsWith("/public")) {
+      try {
+        const explicit = process.env.NEXT_PUBLIC_API_BASE_URL || "";
+        if (explicit) {
+          const base = explicit.replace(/\/api(\/v1)?$/, "");
+          return `${base}${p}`;
+        }
+      } catch {}
+      // Fallback: prefer localhost:5000 in dev when frontend is :3000
+      if (typeof window !== "undefined" && /:\\b3000\\b/.test(window.location.host)) {
+        return `http://localhost:5000${p}`;
+      }
+      // Otherwise, derive from apiService.baseURL
+      try {
+        const base = apiService.baseURL.replace(/\/api(\/v1)?$/, "");
+        return `${base}${p}`;
+      } catch {}
+    }
+    return p;
+  };
+
   useEffect(() => {
     if (!materialId) return;
     const fetchSubs = async () => {
@@ -50,7 +81,7 @@ export default function FacultyMaterialSubmissions({ materialId }) {
                 </div>
               </div>
                       {s.fileUrl && (
-                        <a href={(s.fileUrl.startsWith('/public') || s.fileUrl.startsWith('public')) ? `${apiService.baseURL.replace(/\/api\/v1$/, '')}${s.fileUrl.startsWith('public') ? `/${s.fileUrl}` : s.fileUrl}` : s.fileUrl} target="_blank" rel="noopener noreferrer" className="px-3 py-1 rounded-md text-white" style={{ background: "#0ea5e9" }}>
+                        <a href={fileHref(s.fileUrl)} target="_blank" rel="noopener noreferrer" className="px-3 py-1 rounded-md text-white" style={{ background: "#0ea5e9" }}>
                   View
                 </a>
               )}
