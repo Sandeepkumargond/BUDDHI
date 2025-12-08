@@ -221,133 +221,101 @@ export default function AdmitCardPage() {
         <div className="text-sm text-red-600">{message}</div>
       ) : null}
 
-      {/* TOP ROW */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-
-        {/* STUDENT DETAILS */}
-        <div className="bg-white shadow-lg rounded-xl p-5 border">
-          <div
-            className="rounded-lg px-4 py-2 mb-4 font-semibold"
-            style={{ background: "#CFCEFF" }}
-          >
-            Student Details
-          </div>
-
-          <div className="flex items-center gap-4">
-            <Image
-              src={admitCardStudent.photo || "/avatar.png"}
-              width={90}
-              height={90}
-              alt="student"
-              className="rounded-lg object-cover"
-            />
-            <div>
-              <p className="font-semibold text-lg">{admitCardStudent.name}</p>
-              <p>Roll No: {admitCardStudent.rollNo}</p>
-              <p>Enrollment: {admitCardStudent.enrolmentNo}</p>
-              <p>Course: {admitCardStudent.course}</p>
-              <p>Year/Sem: {admitCardStudent.year} / Sem {admitCardStudent.semester}</p>
+      {/* Consolidated Admit Card */}
+      <div className="rounded-xl bg-white" style={{ border: "1px solid #e5e7eb", boxShadow: "0 6px 18px rgba(2,6,23,0.06)" }}>
+        <div className="p-5 space-y-0" style={{ color: "#0f172a" }}>
+          {/* Student Details */}
+          <section className="pb-6">
+            <h3 className="text-base md:text-lg font-semibold mb-3 inline-block px-3 py-2 rounded-md" style={{ color: "#3730a3", background: "#eef2ff", border: "1px solid #e5e7eb" }}>Student Details</h3>
+            <div className="flex items-center gap-4">
+              <Image src={admitCardStudent.photo || "/avatar.png"} width={90} height={90} alt="student" className="rounded-lg object-cover" />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                <p><strong>Name:</strong> {admitCardStudent.name}</p>
+                <p><strong>Roll No:</strong> {admitCardStudent.rollNo}</p>
+                <p><strong>Enrollment:</strong> {admitCardStudent.enrolmentNo}</p>
+                <p><strong>Course:</strong> {admitCardStudent.course}</p>
+                <p><strong>Year/Sem:</strong> {admitCardStudent.year} / Sem {admitCardStudent.semester}</p>
+              </div>
             </div>
-          </div>
+          </section>
+
+          {/* Divider */}
+          <div className="border-t" style={{ borderColor: "#e5e7eb" }}></div>
+
+          {/* Exam Session Details */}
+          <section className="py-6">
+            <h3 className="text-base md:text-lg font-semibold mb-3 inline-block px-3 py-2 rounded-md" style={{ color: "#3730a3", background: "#eef2ff", border: "1px solid #e5e7eb" }}>Exam Session</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+              <p><strong>Exam Type:</strong> {examSession.type}</p>
+              <p><strong>Session:</strong> {examSession.session}</p>
+              <p><strong>Exam Center:</strong> {examSession.examCenter}</p>
+              <p><strong>Center Code:</strong> {examSession.centerCode}</p>
+              <p><strong>Reporting Time:</strong> {examSession.reportingTime}</p>
+              <p><strong>Gate Close:</strong> {examSession.gateClose}</p>
+            </div>
+          </section>
+
+          {/* Divider */}
+          <div className="border-t" style={{ borderColor: "#e5e7eb" }}></div>
+
+          {/* Coordinator Details */}
+          <section className="py-6">
+            <h3 className="text-base md:text-lg font-semibold mb-3 inline-block px-3 py-2 rounded-md" style={{ color: "#3730a3", background: "#eef2ff", border: "1px solid #e5e7eb" }}>Coordinator Details</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+              <p><strong>Name:</strong> {examCoordinator.name}</p>
+              <p><strong>Phone:</strong> {examCoordinator.phone}</p>
+              <p><strong>Email:</strong> {examCoordinator.email}</p>
+              <p><strong>Office:</strong> {examCoordinator.office}</p>
+            </div>
+          </section>
+
+          {/* Divider */}
+          <div className="border-t" style={{ borderColor: "#e5e7eb" }}></div>
+
+          {/* Instructions */}
+          <section className="py-6">
+            <h3 className="text-base md:text-lg font-semibold mb-3 inline-block px-3 py-2 rounded-md" style={{ color: "#3730a3", background: "#eef2ff", border: "1px solid #e5e7eb" }}>Important Instructions</h3>
+            <ul className="list-disc ml-6 space-y-2">
+              {examInstructions.map((i, index) => (
+                <li key={index}>{i}</li>
+              ))}
+            </ul>
+          </section>
+
+          {/* Divider */}
+          <div className="border-t" style={{ borderColor: "#e5e7eb" }}></div>
+
+          {/* Exam Schedule at bottom */}
+          <section className="py-6">
+            <h3 className="text-base md:text-lg font-semibold mb-3 inline-block px-3 py-2 rounded-md" style={{ color: "#3730a3", background: "#eef2ff", border: "1px solid #e5e7eb" }}>Exam Schedule</h3>
+            <div className="overflow-x-auto">
+              <table className="w-full border-collapse">
+                <thead>
+                  <tr className="bg-gray-200 text-center">
+                    <th className="border p-2">Date</th>
+                    <th className="border p-2">Code</th>
+                    <th className="border p-2">Subject</th>
+                    <th className="border p-2">Time</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {examSchedule.map((exam, index) => (
+                    <tr key={index} className="text-center">
+                      <td className="border p-2">{exam.date}</td>
+                      <td className="border p-2">{exam.code}</td>
+                      <td className="border p-2">{exam.name}</td>
+                      <td className="border p-2">{exam.time}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <div className="flex justify-end gap-3 mt-4">
+              <button onClick={openPreview} className="bg-blue-600 text-white px-5 py-2 rounded-md hover:bg-blue-700">Preview Admit Card</button>
+              <button onClick={downloadPDF} className="bg-green-600 text-white px-5 py-2 rounded-md hover:bg-green-700">Download Admit Card (PDF)</button>
+            </div>
+          </section>
         </div>
-
-        {/* EXAM SESSION */}
-        <div className="bg-white shadow-lg rounded-xl p-5 border">
-          <div
-            className="rounded-lg px-4 py-2 mb-4 font-semibold"
-            style={{ background: "#C3EBFA" }}
-          >
-            Exam Session Details
-          </div>
-
-          <p><strong>Exam Type:</strong> {examSession.type}</p>
-          <p><strong>Session:</strong> {examSession.session}</p>
-          <p><strong>Exam Center:</strong> {examSession.examCenter}</p>
-          <p><strong>Center Code:</strong> {examSession.centerCode}</p>
-          <p><strong>Reporting Time:</strong> {examSession.reportingTime}</p>
-          <p><strong>Gate Close:</strong> {examSession.gateClose}</p>
-        </div>
-
-      </div>
-
-      {/* EXAM SCHEDULE CENTER */}
-      <div className="bg-white shadow-lg rounded-xl p-5 border">
-        <h2 className="font-semibold text-lg mb-4 text-center">Exam Schedule</h2>
-
-        <table className="w-full border-collapse">
-          <thead>
-            <tr className="bg-gray-200 text-center">
-              <th className="border p-2">Date</th>
-              <th className="border p-2">Code</th>
-              <th className="border p-2">Subject</th>
-              <th className="border p-2">Time</th>
-            </tr>
-          </thead>
-
-          <tbody>
-            {examSchedule.map((exam, index) => (
-              <tr key={index} className="text-center">
-                <td className="border p-2">{exam.date}</td>
-                <td className="border p-2">{exam.code}</td>
-                <td className="border p-2">{exam.name}</td>
-                <td className="border p-2">{exam.time}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-
-      {/* BUTTONS BELOW SCHEDULE */}
-      <div className="flex gap-4 justify-center mt-2">
-        <button
-          onClick={openPreview}
-          className="bg-blue-600 text-white px-6 py-2 rounded-lg shadow hover:bg-blue-700"
-        >
-          Preview Admit Card
-        </button>
-
-        <button
-          onClick={downloadPDF}
-          className="bg-green-600 text-white px-6 py-2 rounded-lg shadow hover:bg-green-700"
-        >
-          Download Admit Card (PDF)
-        </button>
-      </div>
-
-      {/* BOTTOM ROW — COORDINATOR + INSTRUCTIONS */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-
-        {/* COORDINATOR DETAILS */}
-        <div className="bg-white shadow-lg rounded-xl p-5 border">
-          <div
-            className="rounded-lg px-4 py-2 mb-4 font-semibold"
-            style={{ background: "#FAE27C" }}
-          >
-            Coordinator Details
-          </div>
-
-          <p><strong>Name:</strong> {examCoordinator.name}</p>
-          <p><strong>Phone:</strong> {examCoordinator.phone}</p>
-          <p><strong>Email:</strong> {examCoordinator.email}</p>
-          <p><strong>Office:</strong> {examCoordinator.office}</p>
-        </div>
-
-        {/* INSTRUCTIONS */}
-        <div className="bg-white shadow-lg rounded-xl p-5 border">
-          <div
-            className="rounded-lg px-4 py-2 mb-4 font-semibold"
-            style={{ background: "#CFCEFF" }}
-          >
-            Important Instructions
-          </div>
-
-          <ul className="list-disc ml-6 space-y-2">
-            {examInstructions.map((i, index) => (
-              <li key={index}>{i}</li>
-            ))}
-          </ul>
-        </div>
-
       </div>
     </div>
   );
