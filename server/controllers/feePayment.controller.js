@@ -2,6 +2,7 @@ import asyncHandler from "../utils/asyncHandler.js";
 import ApiResponse from "../utils/ApiResponse.js";
 import ApiError from "../utils/ApiError.js";
 import { FeePayment } from "../models/feePayment.model.js";
+import { Student } from "../models/student.model.js";
 import { getStudentDetailsById } from "./student.controller.js";
 import { uploadImageOnImageKit } from "../utils/ImageKit.js";
 
@@ -105,40 +106,35 @@ export const listMyFeePayments = asyncHandler(async (req, res) => {
 });
 
 export const getMyFeePaymentReceipt = asyncHandler(async (req, res) => {
-  const studentId = req.user?._id;
+  const student = req.user;
+  if (!student) throw new ApiError(401, "Unauthorized");
+
   const { id } = req.params;
-  const doc = await FeePayment.findById(id);
-  if (!doc || String(doc.student) !== String(studentId)) {
-    throw new ApiError(404, "Fee payment not found");
-  }
+  if (!id) throw new ApiError(400, "Receipt id is required");
 
-  const student = req.user; // already loaded by authenticateStudent
+  const fp = await FeePayment.findOne({ docType: "payment", id, student: student._id }).lean();
+  if (!fp) throw new ApiError(404, "Receipt not found");
 
-  const receipt = {
-    receiptNo: doc.id,
-    session: doc.session,
-    feeHead: doc.feeHead,
-    amount: doc.amount,
-    paymentMode: doc.paymentMode,
-    transaction: {
-      id: doc.transactionId,
-      date: doc.transactionDate,
-      status: doc.transactionStatus,
-      bankName: doc.bankName || null,
+  return res.json({
+    success: true,
+    data: {
+      id: fp.id,
+      session: fp.session,
+      feeHead: fp.feeHead,
+      amount: fp.amount,
+      transactionId: fp.transactionId,
+      transactionStatus: fp.transactionStatus,
+      transactionDate: fp.transactionDate,
+      receiptNumber: fp.receiptNumber,
+      generatedAt: fp.generatedAt,
+      studentName: fp.studentName,
+      enrollmentNo: fp.enrollmentNo,
+      program: fp.program,
+      semester: fp.semester,
+      paymentMode: fp.paymentMode,
+      razorpay: fp.razorpayData,
     },
-    student: {
-      name: `${student.firstName} ${student.lastName}`.trim(),
-      enrollmentNo: student.enrollmentNo,
-      rollNo: student.rollNo,
-      semester: student.semester,
-      program: student.program,
-      branch: student.branch,
-    },
-    imageUrl: doc.imageUrl,
-    createdAt: doc.createdAt,
-  };
-
-  return res.status(200).json(new ApiResponse(200, receipt, "Receipt generated"));
+  });
 });
 
 // Admin endpoints
@@ -241,6 +237,35 @@ export const adminPublishFeeStructure = asyncHandler(async (req, res) => {
   doc.published = true;
   await doc.save();
   return res.status(200).json(new ApiResponse(200, doc, 'Fee structure published'));
+});
+
+export const adminUpdateFeeStructure = asyncHandler(async (req, res) => {
+  const adminId = req.user?._id;
+  if (!adminId) throw new ApiError(401, "Unauthorized");
+
+  const { id } = req.params;
+  const { branch, semester, session, category, feeHeads, published } = req.body || {};
+
+  const doc = await FeePayment.findById(id);
+  if (!doc || doc.docType !== 'structure') throw new ApiError(404, 'Fee structure not found');
+
+  // Update fields
+  if (branch) doc.branch = String(branch).trim().toUpperCase();
+  if (semester !== undefined) doc.semester = semester;
+  if (session) doc.session = session;
+  if (category !== undefined) doc.category = String(category).toLowerCase();
+  if (Array.isArray(feeHeads)) doc.feeHeads = feeHeads;
+  if (published !== undefined) doc.published = !!published;
+
+  await doc.save();
+  return res.status(200).json(new ApiResponse(200, doc, 'Fee structure updated'));
+});
+
+export const adminDeleteFeeStructure = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const doc = await FeePayment.findByIdAndDelete(id);
+  if (!doc || doc.docType !== 'structure') throw new ApiError(404, 'Fee structure not found');
+  return res.status(200).json(new ApiResponse(200, doc, 'Fee structure deleted'));
 });
 
 export const getMyApplicableFeeStructure = asyncHandler(async (req, res) => {
@@ -354,4 +379,96 @@ export const getMyApplicableFeeStructures = asyncHandler(async (req, res) => {
   });
 
   return res.status(200).json(new ApiResponse(200, { items: shaped, count: shaped.length }, 'Published fee structures'));
+});
+
+export const getStudentFeeRecords = asyncHandler(async (req, res) => {
+  // Fetch all students matching published fee structures with their payment status
+  
+  // Step 1: Get all published fee structures
+  const structures = await FeePayment.find({
+    docType: 'structure',
+    published: true,
+  }).lean();
+
+  if (!structures || structures.length === 0) {
+    return res.status(200).json(new ApiResponse(200, { records: [], count: 0 }, 'No fee structures available'));
+  }
+
+  // Step 2: Collect all branch-semester pairs from published structures
+  const structureMap = new Map(); // Key: "branch-semester-session", Value: structure object
+  
+  structures.forEach(struct => {
+    const key = `${struct.branch}-${struct.semester}-${struct.session}`;
+    if (!structureMap.has(key)) {
+      structureMap.set(key, struct);
+    }
+  });
+
+  // Step 3: Fetch all students matching the structure criteria
+  const studentRecords = [];
+  
+  for (const [key, structure] of structureMap) {
+    const [branch, semester, session] = key.split('-');
+    
+    // Find students matching this branch and semester
+    const students = await Student.find({
+      branch: branch,
+      semester: Number(semester),
+      accountStatus: 'approved'
+    }).lean();
+
+    if (students.length === 0) continue;
+
+    // For each student, calculate their payment status
+    for (const student of students) {
+      const totalAmount = structure.feeHeads?.reduce((sum, head) => sum + (Number(head.amount) || 0), 0) || 0;
+      
+      // Find payment records for this student
+      const payments = await FeePayment.find({
+        docType: 'payment',
+        student: student._id,
+        session: session,
+      }).lean();
+
+      const paidAmount = payments.reduce((sum, payment) => {
+        if (payment.transactionStatus === 'success' || payment.transactionStatus === 'completed') {
+          return sum + (Number(payment.amount) || 0);
+        }
+        return sum;
+      }, 0);
+
+      const pendingAmount = Math.max(0, totalAmount - paidAmount);
+      
+      // Determine status
+      let status = 'Pending';
+      if (paidAmount >= totalAmount) {
+        status = 'Paid';
+      } else if (paidAmount > 0) {
+        status = 'Partial';
+      }
+
+      studentRecords.push({
+        studentId: student._id,
+        enrollmentNo: student.enrollmentNo,
+        rollNo: student.rollNo,
+        firstName: student.firstName,
+        lastName: student.lastName,
+        branch: student.branch,
+        semester: student.semester,
+        totalAmount,
+        paidAmount,
+        pendingAmount,
+        status,
+        dueDate: structure.dueDate || null,
+        structureId: structure._id,
+      });
+    }
+  }
+
+  // Step 5: Remove duplicates (in case student appears in multiple structures) and sort by name
+  const uniqueRecords = Array.from(
+    new Map(studentRecords.map(r => [r.studentId.toString(), r])).values()
+  ).sort((a, b) => `${a.firstName} ${a.lastName}`.localeCompare(`${b.firstName} ${b.lastName}`));
+
+  return res.status(200).json(new ApiResponse(200, { records: uniqueRecords, count: uniqueRecords.length }, 'Student fee records'));
 });

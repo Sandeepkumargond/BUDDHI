@@ -82,8 +82,8 @@ const feePaymentSchema = new Schema(
       required: function () {
         return this.docType === "payment";
       },
-      enum: ["cash", "card", "upi", "netbanking", "cheque", "bank-transfer", "wallet", "other"],
-      lowercase: true,
+      enum: ["cash", "card", "upi", "netbanking", "cheque", "bank-transfer", "wallet", "Razorpay", "other"],
+      lowercase: false,
       trim: true,
     },
     transactionStatus: {
@@ -95,6 +95,9 @@ const feePaymentSchema = new Schema(
       lowercase: true,
       trim: true,
     },
+    // Receipt fields for payments
+    receiptNumber: { type: String, index: true },
+    generatedAt: { type: Date },
     bankName: {
       type: String,
       trim: true,
@@ -104,6 +107,11 @@ const feePaymentSchema = new Schema(
       type: String,
       default: null,
       trim: true,
+    },
+    razorpayData: {
+      orderId: { type: String, default: null },
+      paymentId: { type: String, default: null },
+      signature: { type: String, default: null },
     },
 
     // Fields for fee structure (docType === 'structure')

@@ -6,6 +6,9 @@ import {
 	testRazorpayCredentials,
 	createRazorpayOrder,
 	handleRazorpayWebhook,
+	verifyAndRecordPayment,
+	getTransactionStatus,
+	getStudentFeePayments,
 } from "../controllers/razorpay.controller.js";
 import { authenticateAdmin } from "../middlewares/admin.middleware.js";
 import { authenticateStudent } from "../middlewares/student.middleware.js";
@@ -41,6 +44,22 @@ router.post('/webhook', express.raw({ type: 'application/json' }), handleRazorpa
 router.route('/order').post(
 	authenticateStudent,
 	createRazorpayOrder
+);
+
+// Student-facing endpoints to verify and record payment
+router.route('/verify').post(
+	authenticateStudent,
+	verifyAndRecordPayment
+);
+
+router.route('/transaction-status').get(
+	authenticateStudent,
+	getTransactionStatus
+);
+
+router.route('/payments').get(
+	authenticateStudent,
+	getStudentFeePayments
 );
 
 export default router;

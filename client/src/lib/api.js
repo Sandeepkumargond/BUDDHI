@@ -699,6 +699,68 @@ class ApiService {
       method: 'GET'
     });
   }
+
+  // ========== Razorpay Payment Integration ==========
+  
+  // Create Razorpay order
+  async createRazorpayOrder(payload) {
+    return this.request('/razorpay/order', {
+      method: 'POST',
+      body: payload
+    });
+  }
+
+  // Verify payment and create fee payment record
+  async verifyRazorpayPayment(payload) {
+    return this.request('/razorpay/verify', {
+      method: 'POST',
+      body: payload
+    });
+  }
+
+  // Get transaction status
+  async getRazorpayTransactionStatus(orderId) {
+    return this.request(`/razorpay/transaction-status?orderId=${encodeURIComponent(orderId)}`, {
+      method: 'GET'
+    });
+  }
+
+  // Get student's fee payments (via Razorpay)
+  async getStudentFeePayments() {
+    return this.request('/razorpay/payments', {
+      method: 'GET'
+    });
+  }
+
+  // Admin: Get Razorpay credentials
+  async getRazorpayCredentials() {
+    return this.request('/razorpay/credentials', {
+      method: 'GET'
+    });
+  }
+
+  // Admin: Save/update Razorpay credentials
+  async updateRazorpayCredentials(payload) {
+    return this.request('/razorpay/credentials', {
+      method: 'POST',
+      body: payload
+    });
+  }
+
+  // Admin: Delete Razorpay credentials
+  async deleteRazorpayCredentials() {
+    return this.request('/razorpay/credentials', {
+      method: 'DELETE'
+    });
+  }
+
+  // Admin: Test Razorpay credentials
+  async testRazorpayCredentials(payload) {
+    return this.request('/razorpay/credentials/test', {
+      method: 'POST',
+      body: payload
+    });
+  }
 }
 
 export const apiService = new ApiService();

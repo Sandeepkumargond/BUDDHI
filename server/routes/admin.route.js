@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { loginAdmin, logoutAdmin, refreshAdminAccessToken, changeAdminPassword, updateAdminAccountDetails, updateAdminImage, createStudent, updateStudent, createFaculty, createSubAdmin, deleteStudent, deleteFaculty, deleteSubAdmin, getAllFaculty, getAllSubAdmins, getAdminById, getAllStudents, getMyProfile, getDashboardStats } from "../controllers/admin.controller.js";
 import { getSubAdminById } from "../controllers/subAdmin.controller.js";
-import { adminGetFeePaymentById, adminGetReceiptRedirect, adminListFeePayments, adminCreateFeeStructure, adminGetFeeStructureById, adminListFeeStructures, adminPublishFeeStructure } from "../controllers/feePayment.controller.js";
+import { adminGetFeePaymentById, adminGetReceiptRedirect, adminListFeePayments, adminCreateFeeStructure, adminGetFeeStructureById, adminListFeeStructures, adminPublishFeeStructure, adminUpdateFeeStructure, adminDeleteFeeStructure, getStudentFeeRecords } from "../controllers/feePayment.controller.js";
 import { validateAdminFeePaymentQuery, validateCreateFeeStructure } from "../middlewares/feePayment.middleware.js";
 import { authenticateAdmin } from "../middlewares/admin.middleware.js";
 import { upload } from "../middlewares/multer.middleware.js";
@@ -117,6 +117,22 @@ router.route('/fee-structure/:id/publish').patch(
     authenticateAdmin,
     adminPublishFeeStructure
 )
+
+router.route('/fee-structure/:id').patch(
+    authenticateAdmin,
+    adminUpdateFeeStructure
+)
+
+router.route('/fee-structure/:id').delete(
+    authenticateAdmin,
+    adminDeleteFeeStructure
+)
+
+router.route('/student-fee-records').get(
+    authenticateAdmin,
+    getStudentFeeRecords
+)
+
 router.route('/get-all-faculty').get(getAllFaculty);
 router.route('/sub-admins').get(
     authenticateAdmin,

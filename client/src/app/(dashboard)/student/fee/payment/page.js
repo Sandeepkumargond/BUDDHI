@@ -2,11 +2,14 @@
 
 import { useState, useEffect } from "react";
 import Image from "next/image";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { apiService } from "@/lib/api";
+import RazorpayPaymentButton from "@/components/RazorpayPaymentButton";
+import { showToast } from "@/lib/toast";
 
 const FeePaymentPage = () => {
+  const router = useRouter();
   const searchParams = useSearchParams();
   const view = searchParams.get('view');
   
@@ -24,6 +27,8 @@ const FeePaymentPage = () => {
   const [paymentSuccess, setPaymentSuccess] = useState(false);
   const [receiptData, setReceiptData] = useState(null);
   const [showReceiptView, setShowReceiptView] = useState(false);
+  const [receiptLoading, setReceiptLoading] = useState(false);
+  const [receiptError, setReceiptError] = useState(null);
 
   useEffect(() => {
     // Check if we should show receipt view
@@ -214,6 +219,23 @@ const FeePaymentPage = () => {
     load();
   }, [view, role, user]);
 
+  const handlePaymentSuccess = (paymentData) => {
+    console.log("Payment successful:", paymentData);
+    showToast.success("✅ Payment completed successfully!");
+    setPaymentSuccess(true);
+    setShowPaymentModal(false);
+    
+    // Refresh payments list
+    setTimeout(() => {
+      window.location.reload();
+    }, 2000);
+  };
+
+  const handlePaymentError = (error) => {
+    console.error("Payment error:", error);
+    showToast.error(`Payment failed: ${error}`);
+  };
+
   const handlePayment = async () => {
     if (!paymentMode) {
       showToast.error("Please select a payment method");
@@ -331,6 +353,36 @@ const FeePaymentPage = () => {
     window.URL.revokeObjectURL(url);
   };
 
+  const viewReceipt = async (feePaymentId) => {
+    try {
+      setReceiptLoading(true);
+      setReceiptError(null);
+      const res = await apiService.getMyFeePaymentReceipt(feePaymentId);
+      const r = res?.data;
+      if (!r) throw new Error("Receipt not found");
+      const receipt = {
+        receiptNumber: r.receiptNumber || `RCP-${feePaymentId}`,
+        studentName: r.studentName,
+        enrollment: r.enrollmentNo,
+        amount: r.amount,
+        paymentDate: (r.transactionDate ? new Date(r.transactionDate) : new Date()).toISOString().split('T')[0],
+        paymentMethod: (r.paymentMode || 'Razorpay'),
+        transactionId: r.transactionId,
+        semester: r.semester,
+        academicYear: r.session,
+        feeBreakdown: { total: r.amount },
+        lateFee: 0,
+      };
+      setReceiptData(receipt);
+      setShowReceiptView(true);
+    } catch (e) {
+      console.error('Failed to load receipt:', e?.message || e);
+      setReceiptError(e?.message || 'Failed to load receipt');
+    } finally {
+      setReceiptLoading(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex-1 p-4 flex items-center justify-center">
@@ -394,32 +446,7 @@ const FeePaymentPage = () => {
 
                     <div className="flex space-x-3">
                       <button
-                        onClick={async () => {
-                          try {
-                            const res = await apiService.getMyFeeReceipt(payment._id);
-                            const r = res?.data;
-                            if (!r) return;
-                            const receipt = {
-                              receiptNumber: r.receiptNo,
-                              studentName: r.student?.name,
-                              enrollment: r.student?.enrollmentNo,
-                              amount: r.amount,
-                              paymentDate: new Date(r.transaction?.date).toLocaleDateString(),
-                              paymentMethod: (r.paymentMode || '').toUpperCase(),
-                              transactionId: r.transaction?.id,
-                              semester: r.student?.semester ?? '-',
-                              academicYear: r.session,
-                              feeBreakdown: {
-                                tuitionFee: 0, libraryFee: 0, labFee: 0, sportsFee: 0, developmentFee: 0, examFee: 0, hostelFee: 0, messFee: 0
-                              },
-                              lateFee: 0,
-                            };
-                            setReceiptData(receipt);
-                            downloadReceipt();
-                          } catch (e) {
-                            console.error('Failed to fetch receipt:', e?.message || e);
-                          }
-                        }}
+                        onClick={() => viewReceipt(payment.id)}
                         className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 text-sm"
                       >
                         Download Receipt
@@ -781,12 +808,12 @@ const FeePaymentPage = () => {
           </div>
         </div>
 
-        {/* Payment Modal */}
+        {/* Payment Modal - Razorpay Integration */}
         {feeData && showPaymentModal && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
             <div className="bg-white rounded-lg max-w-md w-full p-6">
               <div className="flex items-center justify-between mb-6">
-                <h3 className="text-lg font-semibold">Select Payment Method</h3>
+                <h3 className="text-lg font-semibold">Complete Payment</h3>
                 <button
                   onClick={() => setShowPaymentModal(false)}
                   className="text-gray-400 hover:text-gray-600"
@@ -798,65 +825,63 @@ const FeePaymentPage = () => {
               </div>
 
               <div className="mb-6">
-                <p className="text-gray-600 mb-2">Amount to Pay:</p>
-                <p className="text-2xl font-bold text-blue-600">
-                  ₹{(feeData?.pendingAmount + (feeData?.lateFeeApplicable ? feeData?.lateFeeAmount : 0)).toLocaleString()}
-                </p>
+                <p className="text-gray-600 mb-2">Semester: {feeData?.semester}</p>
+                <p className="text-gray-600 mb-4">Session: {feeData?.academicYear}</p>
+                <div className="bg-blue-50 rounded-lg p-4">
+                  <p className="text-gray-600 text-sm mb-1">Amount to Pay:</p>
+                  <p className="text-3xl font-bold text-blue-600">
+                    ₹{(feeData?.pendingAmount + (feeData?.lateFeeApplicable ? feeData?.lateFeeAmount : 0)).toLocaleString()}
+                  </p>
+                </div>
               </div>
 
-              <div className="space-y-3 mb-6">
-                <label className="flex items-center p-3 border rounded-lg cursor-pointer hover:bg-gray-50">
-                  <input
-                    type="radio"
-                    name="paymentMode"
-                    value="UPI"
-                    onChange={(e) => setPaymentMode(e.target.value)}
-                    className="mr-3"
-                  />
-                  <Image src="/upi.png" alt="" width={24} height={24} className="mr-3" />
-                  <span>UPI Payment</span>
-                </label>
+              {/* Validation: Check if amount exceeds Razorpay limit */}
+              {(feeData?.pendingAmount + (feeData?.lateFeeApplicable ? feeData?.lateFeeAmount : 0)) > 5000000 && (
+                <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+                  <div className="flex items-start">
+                    <svg className="w-5 h-5 text-red-600 mt-0.5 mr-3 shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd"></path>
+                    </svg>
+                    <div className="text-sm text-red-800">
+                      <strong>Amount Limit Exceeded</strong>
+                      <p className="mt-1">The amount exceeds Razorpay's maximum limit of ₹50,00,000. Please contact the admin to split this payment into smaller installments.</p>
+                    </div>
+                  </div>
+                </div>
+              )}
 
-                <label className="flex items-center p-3 border rounded-lg cursor-pointer hover:bg-gray-50">
-                  <input
-                    type="radio"
-                    name="paymentMode"
-                    value="Net Banking"
-                    onChange={(e) => setPaymentMode(e.target.value)}
-                    className="mr-3"
-                  />
-                  <Image src="/bank.png" alt="" width={24} height={24} className="mr-3" />
-                  <span>Net Banking</span>
-                </label>
-
-                <label className="flex items-center p-3 border rounded-lg cursor-pointer hover:bg-gray-50">
-                  <input
-                    type="radio"
-                    name="paymentMode"
-                    value="Debit/Credit Card"
-                    onChange={(e) => setPaymentMode(e.target.value)}
-                    className="mr-3"
-                  />
-                  <Image src="/card.png" alt="" width={24} height={24} className="mr-3" />
-                  <span>Debit/Credit Card</span>
-                </label>
+              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
+                <div className="flex items-start">
+                  <svg className="w-5 h-5 text-yellow-600 mt-0.5 mr-3 shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd"></path>
+                  </svg>
+                  <div className="text-sm text-yellow-800">
+                    <strong>Payment Methods Available:</strong>
+                    <p className="mt-1">Credit/Debit Card, UPI, Net Banking, Wallets</p>
+                  </div>
+                </div>
               </div>
 
-              <div className="flex space-x-3">
-                <button
-                  onClick={() => setShowPaymentModal(false)}
-                  className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={handlePayment}
-                  disabled={!paymentMode || paymentInProgress}
-                  className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {paymentInProgress ? "Processing..." : "Proceed to Pay"}
-                </button>
+              <div className="mb-6">
+                <RazorpayPaymentButton
+                  feeStructureId={selectedStructureId}
+                  session={feeData?.academicYear}
+                  feeHead={feeData?.heads?.[0]?.name || "Fee Payment"}
+                  amount={feeData?.pendingAmount + (feeData?.lateFeeApplicable ? feeData?.lateFeeAmount : 0)}
+                  onSuccess={handlePaymentSuccess}
+                  onPaymentError={handlePaymentError}
+                  buttonText={`Pay ₹${(feeData?.pendingAmount + (feeData?.lateFeeApplicable ? feeData?.lateFeeAmount : 0)).toLocaleString()}`}
+                  className="w-full"
+                  disabled={(feeData?.pendingAmount + (feeData?.lateFeeApplicable ? feeData?.lateFeeAmount : 0)) > 5000000}
+                />
               </div>
+
+              <button
+                onClick={() => setShowPaymentModal(false)}
+                className="w-full px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
+              >
+                Cancel
+              </button>
             </div>
           </div>
         )}

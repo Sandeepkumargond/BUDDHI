@@ -66,14 +66,21 @@ export default function RazorpaySettingsPage() {
 	const handleTest = async () => {
 		setError(null)
 		try {
+			// Validate inputs first
+			if (!keyId || !keySecret) {
+				throw new Error("Please enter both Key ID and Key Secret to test")
+			}
+
+			// Send credentials to test endpoint
 			const res = await fetch((process.env.NEXT_PUBLIC_API_BASE || "http://localhost:5000") + "/api/v1/razorpay/credentials/test", {
 				method: "POST",
 				credentials: "include",
-				headers: { "Content-Type": "application/json" }
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({ keyId, keySecret, mode }) // Send current form values
 			})
 			const payload = await res.json()
 			if (!payload?.success) throw new Error(payload?.message || "Test failed")
-			alert("Credentials validated: able to create an order on Razorpay")
+			alert("✅ Credentials validated successfully!\n\nYou can now save these credentials.")
 		} catch (err) {
 			console.error(err)
 			setError(err.message || "Test failed")
@@ -109,38 +116,51 @@ export default function RazorpaySettingsPage() {
 			<h1 className="text-lg font-semibold mb-4">Razorpay Settings</h1>
 
 			{saved && (
-				<div className="mb-4 text-sm text-green-700 bg-green-100 p-2 rounded">Saved successfully</div>
+				<div className="mb-4 text-sm text-green-700 bg-green-100 p-2 rounded">✅ Saved successfully</div>
 			)}
 
 			{error && (
-				<div className="mb-4 text-sm text-red-700 bg-red-100 p-2 rounded">{error}</div>
+				<div className="mb-4 text-sm text-red-700 bg-red-100 p-3 rounded">❌ {error}</div>
 			)}
+
+			{/* Info Box */}
+			<div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded">
+				<p className="text-sm text-blue-800">
+					<strong>ℹ️ How to use:</strong><br/>
+					1. Get your Razorpay credentials from <a href="https://dashboard.razorpay.com" target="_blank" className="underline">dashboard.razorpay.com</a><br/>
+					2. Paste Key ID and Key Secret below<br/>
+					3. Click "Test Credentials" to verify they work<br/>
+					4. Click "Save" to store them securely
+				</p>
+			</div>
 
 			<form onSubmit={handleSave} className="space-y-4">
 				<div>
-					<label className="block text-sm font-medium text-gray-700 mb-1">Key ID</label>
+					<label className="block text-sm font-medium text-gray-700 mb-1">Key ID <span className="text-red-600">*</span></label>
 					<input
 						value={keyId}
 						onChange={(e) => setKeyId(e.target.value)}
 						className="w-full px-3 py-2 border rounded"
 						placeholder="rzp_test_..."
+						type="text"
 					/>
+					<div className="text-xs text-gray-500 mt-1">Example: rzp_test_1234567890</div>
 				</div>
 
 				<div>
-					<label className="block text-sm font-medium text-gray-700 mb-1">Key Secret</label>
+					<label className="block text-sm font-medium text-gray-700 mb-1">Key Secret <span className="text-red-600">*</span></label>
 					<input
 						value={keySecret}
 						onChange={(e) => setKeySecret(e.target.value)}
 						className="w-full px-3 py-2 border rounded"
-						placeholder="secret"
+						placeholder="Your secret key"
 						type="password"
 					/>
-					<div className="text-xs text-gray-500 mt-1">Leave blank to keep existing secret.</div>
+					<div className="text-xs text-gray-500 mt-1">Leave blank to keep existing secret when updating.</div>
 				</div>
 
 				<div>
-					<label className="block text-sm font-medium text-gray-700 mb-1">Webhook Secret (optional)</label>
+					<label className="block text-sm font-medium text-gray-700 mb-1">Webhook Secret <span className="text-gray-400 text-xs">(Optional)</span></label>
 					<input
 						value={webhookSecret}
 						onChange={(e) => setWebhookSecret(e.target.value)}
@@ -148,24 +168,56 @@ export default function RazorpaySettingsPage() {
 						placeholder="webhook secret"
 						type="password"
 					/>
+					<div className="text-xs text-gray-500 mt-1">Only needed if you're using webhooks</div>
 				</div>
 
 				<div>
 					<label className="block text-sm font-medium text-gray-700 mb-1">Mode</label>
 					<select value={mode} onChange={(e) => setMode(e.target.value)} className="px-3 py-2 border rounded">
-						<option value="test">Test</option>
-						<option value="live">Live</option>
+						<option value="test">🧪 Test (Development)</option>
+						<option value="live">🚀 Live (Production)</option>
 					</select>
+					<div className="text-xs text-gray-500 mt-1">Start with Test mode, switch to Live when ready for production</div>
 				</div>
 
-				<div className="flex justify-between items-center">
+				<div className="flex justify-between items-center pt-4 border-t">
 					<div className="flex gap-2">
-						<button type="button" onClick={handleTest} className="bg-green-600 text-white px-4 py-2 rounded">Test Credentials</button>
-						<button type="button" onClick={handleDelete} className="bg-red-600 text-white px-4 py-2 rounded">Delete Credentials</button>
+						<button 
+							type="button" 
+							onClick={handleTest} 
+							disabled={!keyId || !keySecret}
+							className={`px-4 py-2 rounded font-medium transition-colors ${
+								!keyId || !keySecret
+									? "bg-gray-300 text-gray-600 cursor-not-allowed"
+									: "bg-green-600 text-white hover:bg-green-700"
+							}`}
+						>
+							✓ Test Credentials
+						</button>
+						<button 
+							type="button" 
+							onClick={handleDelete} 
+							disabled={!keyId}
+							className={`px-4 py-2 rounded font-medium transition-colors ${
+								!keyId
+									? "bg-gray-300 text-gray-600 cursor-not-allowed"
+									: "bg-red-600 text-white hover:bg-red-700"
+							}`}
+						>
+							🗑️ Delete
+						</button>
 					</div>
-					<div>
-						<button type="submit" className="bg-blue-600 text-white px-4 py-2 rounded">Save</button>
-					</div>
+					<button 
+						type="submit" 
+						disabled={!keyId || !keySecret}
+						className={`px-4 py-2 rounded font-medium transition-colors ${
+							!keyId || !keySecret
+								? "bg-gray-300 text-gray-600 cursor-not-allowed"
+								: "bg-blue-600 text-white hover:bg-blue-700"
+						}`}
+					>
+						💾 Save
+					</button>
 				</div>
 			</form>
 		</div>
