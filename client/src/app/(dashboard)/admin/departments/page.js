@@ -139,7 +139,7 @@ const DepartmentListPage = () => {
             {role === "admin" && (
               <Link
                 href="/admin/departments/create"
-                className="w-9 h-9 flex items-center justify-center rounded-full bg-[#FAE27C] hover:bg-[#F7D85A] transition cursor-pointer"
+                className="w-9 h-9 flex items-center justify-center rounded-full bg-[#C3EBFA] hover:bg-[#A8DBF2] transition cursor-pointer"
               >
                 <Image src="/create.png" alt="add" width={16} height={16} />
               </Link>

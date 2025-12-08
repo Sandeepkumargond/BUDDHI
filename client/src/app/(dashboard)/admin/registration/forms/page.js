@@ -46,7 +46,7 @@ export default function AdminRegistrationFormsListPage() {
     <div className="p-4 space-y-4">
       <div className="flex items-center justify-between">
         <h1 className="text-xl font-semibold">Registration Forms</h1>
-        <Link href="/admin/registration" className="px-3 py-2 rounded bg-blue-600 text-white">Create New</Link>
+        <Link href="/admin/registration" className="px-3 py-2 rounded bg-[#C3EBFA] text-gray-600 hover:bg-[#A8DBF2]">Create New</Link>
       </div>
       {message ? <div className="text-sm text-blue-600">{message}</div> : null}
 
@@ -58,11 +58,11 @@ export default function AdminRegistrationFormsListPage() {
               <div className="text-sm text-gray-700">Dept: {f.departmentId} | Semester: {f.semester} | Session: {f.session} | Published: {f.published ? 'Yes' : 'No'}</div>
             </div>
             <div className="flex gap-2">
-              <Link href={`/admin/registration/forms/${f._id}/submissions`} className="px-3 py-2 rounded bg-green-600 text-white">View Submissions</Link>
+              <Link href={`/admin/registration/forms/${f._id}/submissions`} className="px-3 py-2 rounded bg-green-200 text-green-700 hover:bg-green-300">View Submissions</Link>
               <button
                 onClick={() => handleDelete(f._id)}
                 disabled={deletingId === f._id}
-                className="px-3 py-2 rounded bg-red-600 text-white disabled:opacity-60"
+                className="px-3 py-2 rounded bg-red-200 text-red-700 hover:bg-red-300 disabled:opacity-60"
               >
                 {deletingId === f._id ? 'Deleting…' : 'Delete'}
               </button>

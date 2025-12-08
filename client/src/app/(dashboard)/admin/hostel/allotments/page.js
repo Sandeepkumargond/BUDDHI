@@ -264,7 +264,7 @@ const HostelAllotments = () => {
         <h1 className="text-2xl font-bold text-gray-800">Hostel Allotments</h1>
         <button
           onClick={exportToCSV}
-          className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 transition-colors flex items-center gap-2"
+          className="bg-[#C3EBFA] text-gray-600 px-4 py-2 rounded-md hover:bg-[#A8DBF2] transition-colors flex items-center gap-2"
         >
           <FaDownload /> Export CSV
         </button>
@@ -435,27 +435,26 @@ const HostelAllotments = () => {
                     </div>
                   </td>
                   <td className="px-6 py-4">
-                    <div className="flex gap-3">
+                    <div className="flex gap-2">
                       <button
                         onClick={() => openDetailsModal(allotment)}
-                        className="text-blue-600 hover:text-blue-800 hover:scale-110 transition-all"
-                        title="View Details"
+                        className="text-blue-600 hover:text-blue-800 text-sm font-medium"
                       >
-                        <FaEye size={18} />
+                        View
                       </button>
+                      <span className="text-gray-300">|</span>
                       <button
                         onClick={() => openEditModal(allotment)}
-                        className="text-yellow-600 hover:text-yellow-800 hover:scale-110 transition-all"
-                        title="Edit Allocation"
+                        className="text-green-600 hover:text-green-800 text-sm font-medium"
                       >
-                        <FaEdit size={18} />
+                        Edit
                       </button>
+                      <span className="text-gray-300">|</span>
                       <button
                         onClick={() => handleRemove(allotment)}
-                        className="text-red-600 hover:text-red-800 hover:scale-110 transition-all"
-                        title="Remove from Hostel"
+                        className="text-red-600 hover:text-red-800 text-sm font-medium"
                       >
-                        <FaTrash size={18} />
+                        Remove
                       </button>
                     </div>
                   </td>

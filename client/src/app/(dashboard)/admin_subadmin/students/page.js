@@ -263,7 +263,7 @@ export default function StudentListPage() {
         <td className="p-3">
           <div className="flex items-center gap-2">
             <Link href={`/admin_subadmin/students/${item._id}`}>
-              <button className="w-7 h-7 bg-[#C3EBFA] rounded-full flex items-center justify-center hover:bg-[#A5D8F3]">
+              <button className="w-7 h-7 bg-[#C3EBFA] rounded-full flex items-center justify-center hover:bg-[#A8DBF2]">
                 <Image src="/view.png" width={16} height={16} alt="view" />
               </button>
             </Link>
@@ -271,7 +271,7 @@ export default function StudentListPage() {
             {(role === "subadmin" || role === "admin") && (
               <button
                 onClick={() => handleDelete(item._id)}
-                className="w-7 h-7 bg-gray-200 hover:bg-gray-300 rounded-full flex items-center justify-center"
+                className="w-7 h-7 bg-[#CFCEFF] hover:bg-[#BEBBFF] rounded-full flex items-center justify-center"
               >
                 <Image src="/delete.png" width={16} height={16} alt="delete" />
               </button>
@@ -289,7 +289,7 @@ export default function StudentListPage() {
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold text-gray-900">Students</h1>
         <Link href="/admin_subadmin/students/create">
-          <button className="flex items-center gap-2 px-4 py-2 bg-[#C3EBFA] hover:bg-[#A5D8F3] rounded-lg transition">
+          <button className="flex items-center gap-2 px-4 py-2 bg-[#C3EBFA] hover:bg-[#A8DBF2] rounded-lg transition text-gray-600">
             <Image src="/create.png" width={16} height={16} alt="add" />
             <span className="font-medium">Add Student</span>
           </button>
@@ -298,7 +298,7 @@ export default function StudentListPage() {
 
       {loading ? (
         <div className="flex justify-center items-center py-20">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#C3EBFA]"></div>
         </div>
       ) : (
         <>
@@ -363,7 +363,7 @@ export default function StudentListPage() {
                   onClick={() => setSelectedBatch(null)}
                   className={`p-4 rounded-lg border-2 transition ${
                     selectedBatch === null
-                      ? 'border-blue-500 bg-blue-50'
+                      ? 'border-[#C3EBFA] bg-[#C3EBFA]/20'
                       : 'border-gray-200 hover:border-gray-300'
                   }`}
                 >
@@ -379,7 +379,7 @@ export default function StudentListPage() {
                     onClick={() => setSelectedBatch(batch.year)}
                     className={`p-4 rounded-lg border-2 transition ${
                       selectedBatch === batch.year
-                        ? 'border-blue-500 bg-blue-50'
+                        ? 'border-[#C3EBFA] bg-[#C3EBFA]/20'
                         : 'border-gray-200 hover:border-gray-300'
                     }`}
                   >
@@ -449,7 +449,7 @@ export default function StudentListPage() {
                       setSearchTerm("");
                       setSelectedBatch(null);
                     }}
-                    className="px-4 py-2 text-sm rounded-lg bg-gray-200 hover:bg-gray-300 font-medium"
+                    className="px-4 py-2 text-sm rounded-lg bg-[#FAE27C] hover:bg-[#F7D85A] font-medium"
                   >
                     Reset All
                   </button>

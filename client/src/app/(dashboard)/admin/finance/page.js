@@ -188,40 +188,40 @@ const FinancePage = () => {
     <div className="space-y-6">
       {/* Financial Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-blue-500 text-white p-6 rounded-lg">
+        <div className="bg-[#C3EBFA] text-gray-700 p-6 rounded-lg">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-blue-100">Total Revenue</p>
+              <p className="text-gray-600">Total Revenue</p>
               <p className="text-2xl font-bold">₹{(financialSummary.totalRevenue / 100000).toFixed(1)}L</p>
             </div>
             <Image src="/home.png" alt="Revenue" width={40} height={40} className="opacity-80" />
           </div>
         </div>
         
-        <div className="bg-green-500 text-white p-6 rounded-lg">
+        <div className="bg-[#FAE27C] text-gray-700 p-6 rounded-lg">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-green-100">Net Income</p>
+              <p className="text-gray-600">Net Income</p>
               <p className="text-2xl font-bold">₹{(financialSummary.netIncome / 100000).toFixed(1)}L</p>
             </div>
             <Image src="/profit.png" alt="Profit" width={40} height={40} className="opacity-80" />
           </div>
         </div>
         
-        <div className="bg-red-500 text-white p-6 rounded-lg">
+        <div className="bg-[#CFCEFF] text-gray-700 p-6 rounded-lg">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-red-100">Pending Fees</p>
+              <p className="text-gray-600">Pending Fees</p>
               <p className="text-2xl font-bold">₹{(financialSummary.totalPendingFees / 100000).toFixed(1)}L</p>
             </div>
             <Image src="/pending.png" alt="Pending" width={40} height={40} className="opacity-80" />
           </div>
         </div>
         
-        <div className="bg-purple-500 text-white p-6 rounded-lg">
+        <div className="bg-[#FAE27C] text-gray-700 p-6 rounded-lg">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-purple-100">Collection Rate</p>
+              <p className="text-gray-600">Collection Rate</p>
               <p className="text-2xl font-bold">{financialSummary.collectionRate}%</p>
             </div>
             <Image src="/percentage.png" alt="Rate" width={40} height={40} className="opacity-80" />
@@ -238,7 +238,7 @@ const FinancePage = () => {
             {financialSummary.monthlyRevenue.map((item, index) => (
               <div key={index} className="flex flex-col items-center flex-1">
                 <div 
-                  className="bg-blue-500 w-full rounded-t"
+                  className="bg-[#CFCEFF] w-full rounded-t"
                   style={{ 
                     height: `${(item.amount / Math.max(...financialSummary.monthlyRevenue.map(r => r.amount))) * 200}px`,
                     minHeight: '20px'
@@ -257,7 +257,7 @@ const FinancePage = () => {
             {financialSummary.departmentWiseRevenue.map((dept, index) => (
               <div key={index} className="flex items-center justify-between">
                 <div className="flex items-center space-x-3">
-                  <div className={`w-3 h-3 rounded-full bg-${['blue', 'green', 'purple', 'orange', 'red'][index % 5]}-500`}></div>
+                  <div className="w-3 h-3 rounded-full" style={{ backgroundColor: ['#C3EBFA', '#CFCEFF', '#FAE27C'][index % 3] }}></div>
                   <span className="font-medium">{dept.department}</span>
                   <span className="text-sm text-gray-500">({dept.students} students)</span>
                 </div>
@@ -657,7 +657,7 @@ const FinancePage = () => {
             </select>
             <button 
               onClick={handleExportData}
-              className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
+              className="bg-[#C3EBFA] text-gray-600 px-4 py-2 rounded-lg hover:bg-[#A8DBF2]"
             >
               Export Data
             </button>
