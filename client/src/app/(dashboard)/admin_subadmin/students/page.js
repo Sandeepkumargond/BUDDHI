@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useCallback } from "react";
 import FormModal from "@/components/FormModal";
 import Pagination from "@/components/Pagination";
 import Table from "@/components/Table";
@@ -50,66 +50,81 @@ export default function StudentListPage() {
   /* ---------------------------------
      FETCH STUDENTS FROM BACKEND
   ---------------------------------- */
-  useEffect(() => {
-    async function fetchStudents() {
-      try {
-        let data;
-        
-        if (role === "admin") {
-          const res = await apiService.adminListStudents();
-          data = res;
-        } else if (role === "subadmin") {
-          const res = await apiService.subAdminListStudents();
-          data = res;
-        } else {
-          console.error("Unauthorized role for student list");
-          return;
-        }
-
-        if (!data || !data.data) {
-          console.error("Error fetching students:", data?.message || "No data returned");
-          return;
-        }
-
-        const studentList = data.data.students || [];
-        setStudents(studentList);
-
-        // Calculate BUDDHI status distribution (use 50 as default if buddhiScore is missing)
-        const atRisk = studentList.filter(s => (s.buddhiScore || 50) < 40).length;
-        const onTheVerge = studentList.filter(s => {
-          const score = s.buddhiScore || 50;
-          return score >= 40 && score < 60;
-        }).length;
-        const normal = studentList.filter(s => (s.buddhiScore || 50) >= 60).length;
-        
-        setStatusStats({ atRisk, onTheVerge, normal });
-
-        // Extract unique batches
-        const uniqueBatches = [...new Set(studentList.map(s => s.batch).filter(Boolean))];
-        const batchData = uniqueBatches.map(batch => {
-          const batchStudents = studentList.filter(s => s.batch === batch);
-          return {
-            year: batch,
-            count: batchStudents.length,
-            atRisk: batchStudents.filter(s => (s.buddhiScore || 50) < 40).length,
-            onTheVerge: batchStudents.filter(s => {
-              const score = s.buddhiScore || 50;
-              return score >= 40 && score < 60;
-            }).length,
-            normal: batchStudents.filter(s => (s.buddhiScore || 50) >= 60).length,
-          };
-        }).sort((a, b) => b.year.localeCompare(a.year));
-        
-        setBatches(batchData);
-      } catch (error) {
-        console.error("Fetch error:", error);
-      } finally {
-        setLoading(false);
+  const fetchStudents = useCallback(async () => {
+    try {
+      let data;
+      
+      if (role === "admin") {
+        const res = await apiService.adminListStudents();
+        data = res;
+      } else if (role === "subadmin") {
+        const res = await apiService.subAdminListStudents();
+        data = res;
+      } else {
+        console.error("Unauthorized role for student list");
+        return;
       }
-    }
 
-    if (role) fetchStudents();
+      if (!data || !data.data) {
+        console.error("Error fetching students:", data?.message || "No data returned");
+        return;
+      }
+
+      const studentList = data.data.students || [];
+      setStudents(studentList);
+
+      // Calculate BUDDHI status distribution (use 50 as default if buddhiScore is missing)
+      const atRisk = studentList.filter(s => (s.buddhiScore || 50) < 40).length;
+      const onTheVerge = studentList.filter(s => {
+        const score = s.buddhiScore || 50;
+        return score >= 40 && score < 60;
+      }).length;
+      const normal = studentList.filter(s => (s.buddhiScore || 50) >= 60).length;
+      
+      setStatusStats({ atRisk, onTheVerge, normal });
+
+      // Extract unique batches
+      const uniqueBatches = [...new Set(studentList.map(s => s.batch).filter(Boolean))];
+      const batchData = uniqueBatches.map(batch => {
+        const batchStudents = studentList.filter(s => s.batch === batch);
+        return {
+          year: batch,
+          count: batchStudents.length,
+          atRisk: batchStudents.filter(s => (s.buddhiScore || 50) < 40).length,
+          onTheVerge: batchStudents.filter(s => {
+            const score = s.buddhiScore || 50;
+            return score >= 40 && score < 60;
+          }).length,
+          normal: batchStudents.filter(s => (s.buddhiScore || 50) >= 60).length,
+        };
+      }).sort((a, b) => b.year.localeCompare(a.year));
+      
+      setBatches(batchData);
+    } catch (error) {
+      console.error("Fetch error:", error);
+    } finally {
+      setLoading(false);
+    }
   }, [role]);
+
+  useEffect(() => {
+    if (role) {
+      setLoading(true);
+      fetchStudents();
+    }
+  }, [role, fetchStudents]);
+
+  // Refetch students when page becomes visible (e.g., after navigating back)
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible' && role) {
+        fetchStudents();
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+  }, [role, fetchStudents]);
 
 
   /* ----------------------------

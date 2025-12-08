@@ -1,9 +1,11 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import { useChatbot } from "../context/ChatbotContext";
+import { useAuth } from "../context/AuthContext";
 
 export default function ChatbotWindow() {
   const { isOpen, close, messages, sendMessage } = useChatbot();
+  const { user, role } = useAuth();
   const [input, setInput] = useState("");
   const listRef = useRef(null);
 
@@ -119,7 +121,7 @@ export default function ChatbotWindow() {
           const text = input.trim();
           if (!text) return;
           setInput("");
-          sendMessage(text);
+          sendMessage(text, { user, role });
         }}
         style={{ display: "flex", gap: 8, padding: 12, borderTop: "1px solid #e5e7eb", background: "white" }}
       >

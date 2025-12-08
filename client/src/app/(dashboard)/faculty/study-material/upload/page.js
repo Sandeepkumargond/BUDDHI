@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { apiService } from "@/lib/api";
+import { FaBook, FaFileAlt, FaBookOpen, FaQuestionCircle, FaFlask, FaChartBar, FaPaperclip, FaUpload, FaList, FaGraduationCap, FaBullseye, FaFile } from 'react-icons/fa';
 
 export default function UploadStudyMaterialPage() {
   const router = useRouter();
@@ -39,13 +40,13 @@ export default function UploadStudyMaterialPage() {
   const [loadingCourses, setLoadingCourses] = useState(true);
 
   const materialTypeOptions = [
-    { value: 'lecture_notes', label: '📚 Lecture Notes' },
-    { value: 'assignment', label: '📝 Assignment' },
-    { value: 'reference_book', label: '📖 Reference Book' },
-    { value: 'question_paper', label: '❓ Question Paper' },
-    { value: 'lab_manual', label: '🔬 Lab Manual' },
-    { value: 'presentation', label: '📊 Presentation' },
-    { value: 'other', label: '📎 Other' }
+    { value: 'lecture_notes', label: 'Lecture Notes' },
+    { value: 'assignment', label: 'Assignment' },
+    { value: 'reference_book', label: 'Reference Book' },
+    { value: 'question_paper', label: 'Question Paper' },
+    { value: 'lab_manual', label: 'Lab Manual' },
+    { value: 'presentation', label: 'Presentation' },
+    { value: 'other', label: 'Other' }
   ];
 
   const branchOptions = ['CSE', 'ECE', 'EEE', 'MECH', 'CIVIL', 'IT', 'AIDS'];
@@ -307,14 +308,14 @@ export default function UploadStudyMaterialPage() {
     <div className="p-6 max-w-4xl mx-auto">
       {/* Header */}
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">📚 Upload Study Material</h1>
+        <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2"><FaBook style={{ color: '#AEE7F7' }} /> Upload Study Material</h1>
         <p className="text-gray-600">Share educational resources with students</p>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Basic Information */}
         <div className="bg-white p-6 rounded-lg border">
-          <h3 className="text-lg font-semibold mb-4">📋 Basic Information</h3>
+          <h3 className="text-lg font-semibold mb-4 flex items-center gap-2"><FaList style={{ color: '#AEE7F7' }} /> Basic Information</h3>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
             <div>
@@ -377,7 +378,7 @@ export default function UploadStudyMaterialPage() {
 
         {/* Course Selection */}
         <div className="bg-white p-6 rounded-lg border">
-          <h3 className="text-lg font-semibold mb-4">🎓 Course Selection</h3>
+          <h3 className="text-lg font-semibold mb-4 flex items-center gap-2"><FaGraduationCap style={{ color: '#C9CCFF' }} /> Course Selection</h3>
           
           {loadingCourses ? (
             <div className="flex items-center justify-center py-8">
@@ -461,7 +462,7 @@ export default function UploadStudyMaterialPage() {
 
         {/* File Upload */}
         <div className="bg-white p-6 rounded-lg border">
-          <h3 className="text-lg font-semibold mb-4">📎 File Upload</h3>
+          <h3 className="text-lg font-semibold mb-4 flex items-center gap-2"><FaPaperclip style={{ color: '#F9DB66' }} /> File Upload</h3>
           
           <div className="border-2 border-dashed border-gray-300 rounded-lg p-6">
             <input
@@ -490,7 +491,7 @@ export default function UploadStudyMaterialPage() {
               <div className="mt-3 p-3 bg-gray-50 rounded-lg">
                 <div className="flex items-center justify-between">
                   <div>
-                    <span className="text-sm font-medium text-gray-700">📄 {file.name}</span>
+                    <span className="text-sm font-medium text-gray-700 flex items-center gap-2"><FaFile style={{ color: '#C9CCFF' }} /> {file.name}</span>
                     <p className="text-xs text-gray-500">
                       {(file.size / 1024 / 1024).toFixed(2)} MB • {file.type}
                     </p>
@@ -592,7 +593,7 @@ export default function UploadStudyMaterialPage() {
         {/* Target Audience */}
         {selectedCourse && (
           <div className="bg-white p-6 rounded-lg border">
-            <h3 className="text-lg font-semibold mb-4">🎯 Additional Target Audience (Optional)</h3>
+            <h3 className="text-lg font-semibold mb-4 flex items-center gap-2"><FaBullseye style={{ color: '#AEE7F7' }} /> Additional Target Audience (Optional)</h3>
             <p className="text-gray-600 text-sm mb-4">
               By default, this material will be available to Semester {selectedCourse.semester} 
               {selectedCourse.section && ` Section ${selectedCourse.section}`}
@@ -661,7 +662,7 @@ export default function UploadStudyMaterialPage() {
             disabled={uploading || !selectedCourse || courses.length === 0}
             className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {uploading ? 'Uploading...' : courses.length === 0 ? 'No Courses Available' : '📚 Upload Material'}
+            {uploading ? 'Uploading...' : courses.length === 0 ? 'No Courses Available' : 'Upload Material'}
           </button>
         </div>
       </form>
