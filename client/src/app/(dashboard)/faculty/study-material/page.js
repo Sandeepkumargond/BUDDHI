@@ -301,6 +301,14 @@ export default function StudyMaterialPage() {
                       >
                         Delete
                       </button>
+                      {material.materialType === 'assignment' && (
+                        <Link
+                          href={`/faculty/materials/${material._id}/submissions`}
+                          className="bg-teal-100 text-teal-700 px-3 py-1 rounded text-sm hover:bg-teal-200"
+                        >
+                          View Submissions
+                        </Link>
+                      )}
                     </div>
                   </div>
                 </div>
