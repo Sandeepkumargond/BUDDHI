@@ -1015,6 +1015,36 @@ class ApiService {
       method: 'DELETE'
     });
   }
+
+  // Scholarships
+  async applyScholarship(formData) {
+    return this.request('/scholarships/student/apply', {
+      method: 'POST',
+      body: formData,
+    });
+  }
+
+  async getMyScholarships(status = '', page = 1, limit = 20) {
+    let url = '/scholarships/student/my?';
+    if (status) url += `status=${status}&`;
+    url += `page=${page}&limit=${limit}`;
+    return this.request(url, { method: 'GET' });
+  }
+
+  async getAllScholarships(status = '', search = '', page = 1, limit = 20) {
+    let url = '/scholarships/admin/all?';
+    if (status) url += `status=${status}&`;
+    if (search) url += `search=${encodeURIComponent(search)}&`;
+    url += `page=${page}&limit=${limit}`;
+    return this.request(url, { method: 'GET' });
+  }
+
+  async reviewScholarship(scholarshipId, status, adminRemarks = '') {
+    return this.request(`/scholarships/admin/${scholarshipId}/review`, {
+      method: 'PATCH',
+      body: { status, adminRemarks },
+    });
+  }
 }
 
 

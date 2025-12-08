@@ -38,6 +38,7 @@ const menusByRole = {
     { Icon: FaCommentDots, label: "Feedback", href: "/student/feedback" },
     { Icon: FaChalkboardTeacher, label: "Faculties", href: "/student/faculties" },
     { Icon: FaBriefcase, label: "Opportunities", href: "/student/opportunities" },
+    { Icon: FaMoneyBillWave, label: "Scholarships", href: "/student/scholarships" },
     { Icon: FaCalendarAlt, label: "Leave", href: "/student/leaves" },
   ],
 
@@ -116,6 +117,7 @@ const menusByRole = {
         { label: "Razorpay", href: "/admin/settings/razorpay" }
       ]
     },
+    { Icon: FaMoneyBillWave, label: "Scholarships", href: "/admin/scholarships" },
     { Icon: FaCalendarAlt, label: "Leave Management", href: "/admin/leaves" },
 
   ],
