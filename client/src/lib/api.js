@@ -558,6 +558,13 @@ class ApiService {
     });
   }
 
+  // Public faculties (student view)
+  async listPublicFaculties(params = {}) {
+    const query = new URLSearchParams(params).toString();
+    const qs = query ? `?${query}` : '';
+    return this.request(`/faculty/public${qs}`, { method: 'GET' });
+  }
+
   // Faculty class notices
   async getFacultyClassNotices(params = {}) {
     const query = new URLSearchParams(params).toString();
