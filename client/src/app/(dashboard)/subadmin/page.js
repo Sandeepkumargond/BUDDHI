@@ -22,32 +22,32 @@ const SubAdminDashboard = () => {
       description: "Register a new student for admission",
       icon: "/student.png",
       href: "/admin_subadmin/students/create",
-      color: "bg-blue-100 text-blue-800",
-      buttonColor: "bg-blue-600 hover:bg-blue-700"
+      color: "bg-white text-gray-800",
+      buttonColor: "bg-[#C3EBFA] text-gray-600 hover:bg-[#A8DBF2]"
     },
     {
       title: "View All Students",
       description: "View and manage student records",
       icon: "/class.png",
       href: "/admin_subadmin/students",
-      color: "bg-green-100 text-green-800",
-      buttonColor: "bg-green-600 hover:bg-green-700"
+      color: "bg-white text-gray-800",
+      buttonColor: "bg-[#C3EBFA] text-gray-600 hover:bg-[#A8DBF2]"
     },
     {
       title: "Admission Reports",
       description: "Generate admission reports",
       icon: "/result.png",
       href: "#",
-      color: "bg-purple-100 text-purple-800",
-      buttonColor: "bg-purple-600 hover:bg-purple-700"
+      color: "bg-white text-gray-800",
+      buttonColor: "bg-[#C3EBFA] text-gray-600 hover:bg-[#A8DBF2]"
     },
     {
       title: "Document Verification",
       description: "Verify student documents",
       icon: "/assignment.png",
       href: "#",
-      color: "bg-orange-100 text-orange-800",
-      buttonColor: "bg-orange-600 hover:bg-orange-700"
+      color: "bg-white text-gray-800",
+      buttonColor: "bg-[#C3EBFA] text-gray-600 hover:bg-[#A8DBF2]"
     }
   ]);
 
@@ -124,42 +124,42 @@ const SubAdminDashboard = () => {
             title="Today's Admissions"
             value={admissionStats.todayAdmissions}
             icon="/student.png"
-            color="bg-green-50 border-green-200 text-green-800"
+            color="bg-[#C3EBFA] border-[#C3EBFA] text-gray-800"
             description="New students today"
           />
           <StatCard
             title="This Week"
             value={admissionStats.weekAdmissions}
             icon="/class.png"
-            color="bg-blue-50 border-blue-200 text-blue-800"
+            color="bg-[#CFCEFF] border-[#CFCEFF] text-gray-800"
             description="Admissions this week"
           />
           <StatCard
             title="This Month"
             value={admissionStats.monthAdmissions}
             icon="/calendar.png"
-            color="bg-purple-50 border-purple-200 text-purple-800"
+            color="bg-[#FAE27C] border-[#FAE27C] text-gray-800"
             description="Monthly admissions"
           />
           <StatCard
             title="Total Students"
             value={admissionStats.totalAdmissions}
             icon="/home.png"
-            color="bg-orange-50 border-orange-200 text-orange-800"
+            color="bg-[#C3EBFA] border-[#C3EBFA] text-gray-800"
             description="All registered students"
           />
           <StatCard
             title="Active Students"
             value={admissionStats.completedApplications}
             icon="/result.png"
-            color="bg-green-50 border-green-200 text-green-800"
+            color="bg-[#CFCEFF] border-[#CFCEFF] text-gray-800"
             description="Complete applications"
           />
           <StatCard
             title="Pending Applications"
             value={admissionStats.pendingApplications}
             icon="/assignment.png"
-            color="bg-yellow-50 border-yellow-200 text-yellow-800"
+            color="bg-[#FAE27C] border-[#FAE27C] text-gray-800"
             description="Awaiting completion"
           />
         </div>
@@ -178,7 +178,7 @@ const SubAdminDashboard = () => {
                     </div>
                     <p className="text-sm opacity-80 mb-3">{action.description}</p>
                     <Link href={action.href}>
-                      <button className={`${action.buttonColor} text-white px-4 py-2 rounded text-sm font-medium transition-colors`}>
+                      <button className={`${action.buttonColor} px-4 py-2 rounded text-sm font-medium transition-colors`}>
                         {action.title.includes("New") ? "Start Registration" : 
                          action.title.includes("View") ? "View Students" : 
                          action.title.includes("Reports") ? "Generate Report" : "Verify Documents"}
