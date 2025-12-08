@@ -32,6 +32,7 @@ const menusByRole = {
       ]
     },
     { Icon: FaIdCard, label: "Admit Card", href: "/student/admit-card" },
+    { Icon: FaBookOpen, label: "Study Materials", href: "/student/study-materials" },
     { Icon: FaGraduationCap, label: "Grade Card", href: "/student/grade-card" },
     { Icon: FaClipboardCheck, label: "Attendance", href: "/student/attendance" },
     { Icon: FaCommentDots, label: "Feedback", href: "/student/feedback" },
@@ -88,7 +89,6 @@ const menusByRole = {
       isDropdown: true,
       subItems: [
         { label: "Manage Hostels", href: "/admin/hostel" },
-        { label: "Hostel Requests", href: "/admin/hostel/requests" },
         { label: "Allotments", href: "/admin/hostel/allotments" }
       ]
     },

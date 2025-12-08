@@ -1,7 +1,7 @@
 "use client";
 import React, { useState, useEffect } from 'react';
 import { FaPlus, FaEdit, FaTrash, FaEye, FaBed, FaUsers } from 'react-icons/fa';
-import { fetchHostels, adminSaveHostel } from '@/lib/hostelApi';
+import { fetchHostels, adminSaveHostel, deleteHostel } from '@/lib/hostelApi';
 
 const HostelManagement = () => {
   const [hostels, setHostels] = useState([]);
@@ -23,6 +23,8 @@ const HostelManagement = () => {
     name: '',
     type: 'Boys',
     totalRooms: '',
+    numberOfFloors: '',
+    roomsPerFloor: '',
     warden: '',
     contact: '',
     address: ''
@@ -43,6 +45,8 @@ const HostelManagement = () => {
         name: formData.name,
         type: formData.type,
         totalRooms: parseInt(formData.totalRooms),
+        numberOfFloors: parseInt(formData.numberOfFloors) || 1,
+        roomsPerFloor: parseInt(formData.roomsPerFloor) || 1,
         warden: formData.warden,
         contact: formData.contact,
         address: formData.address,
@@ -59,6 +63,8 @@ const HostelManagement = () => {
             totalRooms: saved.totalRooms,
             occupiedRooms: saved.occupiedRooms,
             availableRooms: (saved.totalRooms - saved.occupiedRooms),
+            numberOfFloors: saved.numberOfFloors,
+            roomsPerFloor: saved.roomsPerFloor,
             warden: saved.warden,
             contact: saved.contact,
             address: saved.address,
@@ -76,6 +82,8 @@ const HostelManagement = () => {
             totalRooms: saved.totalRooms,
             occupiedRooms: saved.occupiedRooms,
             availableRooms: (saved.totalRooms - saved.occupiedRooms),
+            numberOfFloors: saved.numberOfFloors,
+            roomsPerFloor: saved.roomsPerFloor,
             warden: saved.warden,
             contact: saved.contact,
             address: saved.address,
@@ -96,6 +104,8 @@ const HostelManagement = () => {
       name: '',
       type: 'Boys',
       totalRooms: '',
+      numberOfFloors: '',
+      roomsPerFloor: '',
       warden: '',
       contact: '',
       address: ''
@@ -110,6 +120,8 @@ const HostelManagement = () => {
       name: hostel.name,
       type: hostel.type,
       totalRooms: hostel.totalRooms.toString(),
+      numberOfFloors: (hostel.numberOfFloors || 1).toString(),
+      roomsPerFloor: (hostel.roomsPerFloor || 1).toString(),
       warden: hostel.warden,
       contact: hostel.contact,
       address: hostel.address
@@ -117,9 +129,16 @@ const HostelManagement = () => {
     setShowAddForm(true);
   };
 
-  const handleDelete = (id) => {
+  const handleDelete = async (id, name) => {
     if (window.confirm('Are you sure you want to delete this hostel?')) {
-      setHostels(prev => prev.filter(hostel => hostel.id !== id));
+      try {
+        await deleteHostel(id, name);
+        setHostels(prev => prev.filter(hostel => hostel.id !== id));
+        alert('Hostel deleted successfully');
+      } catch (err) {
+        console.error('Failed to delete hostel', err);
+        alert(err.message || 'Failed to delete hostel');
+      }
     }
   };
 
@@ -184,8 +203,8 @@ const HostelManagement = () => {
 
       {/* Add/Edit Form Modal */}
       {showAddForm && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white p-6 rounded-lg max-w-md w-full mx-4">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 overflow-y-auto p-4">
+          <div className="bg-white rounded-lg max-w-md w-full mx-auto my-auto p-6 max-h-[90vh] overflow-y-auto">
             <h2 className="text-xl font-bold mb-4">
               {editingHostel ? 'Edit Hostel' : 'Add New Hostel'}
             </h2>
@@ -235,6 +254,36 @@ const HostelManagement = () => {
                   min="1"
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   placeholder="Enter total number of rooms"
+                />
+              </div>
+
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Number of Floors (Ground=0)
+                </label>
+                <input
+                  type="number"
+                  name="numberOfFloors"
+                  value={formData.numberOfFloors}
+                  onChange={handleInputChange}
+                  min="1"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="e.g., 4 (for ground floor + 3 more floors)"
+                />
+              </div>
+
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Rooms Per Floor
+                </label>
+                <input
+                  type="number"
+                  name="roomsPerFloor"
+                  value={formData.roomsPerFloor}
+                  onChange={handleInputChange}
+                  min="1"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="e.g., 10 (rooms on each floor)"
                 />
               </div>
 
@@ -357,7 +406,7 @@ const HostelManagement = () => {
                         <FaEdit />
                       </button>
                       <button
-                        onClick={() => handleDelete(hostel.id)}
+                        onClick={() => handleDelete(hostel.id, hostel.name)}
                         className="text-red-600 hover:text-red-800 transition-colors"
                       >
                         <FaTrash />

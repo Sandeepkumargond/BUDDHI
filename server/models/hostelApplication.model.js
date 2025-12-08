@@ -25,7 +25,7 @@ const hostelApplicationSchema = new mongoose.Schema(
     parentName: { type: String },
     address: { type: String },
     choices: { type: [choiceSchema], default: [] },
-    status: { type: String, enum: ["pending", "approved", "rejected"], default: "pending" },
+    status: { type: String, enum: ["pending", "approved", "rejected", "removed"], default: "pending" },
     rejectionReason: { type: String },
     allottedHostel: { type: String },
     allottedRoom: { type: String },
