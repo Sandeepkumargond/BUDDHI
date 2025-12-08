@@ -332,6 +332,22 @@ class ApiService {
     return this.request(`/admin/departments${qs}`, { method: 'GET' });
   }
 
+  async adminGetDepartmentByCode(code) {
+    return this.request(`/admin/departments/${code}`, { method: 'GET' });
+  }
+
+  async adminCreateDepartment(payload) {
+    return this.request('/admin/departments', { method: 'POST', body: payload });
+  }
+
+  async adminUpdateDepartment(code, payload) {
+    return this.request(`/admin/departments/${code}`, { method: 'PATCH', body: payload });
+  }
+
+  async adminDeleteDepartment(code) {
+    return this.request(`/admin/departments/${code}`, { method: 'DELETE' });
+  }
+
   // Admit Cards (admin)
   async adminPublishAdmitCard(payload) {
     return this.request('/admin/admit-cards/publish', { method: 'POST', body: payload });
