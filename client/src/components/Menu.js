@@ -93,6 +93,16 @@ const menusByRole = {
       ]
     },
     { Icon: MdAnnouncement, label: "Notice Management", href: "/admin/notices" },
+    {
+      Icon: FiSettings,
+      label: "Settings",
+      isDropdown: true,
+      subItems: [
+        { label: "General", href: "/admin/settings" },
+        { label: "Razorpay", href: "/admin/settings/razorpay" }
+      ]
+    },
+
   ],
 
   subadmin: [
