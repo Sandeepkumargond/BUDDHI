@@ -37,6 +37,7 @@ import noticeRoutes from "./routes/notice.route.js";
 import studyMaterialRoutes from "./routes/studyMaterial.route.js";
 import hostelRoutes from "./routes/hostel.route.js";
 import razorpayRoutes from "./routes/razorpay.route.js";
+import feedbackFormRoutes from "./routes/feedbackForm.route.js";
 import ApiError from "./utils/ApiError.js";
 
 // route declarations
@@ -51,6 +52,7 @@ app.use("/api/v1/notices", noticeRoutes);
 app.use("/api/v1/study-materials", studyMaterialRoutes);
 app.use("/api/v1/hostel", hostelRoutes);
 app.use("/api/v1/razorpay", razorpayRoutes);
+app.use("/api/v1/feedback", feedbackFormRoutes);
 
 // Centralized error handler to ensure JSON responses instead of default HTML
 app.use((err, req, res, next) => {
