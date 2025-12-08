@@ -1,14 +1,12 @@
 // Base URL resolution: prefer explicit env, else infer from window origin (client-side) or default localhost.
 // Ensure single /api/v1 suffix.
 function resolveBaseUrl() {
-  let raw = process.env.NEXT_PUBLIC_API_BASE_URL;
-  if (!raw && typeof window !== 'undefined') {
-    raw = window.location.origin; // fallback to current origin in production if env missing
-  }
-  if (!raw) raw = 'http://localhost:5000';
-  // Strip trailing slashes
+  // Prefer explicit envs; avoid window origin fallback to prevent pointing at port 3000
+  let raw = process.env.NEXT_PUBLIC_API_BASE_URL
+    || process.env.NEXT_PUBLIC_API_BASE
+    || process.env.NEXT_PUBLIC_SERVER_URL
+    || 'http://localhost:5000';
   raw = raw.replace(/\/$/, '');
-  // If raw already ends with /api or /api/v1 leave, else append /api/v1
   if (!/\/api(\/v1)?$/.test(raw)) raw = `${raw}/api/v1`;
   return raw;
 }
@@ -727,6 +725,30 @@ class ApiService {
     });
   }
 
+  // ========== Razorpay Payment Integration ==========
+  
+  // Create Razorpay order
+  async createRazorpayOrder(payload) {
+    return this.request('/razorpay/order', {
+      method: 'POST',
+      body: payload
+    });
+  }
+
+  // Verify payment and create fee payment record
+  async verifyRazorpayPayment(payload) {
+    return this.request('/razorpay/verify', {
+      method: 'POST',
+      body: payload
+    });
+  }
+
+  // Get transaction status
+  async getRazorpayTransactionStatus(orderId) {
+    return this.request(`/razorpay/transaction-status?orderId=${encodeURIComponent(orderId)}`, {
+      method: 'GET'
+    });
+  }
   // ============ Alumni Methods ============
 
   // Alumni Authentication
@@ -750,13 +772,41 @@ class ApiService {
     });
   }
 
+  // Get student's fee payments (via Razorpay)
+  async getStudentFeePayments() {
+    return this.request('/razorpay/payments', {
+      method: 'GET'
+    });
+  }
+
+  // Admin: Get Razorpay credentials
+  async getRazorpayCredentials() {
+    return this.request('/razorpay/credentials', {
+      method: 'GET'
+    });
+  }
+
+  // Admin: Save/update Razorpay credentials
+  async updateRazorpayCredentials(payload) {
+    return this.request('/razorpay/credentials', {
+      method: 'POST',
+      body: payload
+    });
+  }
+
+  // Admin: Delete Razorpay credentials
+  async deleteRazorpayCredentials() {
+    return this.request('/razorpay/credentials', {
+      method: 'DELETE'
+    });
+  }
+
   async updateAlumniProfile(data) {
     return this.request('/alumni/profile/update', {
       method: 'PATCH',
       body: data
     });
   }
-
   // Alumni Internship Management
   async addInternshipOpportunity(data) {
     return this.request('/alumni/internships/add', {
@@ -778,6 +828,13 @@ class ApiService {
     });
   }
 
+  // Admin: Test Razorpay credentials
+  async testRazorpayCredentials(payload) {
+    return this.request('/razorpay/credentials/test', {
+      method: 'POST',
+      body: payload
+    });
+  }
   // Alumni Referral Management
   async addReferral(data) {
     return this.request('/alumni/referrals/add', {
@@ -882,6 +939,113 @@ class ApiService {
       body: { isApproved }
     });
   }
+
+  // Leave Management
+  async applyLeave(formData) {
+    return this.request('/leaves/student/apply', {
+      method: 'POST',
+      body: formData
+    });
+  }
+
+  async applyLeaveFaculty(formData) {
+    return this.request('/leaves/faculty/apply', {
+      method: 'POST',
+      body: formData
+    });
+  }
+
+  async getMyLeaves(status = '', page = 1, limit = 20) {
+    let url = '/leaves/student/my-leaves?';
+    if (status) url += `status=${status}&`;
+    url += `page=${page}&limit=${limit}`;
+    return this.request(url, { method: 'GET' });
+  }
+
+  async getMyLeavesFaculty(status = '', page = 1, limit = 20) {
+    let url = '/leaves/faculty/my-leaves?';
+    if (status) url += `status=${status}&`;
+    url += `page=${page}&limit=${limit}`;
+    return this.request(url, { method: 'GET' });
+  }
+
+  async getLeaveById(leaveId) {
+    return this.request(`/leaves/student/${leaveId}`, {
+      method: 'GET'
+    });
+  }
+
+  async getLeaveByIdFaculty(leaveId) {
+    return this.request(`/leaves/faculty/${leaveId}`, {
+      method: 'GET'
+    });
+  }
+
+  async cancelLeave(leaveId) {
+    return this.request(`/leaves/student/${leaveId}/cancel`, {
+      method: 'DELETE'
+    });
+  }
+
+  async cancelLeaveFaculty(leaveId) {
+    return this.request(`/leaves/faculty/${leaveId}/cancel`, {
+      method: 'DELETE'
+    });
+  }
+
+  // Admin Leave Management
+  async getAllLeaves(status = '', applicantType = '', search = '', page = 1, limit = 20) {
+    let url = '/leaves/admin/all?';
+    if (status && status !== '') url += `status=${status}&`;
+    if (applicantType && applicantType !== '') url += `applicantType=${applicantType}&`;
+    if (search && search !== '') url += `search=${search}&`;
+    url += `page=${page}&limit=${limit}`;
+    return this.request(url, { method: 'GET' });
+  }
+
+  async reviewLeave(leaveId, status, adminRemarks = '') {
+    return this.request(`/leaves/admin/${leaveId}/review`, {
+      method: 'PATCH',
+      body: { status, adminRemarks }
+    });
+  }
+
+  async deleteLeave(leaveId) {
+    return this.request(`/leaves/admin/${leaveId}`, {
+      method: 'DELETE'
+    });
+  }
+
+  // Scholarships
+  async applyScholarship(formData) {
+    return this.request('/scholarships/student/apply', {
+      method: 'POST',
+      body: formData,
+    });
+  }
+
+  async getMyScholarships(status = '', page = 1, limit = 20) {
+    let url = '/scholarships/student/my?';
+    if (status) url += `status=${status}&`;
+    url += `page=${page}&limit=${limit}`;
+    return this.request(url, { method: 'GET' });
+  }
+
+  async getAllScholarships(status = '', search = '', page = 1, limit = 20) {
+    let url = '/scholarships/admin/all?';
+    if (status) url += `status=${status}&`;
+    if (search) url += `search=${encodeURIComponent(search)}&`;
+    url += `page=${page}&limit=${limit}`;
+    return this.request(url, { method: 'GET' });
+  }
+
+  async reviewScholarship(scholarshipId, status, adminRemarks = '') {
+    return this.request(`/scholarships/admin/${scholarshipId}/review`, {
+      method: 'PATCH',
+      body: { status, adminRemarks },
+    });
+  }
 }
+
 
 export const apiService = new ApiService();

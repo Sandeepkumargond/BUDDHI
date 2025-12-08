@@ -39,6 +39,8 @@ import hostelRoutes from "./routes/hostel.route.js";
 import razorpayRoutes from "./routes/razorpay.route.js";
 import feedbackFormRoutes from "./routes/feedbackForm.route.js";
 import alumniRoutes from "./routes/alumni.route.js";
+import leaveRoutes from "./routes/leave.route.js";
+import scholarshipRoutes from "./routes/scholarship.route.js";
 import ApiError from "./utils/ApiError.js";
 
 // route declarations
@@ -55,6 +57,8 @@ app.use("/api/v1/hostel", hostelRoutes);
 app.use("/api/v1/razorpay", razorpayRoutes);
 app.use("/api/v1/feedback", feedbackFormRoutes);
 app.use("/api/v1/alumni", alumniRoutes);
+app.use("/api/v1/leaves", leaveRoutes);
+app.use("/api/v1/scholarships", scholarshipRoutes);
 
 // Centralized error handler to ensure JSON responses instead of default HTML
 app.use((err, req, res, next) => {
