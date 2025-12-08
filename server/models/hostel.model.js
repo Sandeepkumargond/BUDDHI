@@ -5,6 +5,7 @@ const roomSchema = new mongoose.Schema(
     number: { type: String, required: true },
     occupied: { type: Boolean, default: false },
     student: { type: mongoose.Schema.Types.ObjectId, ref: "Student", default: null },
+    floor: { type: Number, default: 0 },
   },
   { _id: false }
 );
@@ -16,6 +17,8 @@ const hostelSchema = new mongoose.Schema(
     totalRooms: { type: Number, required: true, min: 0 },
     occupiedRooms: { type: Number, default: 0 },
     rooms: { type: [roomSchema], default: [] },
+    numberOfFloors: { type: Number, default: 1, min: 1 },
+    roomsPerFloor: { type: Number, default: 1, min: 1 },
     warden: { type: String },
     contact: { type: String },
     address: { type: String },

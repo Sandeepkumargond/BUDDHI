@@ -89,7 +89,6 @@ const menusByRole = {
       isDropdown: true,
       subItems: [
         { label: "Manage Hostels", href: "/admin/hostel" },
-        { label: "Hostel Requests", href: "/admin/hostel/requests" },
         { label: "Allotments", href: "/admin/hostel/allotments" }
       ]
     },
