@@ -146,6 +146,16 @@ const studyMaterialSchema = new mongoose.Schema({
   expiryDate: {
     type: Date
   }
+  ,
+  // Student submissions (assignment/homework uploads)
+  submissions: [{
+    studentId: { type: mongoose.Schema.Types.ObjectId, ref: 'Student', required: true },
+    type: { type: String, enum: ['assignment', 'homework'], required: true },
+    fileUrl: { type: String, required: true },
+    fileName: { type: String },
+    fileSize: { type: Number },
+    at: { type: Date, default: Date.now }
+  }]
 }, {
   timestamps: true
 });
