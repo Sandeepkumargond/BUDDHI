@@ -77,7 +77,7 @@ export default function AdminPublishedAdmitCardsPage() {
             </select>
           </div>
           <div className="flex items-end">
-            <button className="px-4 py-2 bg-blue-600 text-white rounded" onClick={load} disabled={loading}>
+            <button className="px-4 py-2 bg-[#C3EBFA] text-gray-600 rounded hover:bg-[#A8DBF2]" onClick={load} disabled={loading}>
               {loading ? "Loading…" : "Apply Filters"}
             </button>
           </div>
@@ -110,7 +110,7 @@ export default function AdminPublishedAdmitCardsPage() {
                   <td className="border p-2">{it.published ? "Yes" : "No"}</td>
                   <td className="border p-2">{it.publishedAt ? new Date(it.publishedAt).toLocaleString() : ""}</td>
                   <td className="border p-2">
-                    <button className="px-3 py-1 bg-red-600 text-white rounded" onClick={() => onDelete(it._id)}>
+                    <button className="px-3 py-1 bg-red-200 text-red-700 rounded hover:bg-red-300" onClick={() => onDelete(it._id)}>
                       Delete
                     </button>
                   </td>

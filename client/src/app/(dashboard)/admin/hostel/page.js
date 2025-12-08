@@ -149,7 +149,7 @@ const HostelManagement = () => {
         <h1 className="text-2xl font-bold text-gray-800">Hostel Management</h1>
         <button
           onClick={() => setShowAddForm(true)}
-          className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors flex items-center gap-2"
+          className="bg-[#C3EBFA] text-gray-600 px-4 py-2 rounded-md hover:bg-[#A8DBF2] transition-colors flex items-center gap-2"
         >
           <FaPlus /> Add Hostel
         </button>

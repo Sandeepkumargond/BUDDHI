@@ -106,13 +106,13 @@ const SubAdminDashboard = () => {
       <div className="w-full xl:w-2/3 space-y-6">
         
         {/* Welcome Header */}
-        <div className="bg-linear-to-r from-blue-600 to-blue-700 text-white p-6 rounded-lg shadow-lg">
+        <div className="bg-[#C3EBFA] text-gray-800 p-6 rounded-lg shadow-lg">
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-2xl font-bold">Welcome, SubAdmin!</h1>
-              <p className="text-blue-100 mt-1">Manage student admissions and records efficiently</p>
+              <p className="text-gray-600 mt-1">Manage student admissions and records efficiently</p>
             </div>
-            <div className="bg-white bg-opacity-20 p-3 rounded-full">
+            <div className="bg-white bg-opacity-50 p-3 rounded-full">
               <Image src="/admin.png" alt="" width={32} height={32} />
             </div>
           </div>
