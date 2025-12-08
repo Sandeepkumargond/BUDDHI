@@ -144,7 +144,7 @@ export default function FacultyCoursesPage() {
                 <div className="mt-6 pt-4 border-t border-gray-100">
                   <Link
                     href={`/faculty/grades/${course._id}`}
-                    className="w-full bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors text-center block"
+                    className="w-full bg-[#C3EBFA] text-gray-600 px-4 py-2 rounded-lg hover:bg-[#A8DBF2] transition-colors text-center block"
                   >
                     Manage Grades
                   </Link>
