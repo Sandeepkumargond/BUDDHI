@@ -61,13 +61,83 @@ export default function HostelPage() {
   }, []);
   const [complaint, setComplaint] = useState("");
   const [activeTab, setActiveTab] = useState("Profile");
-
   const [showForm, setShowForm] = useState(false);
+
+  const getAvailableRoomsForHostel = (hostelName) => {
+    const hostel = hostels.find(h => h.name === hostelName);
+    if (!hostel) return [];
+    
+    const availableRooms = hostel.rooms ? hostel.rooms.filter(r => !r.occupied) : [];
+    return availableRooms;
+  };
+
+  const getAvailableFloorsForHostel = (hostelName) => {
+    const hostel = hostels.find(h => h.name === hostelName);
+    if (!hostel) return [];
+    
+    const floors = new Set();
+    if (hostel.rooms) {
+      hostel.rooms.forEach(r => {
+        if (!r.occupied) {
+          floors.add(r.floor ?? 0);
+        }
+      });
+    }
+    return Array.from(floors).sort((a, b) => a - b);
+  };
+
+  const getAllFloorsForHostel = (hostelName) => {
+    const hostel = hostels.find(h => h.name === hostelName);
+    if (!hostel) return [];
+    
+    const numberOfFloors = hostel.numberOfFloors || 1;
+    const floors = [];
+    for (let i = 0; i < numberOfFloors; i++) {
+      floors.push(i);
+    }
+    return floors;
+  };
+
+  const getAvailableRoomsCountPerFloor = (hostelName) => {
+    const hostel = hostels.find(h => h.name === hostelName);
+    if (!hostel) return {};
+    
+    const roomsPerFloor = {};
+    const numberOfFloors = hostel.numberOfFloors || 1;
+    
+    // Initialize all floors with 0
+    for (let i = 0; i < numberOfFloors; i++) {
+      roomsPerFloor[i] = 0;
+    }
+    
+    // Count available rooms per floor
+    if (hostel.rooms) {
+      hostel.rooms.forEach(r => {
+        const floor = r.floor ?? 0;
+        if (!r.occupied) {
+          roomsPerFloor[floor] = (roomsPerFloor[floor] || 0) + 1;
+        }
+      });
+    }
+    
+    return roomsPerFloor;
+  };
+
+  const getRoomsOnFloor = (hostelName, floor) => {
+    const hostel = hostels.find(h => h.name === hostelName);
+    if (!hostel) return [];
+    
+    const roomsOnFloor = hostel.rooms ? hostel.rooms.filter(r => !r.occupied && (r.floor ?? 0) === floor) : [];
+    return roomsOnFloor.sort((a, b) => parseInt(a.number) - parseInt(b.number));
+  };
   const [hostels, setHostels] = useState([]);
+  const [hostelLoading, setHostelLoading] = useState(true);
   const [applyOpen, setApplyOpen] = useState(false);
   const [choice1Hostel, setChoice1Hostel] = useState("");
+  const [choice1Floor, setChoice1Floor] = useState("");
   const [choice1Room, setChoice1Room] = useState("");
   const [choice2Hostel, setChoice2Hostel] = useState("");
+  const [choice2Floor, setChoice2Floor] = useState("");
   const [choice2Room, setChoice2Room] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [hostelAllocationData, setHostelAllocationData] = useState(null);
@@ -76,10 +146,15 @@ export default function HostelPage() {
     let mounted = true;
     (async () => {
       try {
+        setHostelLoading(true);
         const hs = await fetchHostels();
-        if (mounted) setHostels(hs);
+        if (mounted) {
+          setHostels(hs);
+          setHostelLoading(false);
+        }
       } catch (e) {
         console.error("Failed to load hostels", e);
+        if (mounted) setHostelLoading(false);
       }
     })();
     return () => { mounted = false; };
@@ -105,9 +180,9 @@ export default function HostelPage() {
                   ...(updated.hostel || {}),
                   hostelName: allocation.hostelName,
                   roomNumber: allocation.roomNumber,
+                  floor: allocation.floor || '-',
                   roomType: allocation.roomType,
                   block: allocation.hostelDetails?.block || '-',
-                  floor: allocation.hostelDetails?.floor || '-',
                   bedNumber: allocation.hostelDetails?.bedNumber || '-',
                   occupancy: allocation.hostelDetails?.occupancy || '-',
                   attachedWashroom: allocation.hostelDetails?.attachedWashroom,
@@ -118,8 +193,7 @@ export default function HostelPage() {
                   wardenPhone: allocation.hostelDetails?.contact || '-',
                   wardenEmail: allocation.hostelDetails?.email || '-',
                   allocationDate: allocation.allottedDate ? new Date(allocation.allottedDate).toLocaleDateString() : '-',
-                  admissionYear: allocation.hostelDetails?.admissionYear || '-',
-                  roomStatus: 'Allocated'
+                  roomStatus: allocation.status || 'Allocated'
                 }
               };
             });
@@ -133,6 +207,39 @@ export default function HostelPage() {
     })();
     return () => { mounted = false; };
   }, []);
+
+const downloadAllotmentDetails = () => {
+  const allotmentContent = `
+    <div style="font-family: Arial; padding: 20px;">
+      <h2 style="text-align:center;">Hostel Allotment Details</h2>
+      <hr />
+      <h3>Student Details</h3>
+      <p><strong>Name:</strong> ${student.name}</p>
+      <p><strong>Roll No:</strong> ${student.rollNo}</p>
+      <p><strong>Enrollment No:</strong> ${student.enrolmentNo}</p>
+
+      <h3>Allotment Details</h3>
+      <p><strong>Hostel Name:</strong> ${student.hostel.hostelName}</p>
+      <p><strong>Room Number:</strong> ${student.hostel.roomNumber}</p>
+      <p><strong>Room Type:</strong> ${student.hostel.roomType}</p>
+      <p><strong>Allocation Date:</strong> ${student.hostel.allocationDate}</p>
+
+      <h3>Warden Details</h3>
+      <p><strong>Warden Name:</strong> ${student.hostel.wardenName}</p>
+      <p><strong>Warden Phone:</strong> ${student.hostel.wardenPhone}</p>
+
+      <br><br>
+      <p style="text-align:right;">Authorized Signature</p>
+    </div>
+  `;
+
+  const newWindow = window.open("", "_blank");
+  newWindow.document.write(allotmentContent);
+  newWindow.document.close();
+
+  newWindow.print();
+};
+
 
 const downloadReceipt = () => {
   const receiptContent = `
@@ -224,6 +331,7 @@ const downloadReceipt = () => {
 
       <div className="space-y-6">
         {/* Consolidated Hostel Information */}
+        {hostelAllocationData && student.hostel?.hostelName ? (
         <div className="rounded-xl bg-white" style={{ border: "1px solid #e5e7eb", boxShadow: "0 6px 18px rgba(2,6,23,0.06)" }}>
           <div className="p-5 space-y-0" style={{ color: "#0f172a" }}>
             {/* Hostel Allocation */}
@@ -237,42 +345,9 @@ const downloadReceipt = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <p><strong>Hostel Name:</strong> {student.hostel.hostelName}</p>
                 <p><strong>Room Number:</strong> {student.hostel.roomNumber}</p>
-                <p><strong>Block:</strong> {student.hostel.block}</p>
                 <p><strong>Floor:</strong> {student.hostel.floor}</p>
                 <p><strong>Room Type:</strong> {student.hostel.roomType}</p>
                 <p><strong>Status:</strong> {student.hostel.roomStatus}</p>
-              </div>
-            </section>
-
-            {/* Room Details */}
-            <div className="border-t" style={{ borderColor: "#e5e7eb" }}></div>
-            <section className="py-6">
-              <h3
-                className="text-base md:text-lg font-semibold mb-3 inline-block px-3 py-2 rounded-md"
-                style={{ color: "#3730a3", background: "#eef2ff", border: "1px solid #e5e7eb" }}
-              >
-                Room Details
-              </h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <p><strong>Bed Number:</strong> {student.hostel.bedNumber}</p>
-                <p><strong>Occupancy:</strong> {student.hostel.occupancy}</p>
-                <p><strong>Attached Washroom:</strong> {student.hostel.attachedWashroom ? "Yes" : "No"}</p>
-              </div>
-            </section>
-
-            {/* Fee & Payment */}
-            <div className="border-t" style={{ borderColor: "#e5e7eb" }}></div>
-            <section className="py-6">
-              <h3
-                className="text-base md:text-lg font-semibold mb-3 inline-block px-3 py-2 rounded-md"
-                style={{ color: "#3730a3", background: "#eef2ff", border: "1px solid #e5e7eb" }}
-              >
-                Fee & Payment
-              </h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <p><strong>Hostel Fee:</strong> {student.hostel.hostelFee}</p>
-                <p><strong>Payment Status:</strong> {student.hostel.paymentStatus}</p>
-                <p><strong>Last Payment Date:</strong> {student.hostel.lastPaymentDate}</p>
               </div>
             </section>
 
@@ -288,7 +363,6 @@ const downloadReceipt = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <p><strong>Name:</strong> {student.hostel.wardenName}</p>
                 <p><strong>Phone:</strong> {student.hostel.wardenPhone}</p>
-                <p><strong>Email:</strong> {student.hostel.wardenEmail}</p>
               </div>
             </section>
 
@@ -303,22 +377,39 @@ const downloadReceipt = () => {
               </h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <p><strong>Allocation Date:</strong> {student.hostel.allocationDate}</p>
-                <p><strong>Admission Year:</strong> {student.hostel.admissionYear}</p>
               </div>
             </section>
             <div className="flex justify-end pt-2">
               <button
-                onClick={downloadReceipt}
+                onClick={downloadAllotmentDetails}
                 className="mt-2 text-white px-4 py-2 rounded-md"
                 style={{ background: "#6366f1" }}
                 onMouseEnter={(e) => (e.currentTarget.style.background = "#4f46e5")}
                 onMouseLeave={(e) => (e.currentTarget.style.background = "#6366f1")}
               >
-                Download Fee Receipt (PDF)
+                Download Allotment Details (PDF)
               </button>
             </div>
           </div>
         </div>
+        ) : (
+          // No allocation - show apply button
+          <div className="rounded-xl bg-white p-6" style={{ border: "1px solid #e5e7eb", boxShadow: "0 6px 18px rgba(2,6,23,0.06)" }}>
+            <div className="text-center space-y-4">
+              <h3 className="text-xl font-semibold" style={{ color: "#0f172a" }}>No Hostel Allocation</h3>
+              <p style={{ color: "#64748b" }}>You don't have an active hostel allocation. Click the button below to apply for hostel.</p>
+              <button
+                onClick={() => setApplyOpen(true)}
+                className="px-6 py-3 text-white rounded-md font-semibold"
+                style={{ background: "#6366f1" }}
+                onMouseEnter={(e) => (e.currentTarget.style.background = "#4f46e5")}
+                onMouseLeave={(e) => (e.currentTarget.style.background = "#6366f1")}
+              >
+                Apply for Hostel
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Complaint History (separate section) */}
@@ -414,54 +505,179 @@ const downloadReceipt = () => {
 
       {/* HOSTEL APPLICATION POPUP */}
       {applyOpen && (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center">
-          <div className="bg-white p-6 rounded-xl w-[28rem] shadow-lg">
-            <h3 className="font-bold mb-3">Hostel Application</h3>
-            <div className="space-y-3">
-              <div>
-                <label className="block text-sm mb-1">Choice 1: Hostel</label>
-                <select className="border w-full p-2 rounded" value={choice1Hostel} onChange={(e)=>setChoice1Hostel(e.target.value)}>
-                  <option value="">Select hostel</option>
-                  {hostels.map(h => (
-                    <option key={h.id || h._id} value={h.name}>{h.name}</option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm mb-1">Choice 1: Room (optional)</label>
-                <input className="border w-full p-2 rounded" value={choice1Room} onChange={(e)=>setChoice1Room(e.target.value)} placeholder="e.g., 12" />
-              </div>
-              <div>
-                <label className="block text-sm mb-1">Choice 2: Hostel (optional)</label>
-                <select className="border w-full p-2 rounded" value={choice2Hostel} onChange={(e)=>setChoice2Hostel(e.target.value)}>
-                  <option value="">Select hostel</option>
-                  {hostels.map(h => (
-                    <option key={h.id || h._id} value={h.name}>{h.name}</option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm mb-1">Choice 2: Room (optional)</label>
-                <input className="border w-full p-2 rounded" value={choice2Room} onChange={(e)=>setChoice2Room(e.target.value)} placeholder="e.g., 34" />
-              </div>
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center overflow-y-auto p-4 z-50">
+          <div className="bg-white p-6 rounded-xl w-full max-w-2xl shadow-lg my-8 max-h-[90vh] overflow-y-auto">
+            <div className="flex justify-between items-center mb-2">
+              <h3 className="font-bold text-lg">Hostel Application</h3>
+              <button onClick={()=>setApplyOpen(false)} className="text-gray-500 text-xl">✕</button>
             </div>
+            <p className="text-sm text-gray-600 mb-4">Select your hostel preferences with optional floor and room preferences</p>
+            
+            {hostelLoading ? (
+              <div className="text-center py-8">
+                <p className="text-gray-600">Loading available hostels...</p>
+              </div>
+            ) : hostels.length === 0 ? (
+              <div className="text-center py-8">
+                <p className="text-gray-600">No hostels available at the moment.</p>
+              </div>
+            ) : (
+              <div className="space-y-6">
+              {/* Choice 1 */}
+              <div className="border rounded-lg p-4 bg-gray-50">
+                <h4 className="font-semibold mb-3 text-blue-600">Choice 1 (Priority)</h4>
+                
+                <div className="mb-4">
+                  <label className="block text-sm font-medium mb-2">Select Hostel</label>
+                  <select 
+                    className="border w-full p-2 rounded" 
+                    value={choice1Hostel} 
+                    onChange={(e)=>{
+                      setChoice1Hostel(e.target.value);
+                      setChoice1Floor("");
+                      setChoice1Room("");
+                    }}
+                  >
+                    <option value="">Select hostel</option>
+                    {hostels.map(h => {
+                      const availableCount = h.rooms ? h.rooms.filter(r => !r.occupied).length : 0;
+                      return (
+                        <option key={h.id || h._id} value={h.name}>
+                          {h.name} ({availableCount} rooms available)
+                        </option>
+                      );
+                    })}
+                  </select>
+                </div>
 
-            <div className="flex justify-end gap-3 mt-4">
-              <button onClick={()=>setApplyOpen(false)} className="px-4 py-2 rounded bg-gray-300">Cancel</button>
+                {choice1Hostel && (
+                  <>
+                    <div className="mb-4 p-3 bg-blue-50 rounded border border-blue-200">
+                      <p className="text-sm text-blue-800 mb-2">
+                        Available rooms: <strong>{getAvailableRoomsForHostel(choice1Hostel).length}</strong>
+                      </p>
+                      {hostels.find(h => h.name === choice1Hostel) && (
+                        <div className="text-xs text-blue-700 space-y-1 mt-2">
+                          <p><strong>Type:</strong> {hostels.find(h => h.name === choice1Hostel)?.type}</p>
+                          <p><strong>Warden:</strong> {hostels.find(h => h.name === choice1Hostel)?.warden}</p>
+                          <p><strong>Contact:</strong> {hostels.find(h => h.name === choice1Hostel)?.contact}</p>
+                          {hostels.find(h => h.name === choice1Hostel)?.numberOfFloors && (
+                            <>
+                              <p><strong>Total Floors:</strong> {hostels.find(h => h.name === choice1Hostel)?.numberOfFloors}</p>
+                              <p><strong>Rooms per Floor:</strong> {hostels.find(h => h.name === choice1Hostel)?.roomsPerFloor || 1}</p>
+                              <div className="mt-2 border-t border-blue-300 pt-2">
+                                <p className="font-semibold mb-1">Available Rooms per Floor:</p>
+                                <div className="grid grid-cols-2 gap-1">
+                                  {Object.entries(getAvailableRoomsCountPerFloor(choice1Hostel)).map(([floor, count]) => (
+                                    <p key={floor} className="text-xs">
+                                      {floor === '0' ? 'Ground' : `Floor ${floor}`}: <strong>{count}</strong> rooms
+                                    </p>
+                                  ))}
+                                </div>
+                              </div>
+                            </>
+                          )}
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="mb-4">
+                      <label className="block text-sm font-medium mb-2">Select Floor (optional)</label>
+                      <select 
+                        className="border w-full p-2 rounded" 
+                        value={choice1Floor} 
+                        onChange={(e)=>{
+                          setChoice1Floor(e.target.value);
+                          setChoice1Room("");
+                        }}
+                      >
+                        <option value="">All Floors</option>
+                        {getAllFloorsForHostel(choice1Hostel).map(floor => {
+                          const availableOnFloor = getAvailableRoomsCountPerFloor(choice1Hostel)[floor] || 0;
+                          const roomsPerFloor = hostels.find(h => h.name === choice1Hostel)?.roomsPerFloor || 1;
+                          return (
+                            <option key={floor} value={floor.toString()}>
+                              {floor === 0 ? 'Ground Floor' : `Floor ${floor}`} - {availableOnFloor}/{roomsPerFloor} rooms available
+                            </option>
+                          );
+                        })}
+                      </select>
+                    </div>
+
+                    {choice1Floor && (
+                      <div className="mb-4">
+                        <label className="block text-sm font-medium mb-2">Select Room Number (optional)</label>
+                        <select 
+                          className="border w-full p-2 rounded" 
+                          value={choice1Room} 
+                          onChange={(e)=>setChoice1Room(e.target.value)}
+                        >
+                          <option value="">Any Room on Floor {choice1Floor === '0' ? 'Ground' : choice1Floor}</option>
+                          {getRoomsOnFloor(choice1Hostel, parseInt(choice1Floor)).map(room => (
+                            <option key={room.number} value={room.number}>
+                              Room {room.number}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    )}
+
+                    {!choice1Floor && (
+                      <div className="mb-4">
+                        <label className="block text-sm font-medium mb-2">Select Room Number (optional)</label>
+                        <select 
+                          className="border w-full p-2 rounded" 
+                          value={choice1Room} 
+                          onChange={(e)=>setChoice1Room(e.target.value)}
+                        >
+                          <option value="">Any Room in {choice1Hostel}</option>
+                          {getAvailableRoomsForHostel(choice1Hostel).map(room => (
+                            <option key={room.number} value={room.number}>
+                              Room {room.number} (Floor {room.floor === 0 ? 'Ground' : room.floor})
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    )}
+                  </>
+                )}
+              </div>
+
+              {/* Application Summary */}
+              <div className="border-t pt-4 mt-4">
+                <h4 className="font-semibold mb-3">Application Summary</h4>
+                <div className="bg-gray-50 p-3 rounded text-sm">
+                  <p><strong>Selected Hostel:</strong> {choice1Hostel ? `${choice1Hostel}${choice1Floor ? ` - Floor ${choice1Floor === '0' ? 'Ground' : choice1Floor}` : ''}${choice1Room ? ` - Room ${choice1Room}` : ''}` : 'Not selected'}</p>
+                </div>
+              </div>
+
+              <div className="flex justify-end gap-3 mt-6">
+                <button onClick={()=>setApplyOpen(false)} className="px-4 py-2 rounded bg-gray-300 text-gray-700">Cancel</button>
               <button
                 onClick={async ()=>{
                   // Check if already allocated
-                  if (hostelAllocationData || student.hostelAlloted) {
-                    alert('You have already been allocated a hostel. You cannot apply again.');
+                  if (hostelAllocationData && hostelAllocationData.hostelName) {
+                    alert('You have already been allocated a hostel. Contact admin to change your allocation.');
                     setApplyOpen(false);
+                    return;
+                  }
+                  
+                  if (!choice1Hostel) {
+                    alert('Please select at least one hostel');
                     return;
                   }
                   
                   setSubmitting(true);
                   try {
                     const choices = [];
-                    if (choice1Hostel) choices.push({ hostelName: choice1Hostel, roomNumber: choice1Room || undefined, priority: 1 });
-                    if (choice2Hostel) choices.push({ hostelName: choice2Hostel, roomNumber: choice2Room || undefined, priority: 2 });
+                    if (choice1Hostel) {
+                      choices.push({ 
+                        hostelName: choice1Hostel, 
+                        roomNumber: choice1Room || undefined,
+                        floor: choice1Floor ? parseInt(choice1Floor) : undefined,
+                        priority: 1 
+                      });
+                    }
                     const payload = {
                       studentId: student.enrolmentNo || student.rollNo || "UNKNOWN",
                       studentName: student.name,
@@ -486,12 +702,14 @@ const downloadReceipt = () => {
                     setSubmitting(false);
                   }
                 }}
-                disabled={submitting || hostelAllocationData || student.hostelAlloted}
-                className={`px-4 py-2 rounded text-white ${(submitting || hostelAllocationData || student.hostelAlloted) ? 'bg-gray-400' : 'bg-blue-600'}`}
+                disabled={submitting || (hostelAllocationData && hostelAllocationData.hostelName) || !choice1Hostel}
+                className={`px-4 py-2 rounded text-white ${(submitting || (hostelAllocationData && hostelAllocationData.hostelName) || !choice1Hostel) ? 'bg-gray-400' : 'bg-blue-600'}`}
               >
                 {submitting ? 'Submitting...' : 'Submit Application'}
               </button>
-            </div>
+              </div>
+              </div>
+            )}
           </div>
         </div>
       )}

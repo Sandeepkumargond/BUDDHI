@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { createOrUpdateHostel, listHostels, submitHostelApplication, listApplications, getStudentHostelAllocation } from "../controllers/hostel.controller.js";
+import { createOrUpdateHostel, listHostels, submitHostelApplication, listApplications, getStudentHostelAllocation, updateHostelAllocation, removeHostelAllocation, deleteHostel } from "../controllers/hostel.controller.js";
 import { authenticateAdmin } from "../middlewares/admin.middleware.js";
 import { authenticateStudent } from "../middlewares/student.middleware.js";
 
@@ -19,6 +19,15 @@ router.get("/student/hostel/allocation", authenticateStudent, getStudentHostelAl
 
 // Admin view applications
 router.get("/admin/hostel/applications", authenticateAdmin, listApplications);
+
+// Admin: Update hostel allocation (edit hostel/room for student)
+router.put("/admin/hostel/allocation", authenticateAdmin, updateHostelAllocation);
+
+// Admin: Remove student from hostel
+router.delete("/admin/hostel/allocation", authenticateAdmin, removeHostelAllocation);
+
+// Admin: Delete hostel
+router.delete("/admin/hostels", authenticateAdmin, deleteHostel);
 
 // Debug: Get all applications (remove in production)
 router.get("/debug/all-applications", async (req, res) => {
