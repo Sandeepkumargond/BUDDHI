@@ -4,6 +4,7 @@ import { useState } from "react"
 import Image from "next/image"
 import Link from "next/link"
 import { role } from "@/lib/data"
+import { FaMoneyBillWave, FaChartLine, FaExclamationTriangle, FaPercentage } from 'react-icons/fa'
 import { 
   financialSummary, 
   studentFeeRecords, 
@@ -194,7 +195,7 @@ const FinancePage = () => {
               <p className="text-gray-600">Total Revenue</p>
               <p className="text-2xl font-bold">₹{(financialSummary.totalRevenue / 100000).toFixed(1)}L</p>
             </div>
-            <Image src="/home.png" alt="Revenue" width={40} height={40} className="opacity-80" />
+            <FaMoneyBillWave className="w-6 h-6 text-gray-400" />
           </div>
         </div>
         
@@ -204,7 +205,7 @@ const FinancePage = () => {
               <p className="text-gray-600">Net Income</p>
               <p className="text-2xl font-bold">₹{(financialSummary.netIncome / 100000).toFixed(1)}L</p>
             </div>
-            <Image src="/profit.png" alt="Profit" width={40} height={40} className="opacity-80" />
+            <FaChartLine className="w-6 h-6 text-gray-400" />
           </div>
         </div>
         
@@ -214,7 +215,7 @@ const FinancePage = () => {
               <p className="text-gray-600">Pending Fees</p>
               <p className="text-2xl font-bold">₹{(financialSummary.totalPendingFees / 100000).toFixed(1)}L</p>
             </div>
-            <Image src="/pending.png" alt="Pending" width={40} height={40} className="opacity-80" />
+            <FaExclamationTriangle className="w-6 h-6 text-gray-400" />
           </div>
         </div>
         
@@ -224,7 +225,7 @@ const FinancePage = () => {
               <p className="text-gray-600">Collection Rate</p>
               <p className="text-2xl font-bold">{financialSummary.collectionRate}%</p>
             </div>
-            <Image src="/percentage.png" alt="Rate" width={40} height={40} className="opacity-80" />
+            <FaPercentage className="w-6 h-6 text-gray-400" />
           </div>
         </div>
       </div>
@@ -448,7 +449,8 @@ const FinancePage = () => {
         <h2 className="text-xl font-semibold">Expense Management</h2>
         <button 
           onClick={() => setShowExpenseModal(true)}
-          className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700"
+          className="text-red-700 px-4 py-2 rounded-lg hover:opacity-80"
+          style={{ backgroundColor: '#FCA5A5' }}
         >
           Add Expense
         </button>
@@ -563,7 +565,8 @@ const FinancePage = () => {
         <h2 className="text-xl font-semibold">Budget Planning</h2>
         <button 
           onClick={() => setShowBudgetModal(true)}
-          className="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700"
+          className="text-gray-700 px-4 py-2 rounded-lg hover:opacity-80"
+          style={{ backgroundColor: '#C9CCFF' }}
         >
           Create Budget
         </button>
