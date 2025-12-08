@@ -26,6 +26,7 @@ class ApiService {
 
   async request(endpoint, options = {}) {
     const url = `${this.baseURL}${endpoint}`;
+    const silent = options.silent === true;
 
     const method = (options.method || 'GET').toUpperCase();
     const isFormData = typeof FormData !== 'undefined' && options.body instanceof FormData;
@@ -59,7 +60,7 @@ class ApiService {
     }
 
     try {
-      try { console.debug('[apiService] Request', { url, method, headers }); } catch {}
+      try { if (!silent) console.debug('[apiService] Request', { url, method, headers }); } catch {}
       const response = await fetch(url, config);
 
       // Check if response is JSON
@@ -89,7 +90,15 @@ class ApiService {
 
       return data;
     } catch (error) {
-      console.error('API request failed:', { message: error?.message, status: error?.status, url: error?.url, endpoint: error?.endpoint });
+      try {
+        const safe = {
+          message: (error && error.message) ? error.message : String(error || 'Unknown error'),
+          status: (error && error.status) ? error.status : undefined,
+          url: (error && error.url) ? error.url : undefined,
+          endpoint: (error && error.endpoint) ? error.endpoint : endpoint
+        };
+        if (!silent) console.error('API request failed:', safe);
+      } catch {}
       throw error;
     }
   }
