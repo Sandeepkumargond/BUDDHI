@@ -62,11 +62,14 @@ export default function StudentListPage() {
         data = res;
       } else {
         console.error("Unauthorized role for student list");
+        showToast.error("Unauthorized role for student list");
         return;
       }
 
       if (!data || !data.data) {
-        console.error("Error fetching students:", data?.message || "No data returned");
+        const msg = data?.message || "No data returned";
+        console.error("Error fetching students:", msg);
+        showToast.error(`Failed to load students: ${msg}`);
         return;
       }
 
@@ -102,6 +105,7 @@ export default function StudentListPage() {
       setBatches(batchData);
     } catch (error) {
       console.error("Fetch error:", error);
+      showToast.error(error?.message || "Failed to load students");
     } finally {
       setLoading(false);
     }
