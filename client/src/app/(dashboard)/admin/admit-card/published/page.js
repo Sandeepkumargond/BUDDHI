@@ -27,7 +27,7 @@ export default function AdminPublishedAdmitCardsPage() {
     }
   };
 
-  useEffect(() => { load(); /* eslint-disable-next-line */ }, []);
+  useEffect(() => { load(); }, [load]);
 
   const onDelete = async (id) => {
     if (!confirm("Delete this admit card? This will remove it from students immediately.")) return;

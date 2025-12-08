@@ -10,12 +10,12 @@ import { useRouter } from "next/navigation";
 export default function NoticesListPage() {
   const { user: authUser, role } = useAuth();
   const router = useRouter();
-  
+
   const [notices, setNotices] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [stats, setStats] = useState(null);
-  
+
   const [filters, setFilters] = useState({
     page: 1,
     limit: 12,
@@ -39,13 +39,13 @@ export default function NoticesListPage() {
     try {
       setLoading(true);
       const queryParams = new URLSearchParams();
-      
+
       Object.entries(filters).forEach(([key, value]) => {
         if (value) queryParams.append(key, value);
       });
 
       const response = await apiService.request(`/notices?${queryParams}`);
-      
+
       if (response.success && response.data) {
         setNotices(response.data.notices || []);
       } else {
@@ -88,12 +88,12 @@ export default function NoticesListPage() {
       const response = await apiService.request(`/notices/${noticeId}/toggle-status`, {
         method: 'PATCH'
       });
-      
+
       if (response.success) {
         // Update the notice in the list
-        setNotices(prev => 
-          prev.map(notice => 
-            notice._id === noticeId 
+        setNotices(prev =>
+          prev.map(notice =>
+            notice._id === noticeId
               ? { ...notice, isActive: !currentStatus }
               : notice
           )
@@ -111,12 +111,12 @@ export default function NoticesListPage() {
       const response = await apiService.request(`/notices/${noticeId}/toggle-pin`, {
         method: 'PATCH'
       });
-      
+
       if (response.success) {
         // Update the notice in the list
-        setNotices(prev => 
-          prev.map(notice => 
-            notice._id === noticeId 
+        setNotices(prev =>
+          prev.map(notice =>
+            notice._id === noticeId
               ? { ...notice, isPinned: !currentPinned }
               : notice
           )
@@ -138,7 +138,7 @@ export default function NoticesListPage() {
       const response = await apiService.request(`/notices/${noticeId}`, {
         method: 'DELETE'
       });
-      
+
       if (response.success) {
         // Remove from list
         setNotices(prev => prev.filter(notice => notice._id !== noticeId));
@@ -177,7 +177,7 @@ export default function NoticesListPage() {
       <div className="p-6">
         <div className="text-center">
           <h2 className="text-xl font-semibold text-red-600">Access Denied</h2>
-          <p className="text-gray-600 mt-2">You don't have permission to access this page.</p>
+          <p className="text-gray-600 mt-2">You don&apos;t have permission to access this page.</p>
         </div>
       </div>
     );
@@ -272,7 +272,7 @@ export default function NoticesListPage() {
             {showFilters ? 'Hide Filters' : 'Show Filters'}
           </button>
         </div>
-        
+
         <form onSubmit={handleSearch} className="space-y-4">
           <div className="flex gap-4">
             <input
@@ -304,7 +304,7 @@ export default function NoticesListPage() {
                 <option value="staff">Staff</option>
                 <option value="parents">Parents</option>
               </select>
-              
+
               <select
                 value={filters.priority}
                 onChange={(e) => handleFilterChange('priority', e.target.value)}
@@ -383,9 +383,8 @@ export default function NoticesListPage() {
           {notices.map((notice) => (
             <div
               key={notice._id}
-              className={`bg-white rounded-lg border p-6 hover:shadow-lg transition-shadow ${
-                notice.isPinned ? 'ring-2 ring-purple-200 bg-purple-50' : ''
-              }`}
+              className={`bg-white rounded-lg border p-6 hover:shadow-lg transition-shadow ${notice.isPinned ? 'ring-2 ring-purple-200 bg-purple-50' : ''
+                }`}
             >
               {/* Header */}
               <div className="flex justify-between items-start mb-3">
@@ -401,8 +400,8 @@ export default function NoticesListPage() {
                   {notice.isPinned && (
                     <span className="text-purple-600" title="Pinned">📌</span>
                   )}
-                  <span className={`w-3 h-3 rounded-full ${notice.isActive ? 'bg-green-400' : 'bg-red-400'}`} 
-                        title={notice.isActive ? 'Active' : 'Inactive'}>
+                  <span className={`w-3 h-3 rounded-full ${notice.isActive ? 'bg-green-400' : 'bg-red-400'}`}
+                    title={notice.isActive ? 'Active' : 'Inactive'}>
                   </span>
                 </div>
               </div>
@@ -450,22 +449,20 @@ export default function NoticesListPage() {
                 </Link>
                 <button
                   onClick={() => toggleNoticePin(notice._id, notice.isPinned)}
-                  className={`px-3 py-2 rounded text-sm ${
-                    notice.isPinned 
-                      ? 'bg-purple-600 text-white hover:bg-purple-700' 
+                  className={`px-3 py-2 rounded text-sm ${notice.isPinned
+                      ? 'bg-purple-600 text-white hover:bg-purple-700'
                       : 'bg-purple-100 text-purple-700 hover:bg-purple-200'
-                  }`}
+                    }`}
                   title={notice.isPinned ? 'Unpin' : 'Pin'}
                 >
                   📌
                 </button>
                 <button
                   onClick={() => toggleNoticeStatus(notice._id, notice.isActive)}
-                  className={`px-3 py-2 rounded text-sm ${
-                    notice.isActive 
-                      ? 'bg-red-100 text-red-700 hover:bg-red-200' 
+                  className={`px-3 py-2 rounded text-sm ${notice.isActive
+                      ? 'bg-red-100 text-red-700 hover:bg-red-200'
                       : 'bg-green-100 text-green-700 hover:bg-green-200'
-                  }`}
+                    }`}
                   title={notice.isActive ? 'Deactivate' : 'Activate'}
                 >
                   {notice.isActive ? '⏸️' : '▶️'}
@@ -493,7 +490,7 @@ export default function NoticesListPage() {
           </div>
           <h3 className="text-lg font-medium text-gray-900 mb-2">No notices found</h3>
           <p className="text-gray-600 mb-4">
-            {filters.search || filters.audience || filters.priority || filters.category || filters.isActive 
+            {filters.search || filters.audience || filters.priority || filters.category || filters.isActive
               ? 'Try adjusting your filters to see more results.'
               : 'Get started by creating your first notice.'
             }

@@ -67,7 +67,7 @@ export default function FacultyManagement() {
         joiningDate: formData.joiningDate || new Date().toISOString().split('T')[0],
         designation: formData.designation || ''
       };
-      
+
       const response = await apiService.createFaculty(payload);
       showToast.success("Faculty added successfully!");
       setShowAddModal(false);
@@ -88,9 +88,9 @@ export default function FacultyManagement() {
         batch: assignmentData.batch || '',
         academicYear: assignmentData.academicYear || new Date().getFullYear().toString()
       };
-      
+
       console.log('Assigning course with payload:', payload);
-      
+
       await apiService.assignCourseToFaculty(payload);
       showToast.success("Course assigned successfully!");
       setShowAssignModal(false);
@@ -104,7 +104,7 @@ export default function FacultyManagement() {
 
   const handleDeleteFaculty = async (facultyId) => {
     if (!confirm("Are you sure you want to delete this faculty member?")) return;
-    
+
     try {
       await apiService.deleteFaculty(facultyId);
       showToast.success("Faculty deleted successfully!");
@@ -116,7 +116,7 @@ export default function FacultyManagement() {
 
   const handleRemoveCourse = async (facultyId, assignmentId, courseName) => {
     if (!confirm(`Are you sure you want to remove the course assignment: ${courseName}?`)) return;
-    
+
     try {
       await apiService.removeCourseFromFaculty(facultyId, assignmentId);
       showToast.success("Course assignment removed successfully!");
@@ -170,6 +170,7 @@ export default function FacultyManagement() {
                     <td className="px-6 py-4 whitespace-nowrap text-sm">{faculty.facultyId}</td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img
                           src={faculty.imageUrl || "/avatar.png"}
                           alt={faculty.firstName}
@@ -214,8 +215,8 @@ export default function FacultyManagement() {
                           <h3 className="font-semibold text-sm text-gray-700 mb-3">Assigned Courses:</h3>
                           <div className="grid gap-2">
                             {faculty.assignedCourses.filter(c => c.isActive).map((assignment) => (
-                              <div 
-                                key={assignment._id} 
+                              <div
+                                key={assignment._id}
                                 className="flex items-center justify-between bg-white p-3 rounded border border-gray-200"
                               >
                                 <div className="flex-1">
@@ -231,7 +232,7 @@ export default function FacultyManagement() {
                                 </div>
                                 <button
                                   onClick={() => handleRemoveCourse(
-                                    faculty._id, 
+                                    faculty._id,
                                     assignment._id,
                                     `${assignment.courseId?.name || 'Unknown'} (Sem ${assignment.semester}${assignment.section ? `, Sec ${assignment.section}` : ''})`
                                   )}

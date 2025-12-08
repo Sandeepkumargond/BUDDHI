@@ -70,11 +70,11 @@ export default function EditNoticePage() {
       try {
         setLoading(true);
         const response = await apiService.request(`/notices/${noticeId}`);
-        
+
         if (response.success && response.data) {
           const noticeData = response.data.notice;
           setNotice(noticeData);
-          
+
           // Populate form with existing data
           setFormData({
             title: noticeData.title || '',
@@ -179,7 +179,7 @@ export default function EditNoticePage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     if (!validate()) {
       return;
     }
@@ -188,7 +188,7 @@ export default function EditNoticePage() {
       setSaving(true);
 
       const submitFormData = new FormData();
-      
+
       // Add form fields
       Object.entries(formData).forEach(([key, value]) => {
         if (key === 'targetSemesters' || key === 'targetBranches') {
@@ -241,7 +241,7 @@ export default function EditNoticePage() {
       <div className="p-6">
         <div className="text-center">
           <h2 className="text-xl font-semibold text-red-600">Access Denied</h2>
-          <p className="text-gray-600 mt-2">You don't have permission to access this page.</p>
+          <p className="text-gray-600 mt-2">You don&apos;t have permission to access this page.</p>
         </div>
       </div>
     );
@@ -302,7 +302,7 @@ export default function EditNoticePage() {
         {/* Basic Information */}
         <div className="bg-white p-6 rounded-lg border">
           <h3 className="text-lg font-semibold mb-4">Basic Information</h3>
-          
+
           {/* Title */}
           <div className="mb-4">
             <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -314,9 +314,8 @@ export default function EditNoticePage() {
               value={formData.title}
               onChange={(e) => handleInputChange('title', e.target.value)}
               placeholder="Enter notice title"
-              className={`w-full border rounded-lg px-3 py-2 ${
-                errors.title ? 'border-red-400' : 'border-gray-300'
-              }`}
+              className={`w-full border rounded-lg px-3 py-2 ${errors.title ? 'border-red-400' : 'border-gray-300'
+                }`}
             />
             {errors.title && (
               <p className="text-red-600 text-sm mt-1">{errors.title}</p>
@@ -334,9 +333,8 @@ export default function EditNoticePage() {
               value={formData.content}
               onChange={(e) => handleInputChange('content', e.target.value)}
               placeholder="Write notice content..."
-              className={`w-full border rounded-lg px-3 py-2 ${
-                errors.content ? 'border-red-400' : 'border-gray-300'
-              }`}
+              className={`w-full border rounded-lg px-3 py-2 ${errors.content ? 'border-red-400' : 'border-gray-300'
+                }`}
             />
             {errors.content && (
               <p className="text-red-600 text-sm mt-1">{errors.content}</p>
@@ -390,11 +388,10 @@ export default function EditNoticePage() {
                 key={option.value}
                 type="button"
                 onClick={() => handleInputChange('priority', option.value)}
-                className={`p-3 rounded-lg border-2 text-center transition-colors ${
-                  formData.priority === option.value
+                className={`p-3 rounded-lg border-2 text-center transition-colors ${formData.priority === option.value
                     ? getPriorityColor(option.value)
                     : 'border-gray-200 bg-white hover:bg-gray-50'
-                }`}
+                  }`}
               >
                 <div className="font-medium">{option.label}</div>
               </button>
@@ -425,9 +422,8 @@ export default function EditNoticePage() {
                 type="date"
                 value={formData.expiryDate}
                 onChange={(e) => handleInputChange('expiryDate', e.target.value)}
-                className={`w-full border rounded-lg px-3 py-2 ${
-                  errors.expiryDate ? 'border-red-400' : 'border-gray-300'
-                }`}
+                className={`w-full border rounded-lg px-3 py-2 ${errors.expiryDate ? 'border-red-400' : 'border-gray-300'
+                  }`}
               />
               {errors.expiryDate && (
                 <p className="text-red-600 text-sm mt-1">{errors.expiryDate}</p>
@@ -439,23 +435,22 @@ export default function EditNoticePage() {
         {/* Target Audience Details */}
         <div className="bg-white p-6 rounded-lg border">
           <h3 className="text-lg font-semibold mb-4">Target Audience (Optional)</h3>
-          
+
           {/* Target Semesters */}
           <div className="mb-4">
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Target Semesters (Leave empty for all semesters)
             </label>
             <div className="flex flex-wrap gap-2">
-              {[1,2,3,4,5,6,7,8].map(semester => (
+              {[1, 2, 3, 4, 5, 6, 7, 8].map(semester => (
                 <button
                   key={semester}
                   type="button"
                   onClick={() => handleSemesterToggle(semester)}
-                  className={`px-3 py-1 rounded border text-sm ${
-                    formData.targetSemesters.includes(semester)
+                  className={`px-3 py-1 rounded border text-sm ${formData.targetSemesters.includes(semester)
                       ? 'bg-blue-100 border-blue-400 text-blue-700'
                       : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'
-                  }`}
+                    }`}
                 >
                   Semester {semester}
                 </button>
@@ -474,11 +469,10 @@ export default function EditNoticePage() {
                   key={branch}
                   type="button"
                   onClick={() => handleBranchToggle(branch)}
-                  className={`px-3 py-1 rounded border text-sm ${
-                    formData.targetBranches.includes(branch)
+                  className={`px-3 py-1 rounded border text-sm ${formData.targetBranches.includes(branch)
                       ? 'bg-green-100 border-green-400 text-green-700'
                       : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'
-                  }`}
+                    }`}
                 >
                   {branch}
                 </button>
@@ -505,7 +499,7 @@ export default function EditNoticePage() {
         {/* Attachment */}
         <div className="bg-white p-6 rounded-lg border">
           <h3 className="text-lg font-semibold mb-4">Attachment</h3>
-          
+
           {/* Current Attachment */}
           {currentAttachment && (
             <div className="mb-4 p-4 bg-gray-50 rounded-lg">
