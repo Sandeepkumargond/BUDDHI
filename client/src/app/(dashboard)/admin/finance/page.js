@@ -2,6 +2,17 @@
 
 import { useState, useEffect } from "react"
 import Image from "next/image"
+import Link from "next/link"
+import { role } from "@/lib/data"
+import { FaMoneyBillWave, FaChartLine, FaExclamationTriangle, FaPercentage } from 'react-icons/fa'
+import { 
+  financialSummary, 
+  studentFeeRecords, 
+  expenseRecords, 
+  feeCategories,
+  expenseCategories 
+} from "@/lib/data"
+import { apiService } from "@/lib/api"
 
 const FinancePage = () => {
   const [feeRecords, setFeeRecords] = useState([])
