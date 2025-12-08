@@ -5,12 +5,30 @@ import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { showToast } from "@/lib/toast";
 import { useAuth } from "@/context/AuthContext";
+import { getComplaintStats } from "@/lib/hostelApi";
+import { MdSpeakerNotes } from "react-icons/md";
 
 const Navbar = () => {
   const [showDropdown, setShowDropdown] = useState(false);
+  const [complaintCount, setComplaintCount] = useState(0);
   const dropdownRef = useRef(null);
   const router = useRouter();
   const { user, role, logout } = useAuth();
+
+  // Load complaint stats for admin
+  useEffect(() => {
+    if (role === "admin") {
+      const loadStats = async () => {
+        try {
+          const stats = await getComplaintStats();
+          setComplaintCount(stats.pending || 0);
+        } catch (error) {
+          console.error("Error loading complaint stats:", error);
+        }
+      };
+      loadStats();
+    }
+  }, [role]);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -49,22 +67,42 @@ const Navbar = () => {
     router.push(`/${role}/profile`);
   };
 
+  const handleComplaintsClick = () => {
+    if (role === "admin") {
+      router.push("/admin/hostel/complaints");
+    }
+  };
+
   return (
     <div className='flex items-center justify-between p-4'>
       {/* SEARCH BAR */}
       <div className='hidden md:flex items-center gap-2 text-xs rounded-full ring-[1.5px] ring-gray-300 px-2'>
         <Image src="/search.png" alt="" width={14} height={14}/>
-<input
-        type="text"
-        placeholder="Search..."
-        defaultValue=""
-        className="w-[200px] p-2 bg-transparent outline-none"
-      />      </div>
+        <input
+          type="text"
+          placeholder="Search..."
+          defaultValue=""
+          className="w-[200px] p-2 bg-transparent outline-none"
+        />
+      </div>
       {/* ICONS AND USER */}
       <div className='flex items-center gap-6 justify-end w-full'>
-        <div className='bg-white rounded-full w-7 h-7 flex items-center justify-center cursor-pointer'>
-          <Image src="/message.png" alt="" width={20} height={20}/>
-        </div>
+        {/* Complaints Icon (for Admin) */}
+        {role === "admin" && (
+          <div 
+            className='bg-white rounded-full w-7 h-7 flex items-center justify-center cursor-pointer relative'
+            onClick={handleComplaintsClick}
+            title="View Complaints"
+          >
+            <MdSpeakerNotes className="text-xl text-gray-400" />
+            {complaintCount > 0 && (
+              <div className='absolute -top-3 -right-3 w-5 h-5 flex items-center justify-center bg-purple-500 text-white rounded-full text-xs font-bold'>
+                {complaintCount}
+              </div>
+            )}
+          </div>
+        )}
+
         <div className='bg-white rounded-full w-7 h-7 flex items-center justify-center cursor-pointer relative'>
           <Image src="/announcement.png" alt="" width={20} height={20}/>
           <div className='absolute -top-3 -right-3 w-5 h-5 flex items-center justify-center bg-purple-500 text-white rounded-full text-xs'>1</div>

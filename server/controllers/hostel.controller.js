@@ -4,15 +4,40 @@ import ApiResponse from "../utils/ApiResponse.js";
 import ApiError from "../utils/ApiError.js";
 import asyncHandler from "../utils/asyncHandler.js";
 
+// Utility function to get floor label
+const getFloorLabel = (floorNumber) => {
+  if (floorNumber === 0) return "Ground";
+  const labels = ["", "First", "Second", "Third", "Fourth", "Fifth", "Sixth", "Seventh", "Eighth", "Ninth", "Tenth"];
+  return labels[floorNumber] || `Floor ${floorNumber}`;
+};
+
+// Generate room numbers based on floor (G001, G050, 101, 110, 505, etc.)
+const generateRoomNumber = (roomIndex, floor) => {
+  const roomNumberInFloor = (roomIndex % 10) + 1; // 1-10
+  if (floor === 0) {
+    // Ground floor: G001, G002, ..., G050 etc.
+    return `G${String(roomIndex + 1).padStart(3, "0")}`;
+  } else {
+    // Other floors: 101, 102, ..., 110; 201, 202, etc.
+    return `${floor}${String(roomNumberInFloor).padStart(2, "0")}`;
+  }
+};
+
+// Generate rooms with proper naming system
 const generateRooms = (count, numberOfFloors = 1, roomsPerFloor = 1) => {
   const rooms = [];
-  let roomNum = 1;
   
   // Generate exactly 'count' rooms distributed across floors
   for (let i = 0; i < count; i++) {
     const floor = Math.floor(i / roomsPerFloor);
-    rooms.push({ number: `${roomNum}`, floor, occupied: false, student: null });
-    roomNum++;
+    const roomNumber = generateRoomNumber(i, floor);
+    rooms.push({
+      number: roomNumber,
+      floor,
+      floorLabel: getFloorLabel(floor),
+      occupied: false,
+      student: null
+    });
   }
   return rooms;
 };
@@ -58,9 +83,16 @@ export const createOrUpdateHostel = asyncHandler(async (req, res) => {
       // add new empty rooms with proper floor assignment
       const start = hostel.rooms.length;
       for (let i = 1; i <= delta; i++) {
-        const roomNum = start + i;
-        const floor = Math.floor((roomNum - 1) / roomCount);
-        hostel.rooms.push({ number: `${roomNum}`, floor, occupied: false, student: null });
+        const roomIndex = start + i - 1;
+        const floor = Math.floor(roomIndex / roomCount);
+        const roomNumber = generateRoomNumber(roomIndex, floor);
+        hostel.rooms.push({
+          number: roomNumber,
+          floor,
+          floorLabel: getFloorLabel(floor),
+          occupied: false,
+          student: null
+        });
       }
     } else if (delta < 0) {
       // remove from the end only if not occupied
@@ -116,6 +148,28 @@ export const listHostels = asyncHandler(async (req, res) => {
     const actualOccupiedCount = h.rooms ? h.rooms.filter(r => r.occupied || r.student).length : 0;
     const actualAvailableCount = h.rooms ? h.rooms.filter(r => !r.occupied && !r.student).length : 0;
     
+    // Group rooms by floor for display
+    const roomsByFloor = {};
+    if (h.rooms) {
+      h.rooms.forEach(r => {
+        const floorLabel = r.floorLabel || getFloorLabel(r.floor || 0);
+        if (!roomsByFloor[floorLabel]) {
+          roomsByFloor[floorLabel] = { floor: r.floor || 0, available: 0, total: 0, rooms: [] };
+        }
+        roomsByFloor[floorLabel].total++;
+        if (!r.occupied && !r.student) {
+          roomsByFloor[floorLabel].available++;
+        }
+        roomsByFloor[floorLabel].rooms.push({
+          number: r.number,
+          floor: r.floor || 0,
+          floorLabel: floorLabel,
+          occupied: r.occupied || !!r.student,
+          student: r.student || null
+        });
+      });
+    }
+    
     return {
       id: h._id,
       _id: h._id,
@@ -134,9 +188,11 @@ export const listHostels = asyncHandler(async (req, res) => {
       rooms: h.rooms ? h.rooms.map(r => ({
         number: r.number,
         floor: r.floor || 0,
+        floorLabel: r.floorLabel || getFloorLabel(r.floor || 0),
         occupied: r.occupied || !!r.student,
         student: r.student || null
-      })) : []
+      })) : [],
+      roomsByFloor
     };
   });
   return res.status(200).json(new ApiResponse(200, normalized, "Hostels fetched"));
@@ -210,6 +266,8 @@ export const submitHostelApplication = asyncHandler(async (req, res) => {
     const h = hostels.find((x) => x.name === ch.hostelName);
     if (!h) continue;
     if (h.totalRooms - h.occupiedRooms <= 0) continue;
+    
+    // If specific room is requested
     if (ch.roomNumber) {
       const room = h.rooms.find((r) => r.number === ch.roomNumber && !r.occupied);
       if (room) {
@@ -217,7 +275,18 @@ export const submitHostelApplication = asyncHandler(async (req, res) => {
         assignedRoom = room;
         break;
       }
-    } else {
+    } 
+    // If specific floor is requested
+    else if (ch.floor !== undefined && ch.floor !== null) {
+      const room = h.rooms.find((r) => (r.floor ?? 0) === ch.floor && !r.occupied);
+      if (room) {
+        assignedHostel = h;
+        assignedRoom = room;
+        break;
+      }
+    }
+    // Any room in this hostel
+    else {
       const room = pickRoomInHostel(h);
       if (room) {
         assignedHostel = h;
