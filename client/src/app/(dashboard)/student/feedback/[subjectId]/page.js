@@ -53,8 +53,11 @@ export default function FeedbackFormPage() {
 
       {/* PAGE HEADER */}
       <h1 className="text-2xl font-semibold text-gray-700 mb-2">Course Feedback</h1>
-      <p className="text-sm text-gray-500 mb-4">
+      <p className="text-sm text-gray-500 mb-1">
         Please rate each statement honestly.
+      </p>
+      <p className="text-xs text-gray-400 mb-4">
+        Rating Scale: 1 = Poor, 2 = Below Average, 3 = Average, 4 = Good, 5 = Excellent
       </p>
 
       {/* ---------------------------- */}
@@ -91,6 +94,12 @@ export default function FeedbackFormPage() {
                 className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm"
               >
                 <p className="text-sm font-medium text-gray-700 mb-3">{q.question}</p>
+
+                {/* Rating Scale Labels */}
+                <div className="flex justify-between items-center mb-2 px-1">
+                  <span className="text-xs text-gray-500">Poor</span>
+                  <span className="text-xs text-gray-500">Excellent</span>
+                </div>
 
                 {/* Rating Buttons */}
                 <div className="flex gap-3">

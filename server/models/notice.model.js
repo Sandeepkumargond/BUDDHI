@@ -53,11 +53,52 @@ const noticeSchema = new mongoose.Schema({
   createdByModel: {
     type: String,
     required: true,
-    enum: ['Admin', 'SubAdmin', 'SuperAdmin']
+    enum: ['Admin', 'SubAdmin', 'SuperAdmin', 'Faculty']
   },
   createdByName: {
     type: String,
     required: true
+  },
+  courseId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Course',
+    default: null,
+  },
+  courseCode: {
+    type: String,
+    trim: true,
+    default: null,
+  },
+  courseName: {
+    type: String,
+    trim: true,
+    default: null,
+  },
+  section: {
+    type: String,
+    trim: true,
+    default: null,
+  },
+  semester: {
+    type: Number,
+    min: 1,
+    max: 8,
+    default: null,
+  },
+  academicYear: {
+    type: String,
+    trim: true,
+    default: null,
+  },
+  batch: {
+    type: String,
+    trim: true,
+    default: null,
+  },
+  branch: {
+    type: String,
+    trim: true,
+    default: null,
   },
   viewCount: {
     type: Number,
@@ -89,6 +130,8 @@ noticeSchema.index({ audience: 1 });
 noticeSchema.index({ isActive: 1 });
 noticeSchema.index({ priority: 1 });
 noticeSchema.index({ isPinned: -1, publishDate: -1 });
+noticeSchema.index({ createdBy: 1, createdByModel: 1 });
+noticeSchema.index({ courseId: 1, semester: 1, section: 1 });
 
 // Virtual for determining if notice is expired
 noticeSchema.virtual('isExpired').get(function() {

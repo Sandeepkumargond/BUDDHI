@@ -51,7 +51,7 @@ export default function AdminAllRegistrationsPage() {
           <input className="w-full border rounded p-2" value={session} onChange={(e) => setSession(e.target.value)} placeholder="2025-26" />
         </div>
         <div className="flex items-end">
-          <button onClick={fetchData} className="px-4 py-2 bg-blue-600 text-white rounded" disabled={loading}>
+          <button onClick={fetchData} className="px-4 py-2 bg-[#C3EBFA] text-gray-600 rounded hover:bg-[#A8DBF2]" disabled={loading}>
             {loading ? 'Loading…' : 'Apply Filters'}
           </button>
         </div>

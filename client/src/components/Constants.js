@@ -2,11 +2,11 @@
 
 export const NAV_LINKS = [
   { title: "Home", url: "#" },
-  { title: "About Us", url: "#" },
-  { title: "How it Works", url: "#" },
-  { title: "Services", url: "#" },
-  { title: "Contact Us", url: "#" },
-  { title: "Faq", url: "#" },
+  { title: "About Us", url: "#about" },
+  { title: "How it Works", url: "#how-it-works" },
+  { title: "Services", url: "#services" },
+  { title: "Contact Us", url: "#request" },
+  { title: "FAQ", url: "#faq" },
 ];
 
 export const HERO = {

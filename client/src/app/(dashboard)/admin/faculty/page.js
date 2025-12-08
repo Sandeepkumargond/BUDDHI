@@ -138,7 +138,7 @@ export default function FacultyManagement() {
         <h1 className="text-2xl font-bold">Faculty Management</h1>
         <button
           onClick={() => setShowAddModal(true)}
-          className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
+          className="px-4 py-2 bg-[#C3EBFA] text-gray-600 rounded-lg hover:bg-[#A8DBF2] font-medium"
         >
           + Add Faculty
         </button>

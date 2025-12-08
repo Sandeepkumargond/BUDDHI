@@ -120,7 +120,7 @@ export default function AdminStudentGradesPage() {
         </div>
         <Link
           href="/admin_subadmin/students/grades/add"
-          className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center gap-2"
+          className="bg-[#C3EBFA] text-gray-600 px-4 py-2 rounded-lg hover:bg-[#A8DBF2] flex items-center gap-2"
         >
           <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -252,19 +252,23 @@ export default function AdminStudentGradesPage() {
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                     {student.semestersCompleted || 0}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
-                    <Link
-                      href={`/admin_subadmin/students/grades/${student._id}`}
-                      className="text-blue-600 hover:text-blue-900"
-                    >
-                      View Grades
-                    </Link>
-                    <Link
-                      href={`/admin_subadmin/students/grades/${student._id}/edit`}
-                      className="text-green-600 hover:text-green-900"
-                    >
-                      Add/Edit
-                    </Link>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                    <div className="flex items-center gap-3">
+                      <Link
+                        href={`/admin_subadmin/students/grades/${student._id}`}
+                        className="text-blue-600 hover:text-blue-800 hover:scale-110 transition-all"
+                        title="View Grades"
+                      >
+                        <Image src="/view.png" width={16} height={16} alt="view" />
+                      </Link>
+                      <Link
+                        href={`/admin_subadmin/students/grades/${student._id}/edit`}
+                        className="text-green-600 hover:text-green-800 hover:scale-110 transition-all"
+                        title="Add/Edit Grades"
+                      >
+                        <Image src="/update.png" width={16} height={16} alt="edit" />
+                      </Link>
+                    </div>
                   </td>
                 </tr>
               ))}

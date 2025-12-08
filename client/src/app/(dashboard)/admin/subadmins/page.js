@@ -127,7 +127,7 @@ export default function SubAdminListPage() {
 
           {/* CREATE */}
           <Link href="/admin/subadmins/create">
-            <button className="w-8 h-8 bg-[#C3EBFA] rounded-full flex items-center justify-center">
+            <button className="w-8 h-8 bg-[#AEE7F7] hover:bg-[#8DD4E8] rounded-full flex items-center justify-center transition">
               <Image src="/create.png" width={16} height={16} alt="add" />
             </button>
           </Link>
