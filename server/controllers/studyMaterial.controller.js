@@ -5,6 +5,7 @@ import StudyMaterial from "../models/studyMaterial.model.js";
 import { uploadStudyMaterial, deleteStudyMaterial } from "../utils/ImageKit.js";
 import { Course } from "../models/course.model.js";
 import { Faculty } from "../models/faculty.model.js";
+import { StudentRegistration } from "../models/registrationForm.model.js";
 
 // Create/Upload study material (Faculty)
 const uploadMaterial = asyncHandler(async (req, res) => {
@@ -484,7 +485,7 @@ const getMaterialStats = asyncHandler(async (req, res) => {
     const facultyId = req.user._id;
 
     try {
-        const stats = await StudyMaterial.getStatsByFaculty(facultyId);
+        const stats = await StudyMaterial.getStats(facultyId);
         
         // Get recent activities
         const recentMaterials = await StudyMaterial.find({ uploadedBy: facultyId })
@@ -572,12 +573,59 @@ export {
 // Options for dropdowns (courses/classes) based on available materials and optional semester
 const getStudentMaterialOptions = asyncHandler(async (req, res) => {
     const { semester } = req.query;
-    const baseQuery = { isActive: true };
+    const student = req.user;
+    // Base: active, non-expired materials
+    const baseQuery = {
+        isActive: true,
+        $or: [ { expiryDate: null }, { expiryDate: { $gt: new Date() } } ]
+    };
+    // Narrow by semester if provided, else prefer student's semester
     if (semester) baseQuery.semester = parseInt(semester);
-    const materials = await StudyMaterial.find(baseQuery).select('courseCode branch semester materialType').lean();
-    const courses = Array.from(new Set(materials.map(m => m.courseCode).filter(Boolean))).sort();
-    const classes = Array.from(new Set(materials.map(m => m.branch).filter(Boolean))).sort();
-    const types = Array.from(new Set(materials.map(m => m.materialType).filter(Boolean))).sort();
+    else if (student?.semester) baseQuery.semester = parseInt(student.semester);
+
+    const mats = await StudyMaterial.find(baseQuery)
+        .select('courseCode branch semester materialType targetAudience')
+        .lean();
+
+    // Enforce audience targeting to the logged-in student when computing options
+    const userSem = parseInt(semester || student?.semester);
+    const userBranch = student?.branch;
+    const accessible = mats.filter(m => {
+        const audience = m.targetAudience || {};
+        const sems = Array.isArray(audience.semesters) ? audience.semesters.map(Number) : [];
+        const branches = Array.isArray(audience.branches) ? audience.branches : [];
+        const semOk = !userSem || sems.length === 0 || sems.includes(userSem);
+        const branchOk = !userBranch || branches.length === 0 || branches.includes(userBranch);
+        return semOk && branchOk;
+    });
+
+    // Derive student's enrolled course codes (from registrations)
+    let enrolledCodes = new Set();
+    try {
+        const regFilter = { docType: 'submission', student: student?._id };
+        if (userSem) regFilter.semester = Number(userSem);
+        const regs = await StudentRegistration
+            .find(regFilter)
+            .populate({ path: 'courses', select: 'code' })
+            .lean();
+        for (const r of regs) {
+            const attached = Array.isArray(r.attachedCourses) ? r.attachedCourses : [];
+            attached.forEach((c) => c?.code && enrolledCodes.add(String(c.code).toUpperCase()));
+            const populated = Array.isArray(r.courses) ? r.courses : [];
+            populated.forEach((c) => c?.code && enrolledCodes.add(String(c.code).toUpperCase()));
+        }
+    } catch (e) {
+        // If registration lookup fails, fall back to accessible courses only
+        console.warn('Student registration lookup failed for options:', e?.message || e);
+    }
+
+    const accessibleCodes = Array.from(new Set(accessible.map(m => String(m.courseCode || '').toUpperCase()).filter(Boolean)));
+    // Only show courses student is enrolled in, intersected with accessible materials
+    const courses = accessibleCodes.filter(code => enrolledCodes.has(code)).sort();
+    const classesAll = Array.from(new Set(accessible.map(m => m.branch).filter(Boolean))).sort();
+    const studentBranch = student?.branch || null;
+    const classes = studentBranch ? classesAll.filter((b) => b === studentBranch) : classesAll;
+    const types = Array.from(new Set(accessible.map(m => m.materialType).filter(Boolean))).sort();
     return res.status(200).json(new ApiResponse(200, { courses, classes, types }, 'Options fetched'));
 });
 

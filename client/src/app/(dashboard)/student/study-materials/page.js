@@ -25,11 +25,11 @@ export default function StudentStudyMaterialsPage() {
         const qs = semester ? `?semester=${encodeURIComponent(semester)}` : "";
         const res = await apiService.request(`/study-materials/student/options${qs}`);
         const courses = Array.isArray(res?.courses) ? res.courses : [];
-        const classes = Array.isArray(res?.classes) ? res.classes : [];
         const types = Array.isArray(res?.types) ? res.types : [];
+        const classes = Array.isArray(res?.classes) ? res.classes : [];
         setCourseOptions(courses);
-        setClassOptions(classes);
         setTypeOptions(types);
+        setClassOptions(classes);
         // Reset selections if no longer valid
         if (course && !courses.includes(course)) setCourse("");
         if (className && !classes.includes(className)) setClassName("");
@@ -41,6 +41,18 @@ export default function StudentStudyMaterialsPage() {
     })();
   }, [semester]);
 
+  // Auto-fetch on mount (initial load)
+  useEffect(() => {
+    fetchMaterials();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Auto-fetch whenever filters change (like notices)
+  useEffect(() => {
+    fetchMaterials();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [semester, course, type, className]);
+
   const fetchMaterials = async () => {
     setLoading(true);
     setError("");
@@ -48,18 +60,14 @@ export default function StudentStudyMaterialsPage() {
       const params = {};
       if (semester) params.semester = semester;
       if (course) params.course = course;
-      if (className) params.class = className;
       if (type) params.materialType = type;
+      if (className) params.class = className;
       // Example endpoint; adjust to server routes if different
       const query = new URLSearchParams(params).toString();
       const res = await apiService.request(`/study-materials/student${query ? `?${query}` : ""}`);
       const list = res?.data?.materials || res?.materials || [];
-      // Only show topics present for the student within the selected semester/course/class
-      let safeList = Array.isArray(list) ? list : [];
-      if (semester) safeList = safeList.filter(m => String(m.semester) === String(semester));
-      if (course) safeList = safeList.filter(m => (m.course || "") === course);
-      if (className) safeList = safeList.filter(m => (m.className || m.class || "") === className);
-      setMaterials(safeList);
+      // Server already applies filters and audience targeting; just set safely
+      setMaterials(Array.isArray(list) ? list : []);
     } catch (err) {
       setError(err?.message || "Failed to fetch materials");
     } finally {
@@ -67,18 +75,24 @@ export default function StudentStudyMaterialsPage() {
     }
   };
 
-  const handleDownload = (url) => {
-    if (!url) return;
+  const handleDownload = async (material) => {
     try {
-      const a = document.createElement("a");
-      a.href = url;
-      a.target = "_blank";
-      a.rel = "noopener noreferrer";
-      a.download = "";
+      const id = material.id || material._id;
+      if (!id) return;
+      const res = await apiService.request(`/study-materials/student/${id}/download`, { method: 'POST' });
+      const fileUrl = res?.data?.fileUrl || material.fileUrl;
+      if (!fileUrl) return;
+      const a = document.createElement('a');
+      a.href = fileUrl;
+      a.target = '_blank';
+      a.rel = 'noopener noreferrer';
+      a.download = '';
       document.body.appendChild(a);
       a.click();
       a.remove();
-    } catch {}
+    } catch (e) {
+      console.warn('Download failed', e?.message || e);
+    }
   };
 
   const handleSubmit = async (item, file) => {
@@ -86,7 +100,9 @@ export default function StudentStudyMaterialsPage() {
     try {
       const fd = new FormData();
       fd.append("materialId", item.id || item._id);
-      fd.append("type", item.type);
+      // Only assignments/homework are submittable; infer from materialType
+      const submitType = (item.materialType === 'assignment') ? 'assignment' : (item.materialType === 'homework' ? 'homework' : 'assignment');
+      fd.append("type", submitType);
       fd.append("file", file);
       // You can attach optional text answers, links, etc.
       const res = await apiService.request("/study-materials/student/submit", { method: "POST", body: fd });
@@ -97,27 +113,27 @@ export default function StudentStudyMaterialsPage() {
   };
 
   const MaterialRow = ({ item }) => {
-    const isInteractive = item.type === "assignment" || item.type === "homework";
+    const isInteractive = item.materialType === "assignment" || item.materialType === "homework";
     return (
       <div className="rounded-xl p-4 bg-white" style={{ border: "1px solid #e5e7eb", boxShadow: "0 6px 18px rgba(2,6,23,0.06)" }}>
         <div className="flex justify-between items-center">
           <div>
             <div className="font-semibold" style={{ color: "#0f172a" }}>{item.title}</div>
-            <div className="text-sm" style={{ color: "#64748b" }}>{item.course} • Sem {item.semester} • Class {item.className}</div>
+            <div className="text-sm" style={{ color: "#64748b" }}>{item.courseCode} • Sem {item.semester} • Branch {item.branch}</div>
             <div className="mt-1 text-xs px-2 py-1 inline-block rounded-md"
                  style={{ background: "#eef2ff", border: "1px solid #e5e7eb", color: "#3730a3" }}>
-              {item.type.charAt(0).toUpperCase() + item.type.slice(1)}
+              {String(item.materialType || '').replace(/_/g,' ').replace(/^./, c=>c.toUpperCase())}
             </div>
           </div>
           <div className="flex gap-2">
-            {item.viewUrl && (
-              <a href={item.viewUrl} target="_blank" rel="noopener noreferrer"
+            {item.fileUrl && (
+              <a href={item.fileUrl} target="_blank" rel="noopener noreferrer"
                  className="px-3 py-1 rounded-md text-white" style={{ background: "#6366f1" }}>
                 View
               </a>
             )}
-            {item.downloadUrl && (
-              <button onClick={() => handleDownload(item.downloadUrl)}
+            {(item._id || item.id) && (
+              <button onClick={() => handleDownload(item)}
                       className="px-3 py-1 rounded-md text-white" style={{ background: "#10b981" }}>
                 Download
               </button>
@@ -176,6 +192,7 @@ export default function StudentStudyMaterialsPage() {
                 ))}
               </select>
             </div>
+            
             <div>
               <label className="block text-sm mb-1">Type</label>
               <select className="border w-full p-2 rounded" value={type} onChange={(e)=>setType(e.target.value)}>
@@ -187,15 +204,14 @@ export default function StudentStudyMaterialsPage() {
             </div>
           </div>
 
-          <div className="flex justify-end mt-4">
-            <button onClick={fetchMaterials} className="px-4 py-2 rounded-md text-white" style={{ background: "#6366f1" }}>
-              {loading ? "Loading..." : "Fetch Materials"}
-            </button>
-          </div>
+          
 
           {error && <div className="mt-3 text-sm text-red-600">{error}</div>}
 
           <div className="mt-6 space-y-3">
+            {loading && (
+              <div className="text-sm" style={{ color: "#64748b" }}>Loading materials...</div>
+            )}
             {materials.length === 0 && !loading && (
               <div className="text-sm" style={{ color: "#64748b" }}>No materials found. Adjust filters and fetch again.</div>
             )}
