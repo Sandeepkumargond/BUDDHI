@@ -1,6 +1,9 @@
 import { AuthProvider } from '@/context/AuthContext';
 import { Toaster } from 'react-hot-toast';
 import "./globals.css";
+import { ChatbotProvider } from "../context/ChatbotContext";
+import ChatbotButton from "../components/ChatbotButton";
+import ChatbotWindow from "../components/ChatbotWindow";
 
 export const metadata = {
   title: "BUDDHI - Education Management System",
@@ -8,13 +11,19 @@ export const metadata = {
 };
 
 export default function RootLayout({ children }) {
+  // Optionally detect role from auth context or route; default to guest.
+  const initialRole = "guest";
   return (
     <html lang="en">
       <body className="font-sans antialiased">
-        <AuthProvider>
-          {children}
-          <Toaster position="top-right" />
-        </AuthProvider>
+        <ChatbotProvider initialRole={initialRole}>
+          <AuthProvider>
+            {children}
+            <Toaster position="top-right" />
+            <ChatbotButton />
+            <ChatbotWindow />
+          </AuthProvider>
+        </ChatbotProvider>
       </body>
     </html>
   );

@@ -6,6 +6,7 @@ import Link from "next/link";
 import { FcGoogle } from "react-icons/fc";
 import { showToast } from "@/lib/toast";
 import { useAuth } from "@/context/AuthContext";
+import AutoFillLogin from "@/components/AutoFillLogin";
 
 export default function SignIn() {
   const [formData, setFormData] = useState({
@@ -72,6 +73,17 @@ export default function SignIn() {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleAutoFill = (preset) => {
+    if (!preset) return;
+    const { email, password, role } = preset;
+    setFormData((prev) => ({
+      ...prev,
+      email: email || prev.email,
+      password: password || prev.password,
+      role: role || prev.role,
+    }));
   };
 
   return (
@@ -168,14 +180,16 @@ export default function SignIn() {
               </div>
             </div>
 
-            <div>
+            <div className="flex items-center gap-3">
               <button
                 type="submit"
                 disabled={isLoading}
-                className="flex w-full border border-black justify-center rounded-md bg-black px-3 py-1.5 text-sm font-semibold leading-6 text-white shadow-sm hover:bg-white transition-colors hover:text-black focus-visible:outline-2 focus-visible:outline-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex-1 border border-black justify-center rounded-md bg-black px-3 py-1.5 text-sm font-semibold leading-6 text-white shadow-sm hover:bg-white transition-colors hover:text-black focus-visible:outline-2 focus-visible:outline-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isLoading ? "Signing in..." : "Sign in"}
               </button>
+
+              <AutoFillLogin role={formData.role} onFill={handleAutoFill} />
             </div>
           </form>
 
