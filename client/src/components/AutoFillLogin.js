@@ -5,7 +5,7 @@ import React from "react";
 const ROLE_PRESETS = {
   student: { email: "aryan.arya@nitp.ac.in", password: "student123", displayName: "Aryan Arya" },
   faculty: { email: "priya.sharma@nitp.ac.in", password: "faculty123", displayName: "Priya Sharma" },
-  alumni: { email: "alumni@nitp.ac.in", password: "alumni123", displayName: "Alumni User" },
+  alumni: { email: "testing.alumni@nitp.ac.in", password: "1234567890", displayName: "Alumni User" },
   admin: { email: "admin@nitp.ac.in", password: "admin123", displayName: "Administrator" },
   subadmin: { email: "aakash.kumar@nitp.ac.in", password: "subAdmin@1234", displayName: "Aakash Kumar" },
   superadmin: { email: "superadmin1@buddhi.in", password: "Aakash789", displayName: "Super Admin" }
