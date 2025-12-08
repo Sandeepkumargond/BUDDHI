@@ -8,7 +8,10 @@ import {
     deleteMaterial,
     downloadMaterial,
     getPublicMaterials,
-    getMaterialStats
+    getMaterialStats,
+    getStudentMaterialOptions,
+    listStudentMaterials,
+    submitStudentMaterial
 } from "../controllers/studyMaterial.controller.js";
 import { authenticateFaculty } from "../middlewares/faculty.middleware.js";
 import { authenticateStudent } from "../middlewares/student.middleware.js";
@@ -68,7 +71,18 @@ router.route('/faculty/:materialId/download').post(
 // Student routes (authenticated access)
 router.route('/student').get(
     authenticateStudent,
-    getPublicMaterials
+    listStudentMaterials
+);
+
+router.route('/student/options').get(
+    authenticateStudent,
+    getStudentMaterialOptions
+);
+
+router.route('/student/submit').post(
+    authenticateStudent,
+    upload.single('file'),
+    submitStudentMaterial
 );
 
 router.route('/student/:materialId').get(

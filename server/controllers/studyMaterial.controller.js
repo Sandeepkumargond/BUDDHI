@@ -567,3 +567,108 @@ export {
     getPublicMaterials,
     getMaterialStats
 };
+
+// ---------------- Student-targeted endpoints ----------------
+// Options for dropdowns (courses/classes) based on available materials and optional semester
+const getStudentMaterialOptions = asyncHandler(async (req, res) => {
+    const { semester } = req.query;
+    const baseQuery = { isActive: true };
+    if (semester) baseQuery.semester = parseInt(semester);
+    const materials = await StudyMaterial.find(baseQuery).select('courseCode branch semester materialType').lean();
+    const courses = Array.from(new Set(materials.map(m => m.courseCode).filter(Boolean))).sort();
+    const classes = Array.from(new Set(materials.map(m => m.branch).filter(Boolean))).sort();
+    const types = Array.from(new Set(materials.map(m => m.materialType).filter(Boolean))).sort();
+    return res.status(200).json(new ApiResponse(200, { courses, classes, types }, 'Options fetched'));
+});
+
+// List materials for student with filters and target audience constraints
+const listStudentMaterials = asyncHandler(async (req, res) => {
+    const { subject, materialType, semester, course, class: klass, search } = req.query;
+    const query = {
+        isActive: true,
+        $or: [ { expiryDate: null }, { expiryDate: { $gt: new Date() } } ]
+    };
+    if (subject) query.subject = { $regex: subject, $options: 'i' };
+    if (materialType) query.materialType = materialType;
+    if (semester) query.semester = parseInt(semester);
+    if (course) query.courseCode = course;
+    if (klass) query.branch = klass;
+    if (search) {
+        query.$or = [
+            { title: { $regex: search, $options: 'i' } },
+            { description: { $regex: search, $options: 'i' } },
+            { subject: { $regex: search, $options: 'i' } },
+            { tags: { $in: [new RegExp(search, 'i')] } }
+        ];
+    }
+
+    // Fetch then apply audience targeting
+    const materials = await StudyMaterial.find(query)
+        .select('-cloudinaryPublicId')
+        .populate('uploadedBy', 'firstName lastName')
+        .lean();
+
+    const sem = semester ? parseInt(semester) : undefined;
+    const cls = klass;
+    const filtered = materials.filter(m => {
+        const audience = m.targetAudience || {};
+        const sems = Array.isArray(audience.semesters) ? audience.semesters.map(Number) : [];
+        const branches = Array.isArray(audience.branches) ? audience.branches : [];
+        // If audience arrays are present, enforce membership; otherwise allow
+        const semOk = !sem || sems.length === 0 || sems.includes(sem);
+        const classOk = !cls || branches.length === 0 || branches.includes(cls);
+        return semOk && classOk;
+    });
+
+    return res.status(200).json(new ApiResponse(200, { materials: filtered }, 'Student materials'));
+});
+
+// Student submission upload (assignment/homework)
+const submitStudentMaterial = asyncHandler(async (req, res) => {
+    const { materialId, type } = req.body;
+    if (!materialId || !req.file) {
+        throw new ApiError(400, 'materialId and file are required');
+    }
+    const material = await StudyMaterial.findById(materialId);
+    if (!material) throw new ApiError(404, 'Material not found');
+    if (!['assignment','homework'].includes(type)) {
+        throw new ApiError(400, 'Invalid submission type');
+    }
+
+    // Upload student submission to storage
+    const uploadResult = await uploadStudyMaterial(req.file, {
+        title: `${material.title}-submission`,
+        subject: material.subject,
+        courseCode: material.courseCode,
+        semester: material.semester,
+        branch: material.branch,
+        materialType: `student-${type}`
+    });
+    if (uploadResult.error) {
+        throw new ApiError(500, `File upload failed: ${uploadResult.message}`);
+    }
+
+    // Append a submission entry (if submissions field exists, push; else ignore persistence)
+    try {
+        material.submissions = Array.isArray(material.submissions) ? material.submissions : [];
+        material.submissions.push({
+            studentId: req.user?._id,
+            type,
+            fileUrl: uploadResult.url,
+            fileName: uploadResult.fileName,
+            fileSize: uploadResult.fileSize,
+            at: new Date()
+        });
+        await material.save();
+    } catch (e) {
+        console.warn('Could not persist submission, continuing:', e?.message || e);
+    }
+
+    return res.status(200).json(new ApiResponse(200, { url: uploadResult.url }, 'Submission uploaded'));
+});
+
+export {
+    getStudentMaterialOptions,
+    listStudentMaterials,
+    submitStudentMaterial
+};
