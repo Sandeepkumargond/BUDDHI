@@ -1,10 +1,27 @@
 "use client";
 import React, { useState } from 'react';
 import { FaCheck, FaTimes, FaEye, FaUser, FaBed, FaCalendarAlt, FaRocket } from 'react-icons/fa';
-import { initialRequests, initialHostels } from '@/lib/hostelData';
+import { useEffect } from 'react';
+import { fetchHostelApplications, fetchHostels } from '@/lib/hostelApi';
 
 const HostelRequests = () => {
-  const [requests, setRequests] = useState(initialRequests);
+  const [requests, setRequests] = useState([]);
+  const [hostels, setHostels] = useState([]);
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      try {
+        const [apps, hs] = await Promise.all([fetchHostelApplications(), fetchHostels()]);
+        if (mounted) {
+          setRequests(apps);
+          setHostels(hs);
+        }
+      } catch (e) {
+        console.error('Failed to load hostel data', e);
+      }
+    })();
+    return () => { mounted = false; };
+  }, []);
   const [selectedRequest, setSelectedRequest] = useState(null);
   const [showModal, setShowModal] = useState(false);
   const [filterStatus, setFilterStatus] = useState('all');
@@ -149,8 +166,7 @@ const HostelRequests = () => {
       alert('Please fill all required fields');
       return;
     }
-
-    const hostel = initialHostels.find(h => h.id === parseInt(allotmentData.hostelId));
+    const hostel = hostels.find(h => String(h.id) === String(allotmentData.hostelId) || String(h._id) === String(allotmentData.hostelId));
     
     handleStatusUpdate(selectedRequest.id, 'approved', {
       allottedHostel: hostel.name,
@@ -279,29 +295,29 @@ const HostelRequests = () => {
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
               {filteredRequests.map(request => (
-                <tr key={request.id} className="hover:bg-gray-50">
+                <tr key={request.id || request._id} className="hover:bg-gray-50">
                   <td className="px-6 py-4">
                     <div>
-                      <div className="text-sm font-medium text-gray-900">{request.studentName}</div>
-                      <div className="text-sm text-gray-500">{request.studentId}</div>
-                      <div className="text-sm text-gray-500">{request.course} - {request.semester}</div>
-                      <div className="text-sm text-gray-500">CGPA: {request.cgpa}</div>
+                      <div className="text-sm font-medium text-gray-900">{request.studentName || '-'}</div>
+                      <div className="text-sm text-gray-500">{request.studentId || '-'}</div>
+                      <div className="text-sm text-gray-500">{[request.course, request.semester].filter(Boolean).join(' - ') || '-'}</div>
+                      <div className="text-sm text-gray-500">CGPA: {request.cgpa ?? '-'}</div>
                     </div>
                   </td>
                   <td className="px-6 py-4">
                     <div>
-                      <div className="text-sm font-medium text-gray-900">Preferred: {request.preferredHostel}</div>
-                      {request.alternateHostel && (
+                      <div className="text-sm font-medium text-gray-900">Preferred: {request.preferredHostel || '-'}</div>
+                      {request.alternateHostel ? (
                         <div className="text-sm text-gray-500">Alternate: {request.alternateHostel}</div>
-                      )}
-                      <div className="text-sm text-gray-500">Room Type: {request.roomType}</div>
-                      <div className="text-sm text-gray-500">Request Date: {request.requestDate}</div>
+                      ) : null}
+                      <div className="text-sm text-gray-500">Room Type: {request.roomType || '-'}</div>
+                      <div className="text-sm text-gray-500">Request Date: {request.requestDate || '-'}</div>
                     </div>
                   </td>
                   <td className="px-6 py-4">
                     <div className="flex flex-col gap-1">
-                      <span className={`px-2 py-1 text-xs rounded-full font-medium w-fit ${getStatusColor(request.status)}`}>
-                        {request.status.charAt(0).toUpperCase() + request.status.slice(1)}
+                      <span className={`px-2 py-1 text-xs rounded-full font-medium w-fit ${getStatusColor(request.status || 'pending')}`}>
+                        {(request.status || 'pending').charAt(0).toUpperCase() + (request.status || 'pending').slice(1)}
                       </span>
                       {request.allocationType && (
                         <span className={`px-2 py-1 text-xs rounded font-medium w-fit ${
@@ -312,12 +328,12 @@ const HostelRequests = () => {
                           {request.allocationType === 'auto' ? 'Auto' : 'Manual'}
                         </span>
                       )}
-                      {request.allottedHostel && (
+                      {request.allottedHostel ? (
                         <div className="text-xs text-green-700">
                           <div>{request.allottedHostel}</div>
                           <div>{request.allottedRoom}</div>
                         </div>
-                      )}
+                      ) : null}
                     </div>
                   </td>
                   <td className="px-6 py-4">

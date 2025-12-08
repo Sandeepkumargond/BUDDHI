@@ -90,6 +90,7 @@ const Navbar = () => {
               width={36}
               height={36}
               className="rounded-full object-cover"
+              style={{ width: 'auto', height: '36px' }}
             />
           </div>
 
