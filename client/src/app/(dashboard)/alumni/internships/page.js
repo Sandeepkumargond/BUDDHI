@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { apiService } from "@/lib/api";
 import { toast } from "react-toastify";
-import { FaPlus, FaEdit, FaTrash, FaEye, FaToggleOn, FaToggleOff, FaCheckCircle } from "react-icons/fa";
+import { FaPlus, FaEdit, FaTrash, FaPowerOff, FaCheckCircle, FaClock } from "react-icons/fa";
 
 export default function InternshipsPage() {
   const { user } = useAuth();
@@ -182,31 +182,39 @@ export default function InternshipsPage() {
                 <div className="flex gap-2">
                   <button
                     onClick={() => handleToggleActive(internship)}
-                    className="text-blue-600 hover:text-blue-800"
+                    className={`px-3 py-1 text-xs font-semibold rounded border transition-colors ${
+                      internship.isActive 
+                        ? "bg-green-50 text-green-700 border-green-300 hover:bg-green-100" 
+                        : "bg-gray-50 text-gray-500 border-gray-300 hover:bg-gray-100"
+                    }`}
                     title={internship.isActive ? "Deactivate" : "Activate"}
                   >
-                    {internship.isActive ? <FaToggleOn size={20} /> : <FaToggleOff size={20} />}
+                    {internship.isActive ? "Active" : "Inactive"}
                   </button>
                   <button
                     onClick={() => handleToggleApproved(internship)}
-                    className="text-blue-600 hover:text-blue-800"
+                    className={`px-3 py-1 text-xs font-semibold rounded border transition-colors ${
+                      internship.isApproved
+                        ? "bg-blue-50 text-blue-700 border-blue-300 hover:bg-blue-100"
+                        : "bg-yellow-50 text-yellow-700 border-yellow-300 hover:bg-yellow-100"
+                    }`}
                     title={internship.isApproved ? "Mark pending" : "Approve"}
                   >
-                    <FaCheckCircle size={18} />
+                    {internship.isApproved ? "Approved" : "Pending"}
                   </button>
                   <button
                     onClick={() => handleEdit(internship)}
-                    className="text-green-600 hover:text-green-800"
+                    className="px-3 py-1 text-xs font-semibold rounded border bg-blue-50 text-blue-700 border-blue-300 hover:bg-blue-100 transition-colors"
                     title="Edit"
                   >
-                    <FaEdit />
+                    Edit
                   </button>
                   <button
                     onClick={() => handleDelete(internship._id)}
-                    className="text-red-600 hover:text-red-800"
+                    className="px-3 py-1 text-xs font-semibold rounded border bg-red-50 text-red-700 border-red-300 hover:bg-red-100 transition-colors"
                     title="Delete"
                   >
-                    <FaTrash />
+                    Delete
                   </button>
                 </div>
               </div>
