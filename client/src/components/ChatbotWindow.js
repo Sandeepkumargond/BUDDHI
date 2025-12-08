@@ -60,7 +60,7 @@ export default function ChatbotWindow() {
           }}>BA</div>
           <div>
             <div style={{ fontWeight: 600, color: "#0f172a" }}>Buddhi Assistant</div>
-            <div style={{ fontSize: 12, color: "#64748b" }}>Ask about courses, attendance, fees, exams</div>
+            
           </div>
         </div>
         <button
@@ -126,7 +126,7 @@ export default function ChatbotWindow() {
         <input
           value={input}
           onChange={(e) => setInput(e.target.value)}
-          placeholder="Ask about attendance, grades, fees, or exams..."
+          placeholder="Ask your query..."
           style={{
             flex: 1,
             borderRadius: 8,

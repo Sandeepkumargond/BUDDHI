@@ -6,9 +6,7 @@ import { apiService } from "@/lib/api";
 export default function StudentStudyMaterialsPage() {
   const [semester, setSemester] = useState("");
   const [course, setCourse] = useState("");
-  const [className, setClassName] = useState("");
   const [courseOptions, setCourseOptions] = useState([]);
-  const [classOptions, setClassOptions] = useState([]);
   const [materials, setMaterials] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -26,13 +24,10 @@ export default function StudentStudyMaterialsPage() {
         const res = await apiService.request(`/study-materials/student/options${qs}`);
         const courses = Array.isArray(res?.courses) ? res.courses : [];
         const types = Array.isArray(res?.types) ? res.types : [];
-        const classes = Array.isArray(res?.classes) ? res.classes : [];
         setCourseOptions(courses);
         setTypeOptions(types);
-        setClassOptions(classes);
         // Reset selections if no longer valid
         if (course && !courses.includes(course)) setCourse("");
-        if (className && !classes.includes(className)) setClassName("");
         if (type && !types.includes(type)) setType("");
       } catch (err) {
         // Non-blocking: keep previous options if call fails
@@ -51,7 +46,7 @@ export default function StudentStudyMaterialsPage() {
   useEffect(() => {
     fetchMaterials();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [semester, course, type, className]);
+  }, [semester, course, type]);
 
   const fetchMaterials = async () => {
     setLoading(true);
@@ -61,7 +56,6 @@ export default function StudentStudyMaterialsPage() {
       if (semester) params.semester = semester;
       if (course) params.course = course;
       if (type) params.materialType = type;
-      if (className) params.class = className;
       // Example endpoint; adjust to server routes if different
       const query = new URLSearchParams(params).toString();
       const res = await apiService.request(`/study-materials/student${query ? `?${query}` : ""}`);
@@ -164,7 +158,7 @@ export default function StudentStudyMaterialsPage() {
         <div className="p-5" style={{ color: "#0f172a" }}>
           <h2 className="text-lg font-semibold mb-4">Study Materials</h2>
 
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
               <label className="block text-sm mb-1">Semester</label>
               <select className="border w-full p-2 rounded" value={semester} onChange={(e)=>setSemester(e.target.value)}>
@@ -183,21 +177,20 @@ export default function StudentStudyMaterialsPage() {
                 ))}
               </select>
             </div>
-            <div>
-              <label className="block text-sm mb-1">Class</label>
-              <select className="border w-full p-2 rounded" value={className} onChange={(e)=>setClassName(e.target.value)}>
-                <option value="">All</option>
-                {classOptions.map((c) => (
-                  <option key={c} value={c}>{c}</option>
-                ))}
-              </select>
-            </div>
+            
             
             <div>
               <label className="block text-sm mb-1">Type</label>
               <select className="border w-full p-2 rounded" value={type} onChange={(e)=>setType(e.target.value)}>
                 <option value="">All Types</option>
-                {typeOptions.map((t) => (
+                <option value="lecture_notes">Lecture Notes</option>
+                <option value="assignment">Assignment</option>
+                <option value="reference_book">Reference Book</option>
+                <option value="question_paper">Question Paper</option>
+                <option value="lab_manual">Lab Manual</option>
+                <option value="presentation">Presentation</option>
+                <option value="other">Other</option>
+                {typeOptions && typeOptions.filter(t => !['lecture_notes','assignment','reference_book','question_paper','lab_manual','presentation','other'].includes(t)).map((t) => (
                   <option key={t} value={t}>{t}</option>
                 ))}
               </select>
