@@ -822,3 +822,5 @@ export const getDashboardStats = asyncHandler(async (req, res) => {
     throw new ApiError(500, "Failed to fetch dashboard statistics");
   }
 });
+
+// (duplicate removed) adminListStudents defined earlier with filters
