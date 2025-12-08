@@ -449,7 +449,7 @@ export const listPublicFaculties = asyncHandler(async (req, res) => {
 
     const [faculties, total, branches] = await Promise.all([
         Faculty.find(filter)
-            .select("firstName lastName email department designation specialization imageUrl about")
+            .select("firstName lastName email department designation specialization imageUrl about mobile social journalPapers conferencePapers patents sponsoredProjects consultancyProjects")
             .sort({ department: 1, firstName: 1 })
             .limit(parseInt(limit))
             .skip(skip)
