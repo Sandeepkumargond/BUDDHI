@@ -36,6 +36,7 @@ const menusByRole = {
     { Icon: FaGraduationCap, label: "Grade Card", href: "/student/grade-card" },
     { Icon: FaClipboardCheck, label: "Attendance", href: "/student/attendance" },
     { Icon: FaCommentDots, label: "Feedback", href: "/student/feedback" },
+    { Icon: FaChalkboardTeacher, label: "Faculties", href: "/student/faculties" },
   ],
 
   faculty: [

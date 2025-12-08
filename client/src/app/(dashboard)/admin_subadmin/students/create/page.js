@@ -52,7 +52,7 @@ export default function CreateStudentPage() {
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
   const [successMsg, setSuccessMsg] = useState("");
-  const [showToast, setShowToast] = useState(false); // for animation
+  const [showSuccessToast, setShowSuccessToast] = useState(false); // for animation
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -102,10 +102,10 @@ export default function CreateStudentPage() {
 
       // Set success state
       setSuccessMsg("Student created successfully!");
-      setShowToast(true);
+      setShowSuccessToast(true);
 
       // Auto-hide animation
-      setTimeout(() => setShowToast(false), 3500);
+      setTimeout(() => setShowSuccessToast(false), 3500);
 
       // Reset form
       setForm({
@@ -128,7 +128,8 @@ export default function CreateStudentPage() {
 
     } catch (err) {
       setLoading(false);
-      showToast.error("Server error");
+      const errorMessage = err?.message || err?.data?.message || "Server error";
+      showToast.error(errorMessage);
     }
   };
 
@@ -136,7 +137,7 @@ export default function CreateStudentPage() {
     <div className="p-6 m-4 bg-white rounded-xl border border-gray-100 shadow-sm">
 
       {/* SUCCESS POPUP */}
-      <SuccessCard message={successMsg} show={showToast} />
+      <SuccessCard message={successMsg} show={showSuccessToast} />
 
       <h1 className="text-2xl font-semibold text-gray-700">Create Student</h1>
       <p className="text-sm text-gray-500 mb-6">Enter student details correctly.</p>

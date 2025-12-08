@@ -8,7 +8,7 @@ import { upload } from "../middlewares/multer.middleware.js";
 import { adminCreateCourse, adminListDepartmentCourses, adminDeleteCourse, adminListDepartmentCoursesByCode, adminListAllCourses, getCoursesForGradeCard } from "../controllers/course.controller.js";
 import { adminCreateRegistrationForm, adminListRegistrationForms, adminPublishRegistrationForm, adminListFormSubmissions, adminListAllRegistrations, adminDeleteRegistrationForm } from "../controllers/registration.controller.js";
 import { adminGetAdmitCardByDeptSem, adminPublishAdmitCard, adminListAdmitCards, adminDeleteAdmitCard } from "../controllers/admitCard.controller.js";
-import { adminGetDepartmentByCode, adminUpdateDepartmentHod, adminListDepartments } from "../controllers/department.controller.js";
+import { adminGetDepartmentByCode, adminUpdateDepartmentHod, adminListDepartments, adminCreateDepartment, adminUpdateDepartment, adminDeleteDepartment } from "../controllers/department.controller.js";
 import { adminListStudents } from "../controllers/admin.controller.js";
 import { assignCourseToFaculty, removeCourseFromFaculty } from "../controllers/attendance.controller.js";
 
@@ -162,15 +162,14 @@ router.route('/courses/grade-card/options').get(
 );
 
 // Departments (admin)
-router.route('/departments').get(
-    authenticateAdmin,
-    adminListDepartments
-);
+router.route('/departments')
+    .get(authenticateAdmin, adminListDepartments)
+    .post(authenticateAdmin, adminCreateDepartment);
 
-router.route('/departments/:code').get(
-    authenticateAdmin,
-    adminGetDepartmentByCode
-);
+router.route('/departments/:code')
+    .get(authenticateAdmin, adminGetDepartmentByCode)
+    .patch(authenticateAdmin, adminUpdateDepartment)
+    .delete(authenticateAdmin, adminDeleteDepartment);
 
 router.route('/departments/:code/hod').patch(
     authenticateAdmin,

@@ -11,14 +11,22 @@ export function ChatbotProvider({ children, initialRole = "guest" }) {
   const close = useCallback(() => setIsOpen(false), []);
   const toggle = useCallback(() => setIsOpen((v) => !v), []);
 
-  const sendMessage = useCallback(async (text) => {
+  const sendMessage = useCallback(async (text, context = {}) => {
+    const { user, role: userRole } = context;
+    const activeRole = userRole || role;
+
     const userMsg = { id: Date.now(), role: "user", text };
     setMessages((m) => [...m, userMsg]);
     try {
       const res = await fetch(`/api/chat`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ prompt: text, role }),
+        // Pass user context and role to the API
+        body: JSON.stringify({
+          prompt: text,
+          role: activeRole,
+          userContext: user || {}
+        }),
       });
       const data = await res.json();
       const botMsg = { id: Date.now() + 1, role: "assistant", text: data.reply ?? "" };

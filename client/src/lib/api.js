@@ -359,6 +359,22 @@ class ApiService {
     return this.request(`/admin/departments${qs}`, { method: 'GET' });
   }
 
+  async adminGetDepartmentByCode(code) {
+    return this.request(`/admin/departments/${code}`, { method: 'GET' });
+  }
+
+  async adminCreateDepartment(payload) {
+    return this.request('/admin/departments', { method: 'POST', body: payload });
+  }
+
+  async adminUpdateDepartment(code, payload) {
+    return this.request(`/admin/departments/${code}`, { method: 'PATCH', body: payload });
+  }
+
+  async adminDeleteDepartment(code) {
+    return this.request(`/admin/departments/${code}`, { method: 'DELETE' });
+  }
+
   // Admit Cards (admin)
   async adminPublishAdmitCard(payload) {
     return this.request('/admin/admit-cards/publish', { method: 'POST', body: payload });
@@ -556,6 +572,13 @@ class ApiService {
     return this.request('/admin/dashboard-stats', {
       method: 'GET'
     });
+  }
+
+  // Public faculties (student view)
+  async listPublicFaculties(params = {}) {
+    const query = new URLSearchParams(params).toString();
+    const qs = query ? `?${query}` : '';
+    return this.request(`/faculty/public${qs}`, { method: 'GET' });
   }
 
   // Faculty class notices
