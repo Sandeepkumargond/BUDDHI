@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
 import { apiService } from "@/lib/api";
+import { FaBook, FaFileAlt, FaBookOpen, FaQuestionCircle, FaFlask, FaChartBar, FaPaperclip, FaDownload, FaGraduationCap, FaCalendarAlt, FaFile } from 'react-icons/fa';
 
 export default function StudyMaterialPage() {
   const { user } = useAuth();
@@ -77,17 +78,17 @@ export default function StudyMaterialPage() {
     }
   };
 
-  const getMaterialTypeIcon = (type) => {
+  const getMaterialIcon = (type) => {
     const icons = {
-      lecture_notes: '📚',
-      assignment: '📝',
-      reference_book: '📖',
-      question_paper: '❓',
-      lab_manual: '🔬',
-      presentation: '📊',
-      other: '📎'
+      lecture_notes: <FaBook className="inline" style={{ color: '#AEE7F7' }} />,
+      assignment: <FaFileAlt className="inline" style={{ color: '#C9CCFF' }} />,
+      reference_book: <FaBookOpen className="inline" style={{ color: '#F9DB66' }} />,
+      question_paper: <FaQuestionCircle className="inline" style={{ color: '#AEE7F7' }} />,
+      lab_manual: <FaFlask className="inline" style={{ color: '#C9CCFF' }} />,
+      presentation: <FaChartBar className="inline" style={{ color: '#F9DB66' }} />,
+      other: <FaPaperclip className="inline" style={{ color: '#AEE7F7' }} />
     };
-    return icons[type] || '📎';
+    return icons[type] || <FaPaperclip className="inline" style={{ color: '#AEE7F7' }} />;
   };
 
   const formatFileSize = (bytes) => {
@@ -111,7 +112,7 @@ export default function StudyMaterialPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-semibold">📚 Study Materials</h1>
+          <h1 className="text-2xl font-semibold flex items-center gap-2"><FaBook style={{ color: '#AEE7F7' }} /> Study Materials</h1>
           <p className="text-gray-600">Manage and share educational resources</p>
         </div>
 
@@ -134,7 +135,7 @@ export default function StudyMaterialPage() {
                 <p className="text-sm text-gray-600">Total Materials</p>
                 <p className="text-2xl font-bold text-blue-600">{stats.totalMaterials || 0}</p>
               </div>
-              <div className="text-3xl">📚</div>
+              <div className="text-3xl" style={{ color: '#AEE7F7' }}><FaBook /></div>
             </div>
           </div>
           
@@ -144,7 +145,7 @@ export default function StudyMaterialPage() {
                 <p className="text-sm text-gray-600">Total Downloads</p>
                 <p className="text-2xl font-bold text-green-600">{stats.totalDownloads || 0}</p>
               </div>
-              <div className="text-3xl">📥</div>
+              <div className="text-3xl" style={{ color: '#AEE7F7' }}><FaDownload /></div>
             </div>
           </div>
           
@@ -154,7 +155,7 @@ export default function StudyMaterialPage() {
                 <p className="text-sm text-gray-600">Total Views</p>
                 <p className="text-2xl font-bold text-purple-600">{stats.totalViews || 0}</p>
               </div>
-              <div className="text-3xl">👀</div>
+              <div className="text-3xl" style={{ color: '#C9CCFF' }}><FaFileAlt /></div>
             </div>
           </div>
           
@@ -164,7 +165,7 @@ export default function StudyMaterialPage() {
                 <p className="text-sm text-gray-600">Subjects</p>
                 <p className="text-2xl font-bold text-orange-600">{stats.totalSubjects || 0}</p>
               </div>
-              <div className="text-3xl">🎓</div>
+              <div className="text-3xl" style={{ color: '#F9DB66' }}><FaGraduationCap /></div>
             </div>
           </div>
         </div>
@@ -195,13 +196,13 @@ export default function StudyMaterialPage() {
             className="border border-gray-300 rounded-lg px-3 py-2"
           >
             <option value="">All Types</option>
-            <option value="lecture_notes">📚 Lecture Notes</option>
-            <option value="assignment">📝 Assignment</option>
-            <option value="reference_book">📖 Reference Book</option>
-            <option value="question_paper">❓ Question Paper</option>
-            <option value="lab_manual">🔬 Lab Manual</option>
-            <option value="presentation">📊 Presentation</option>
-            <option value="other">📎 Other</option>
+            <option value="lecture_notes">Lecture Notes</option>
+            <option value="assignment">Assignment</option>
+            <option value="reference_book">Reference Book</option>
+            <option value="question_paper">Question Paper</option>
+            <option value="lab_manual">Lab Manual</option>
+            <option value="presentation">Presentation</option>
+            <option value="other">Other</option>
           </select>
           
           <select
@@ -252,7 +253,7 @@ export default function StudyMaterialPage() {
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-2">
-                        <span className="text-2xl">{getMaterialTypeIcon(material.materialType)}</span>
+                        <span className="text-2xl">{getMaterialIcon(material.materialType)}</span>
                         <h4 className="font-semibold text-lg">{material.title}</h4>
                         <span className="px-2 py-1 text-xs bg-blue-100 text-blue-800 rounded">
                           {material.courseCode}
@@ -262,13 +263,13 @@ export default function StudyMaterialPage() {
                       <p className="text-gray-600 mb-2 line-clamp-2">{material.description}</p>
                       
                       <div className="flex flex-wrap items-center gap-4 text-sm text-gray-500">
-                        <span>📖 {material.subject}</span>
-                        <span>🎓 Semester {material.semester}</span>
-                        <span>🏢 {material.branch}</span>
-                        <span>📄 {formatFileSize(material.fileSize)}</span>
-                        <span>📅 {formatDate(material.createdAt)}</span>
-                        <span>👀 {material.viewCount} views</span>
-                        <span>📥 {material.downloadCount} downloads</span>
+                        <span className="flex items-center gap-1"><FaBookOpen style={{ color: '#AEE7F7' }} /> {material.subject}</span>
+                        <span className="flex items-center gap-1"><FaGraduationCap style={{ color: '#C9CCFF' }} /> Semester {material.semester}</span>
+                        <span>{material.branch}</span>
+                        <span className="flex items-center gap-1"><FaFile style={{ color: '#F9DB66' }} /> {formatFileSize(material.fileSize)}</span>
+                        <span className="flex items-center gap-1"><FaCalendarAlt style={{ color: '#AEE7F7' }} /> {formatDate(material.createdAt)}</span>
+                        <span>{material.viewCount} views</span>
+                        <span className="flex items-center gap-1"><FaDownload style={{ color: '#C9CCFF' }} /> {material.downloadCount} downloads</span>
                       </div>
                       
                       {material.tags && material.tags.length > 0 && (
