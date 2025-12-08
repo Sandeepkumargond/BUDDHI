@@ -1,8 +1,11 @@
+import mongoose from "mongoose";
 import asyncHandler from "../utils/asyncHandler.js";
 import ApiError from "../utils/ApiError.js";
 import ApiResponse from "../utils/ApiResponse.js";
 import { Notice } from "../models/notice.model.js";
 import { uploadNoticeAttachment } from "../utils/ImageKit.js";
+import { Faculty } from "../models/faculty.model.js";
+import { Course } from "../models/course.model.js";
 
 // Create a new notice (Admin/SubAdmin)
 const createNotice = asyncHandler(async (req, res) => {
@@ -322,6 +325,10 @@ const getActiveNotices = asyncHandler(async (req, res) => {
 const getNoticeById = asyncHandler(async (req, res) => {
     const { noticeId } = req.params;
 
+    if (!noticeId || !mongoose.isValidObjectId(noticeId)) {
+        throw new ApiError(400, "Invalid notice id");
+    }
+
     const notice = await Notice.findById(noticeId)
         .populate('createdBy', 'firstName lastName email');
 
@@ -480,10 +487,124 @@ const getNoticeStats = asyncHandler(async (req, res) => {
     );
 });
 
+// Faculty: create notice for an assigned class
+const createFacultyClassNotice = asyncHandler(async (req, res) => {
+    const facultyId = req.user?._id;
+    if (!facultyId) {
+        throw new ApiError(401, "Unauthorized");
+    }
+
+    const { courseId, title, content, section, priority = "normal", publishDate, expiryDate, tags } = req.body;
+
+    if (!courseId) throw new ApiError(400, "courseId is required");
+    if (!title?.trim()) throw new ApiError(400, "Title is required");
+    if (!content?.trim()) throw new ApiError(400, "Content is required");
+
+    const faculty = await Faculty.findById(facultyId).lean();
+    if (!faculty) throw new ApiError(404, "Faculty not found");
+
+    const assignment = faculty.assignedCourses?.find(
+        (c) => c.courseId?.toString() === courseId && c.isActive !== false
+    );
+    if (!assignment) {
+        throw new ApiError(403, "You are not assigned to this course/section");
+    }
+
+    const course = await Course.findById(courseId).lean();
+    if (!course) throw new ApiError(404, "Course not found");
+
+    // Upload attachment if provided
+    let attachmentUrl = null;
+    let attachmentName = null;
+    if (req.file) {
+        const uploadResult = await uploadNoticeAttachment(req.file.path, req.file.originalname);
+        if (uploadResult.error) {
+            throw new ApiError(500, uploadResult.message || "Failed to upload attachment");
+        }
+        attachmentUrl = uploadResult.url;
+        attachmentName = uploadResult.originalName;
+    }
+
+    // Parse tags if sent as JSON
+    let parsedTags = [];
+    if (tags) {
+        try {
+            parsedTags = typeof tags === "string" ? JSON.parse(tags) : tags;
+        } catch (e) {
+            throw new ApiError(400, "Invalid tags format");
+        }
+    }
+
+    const derivedSemester = assignment.semester || course.semester || null;
+    const derivedSection = section || assignment.section || null;
+    const derivedYear = assignment.academicYear || null;
+    const derivedBatch = assignment.batch || null;
+    const derivedBranch = faculty.department || null;
+
+    const notice = await Notice.create({
+        title: title.trim(),
+        content: content.trim(),
+        audience: "students",
+        priority,
+        publishDate: publishDate ? new Date(publishDate) : new Date(),
+        expiryDate: expiryDate ? new Date(expiryDate) : null,
+        attachmentUrl,
+        attachmentName,
+        createdBy: facultyId,
+        createdByModel: "Faculty",
+        createdByName: `${faculty.firstName} ${faculty.lastName}`.trim(),
+        category: "academic",
+        targetSemesters: derivedSemester ? [derivedSemester] : [],
+        targetBranches: derivedBranch ? [derivedBranch] : [],
+        isPinned: false,
+        tags: parsedTags,
+        courseId,
+        courseCode: course.code,
+        courseName: course.name,
+        section: derivedSection,
+        semester: derivedSemester,
+        academicYear: derivedYear,
+        batch: derivedBatch,
+        branch: derivedBranch,
+    });
+
+    return res.status(201).json(
+        new ApiResponse(201, { notice }, "Notice created successfully")
+    );
+});
+
+// Faculty: list own notices
+const getFacultyClassNotices = asyncHandler(async (req, res) => {
+    const facultyId = req.user?._id;
+    if (!facultyId) {
+        throw new ApiError(401, "Unauthorized");
+    }
+
+    const { courseId } = req.query;
+
+    const filter = {
+        createdBy: facultyId,
+        createdByModel: "Faculty",
+    };
+
+    if (courseId) filter.courseId = courseId;
+
+    const notices = await Notice.find(filter)
+        .sort({ publishDate: -1 })
+        .select("title content publishDate expiryDate courseCode courseName section semester academicYear attachmentUrl attachmentName isActive isPinned viewCount")
+        .lean();
+
+    return res.status(200).json(
+        new ApiResponse(200, { notices }, "Faculty notices retrieved successfully")
+    );
+});
+
 export {
     createNotice,
+    createFacultyClassNotice,
     getAllNotices,
     getActiveNotices,
+    getFacultyClassNotices,
     getNoticeById,
     updateNotice,
     deleteNotice,
