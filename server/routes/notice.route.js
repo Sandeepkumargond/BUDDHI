@@ -1,6 +1,7 @@
 import { Router } from "express";
 import {
     createNotice,
+    createFacultyClassNotice,
     getAllNotices,
     getActiveNotices,
     getNoticeById,
@@ -8,7 +9,8 @@ import {
     deleteNotice,
     toggleNoticeStatus,
     toggleNoticePin,
-    getNoticeStats
+    getNoticeStats,
+    getFacultyClassNotices
 } from "../controllers/notice.controller.js";
 import { authenticateAdmin } from "../middlewares/admin.middleware.js";
 import { authenticateSubAdmin } from "../middlewares/subAdmin.middleware.js";
@@ -109,7 +111,18 @@ router.route('/student/:noticeId').get(
     getNoticeById
 );
 
-// Faculty routes (read-only)
+// Faculty routes (class-specific first to avoid :noticeId catching "class")
+router.route('/faculty/class').get(
+    authenticateFaculty,
+    getFacultyClassNotices
+);
+
+router.route('/faculty/class').post(
+    authenticateFaculty,
+    upload.single('attachment'),
+    createFacultyClassNotice
+);
+
 router.route('/faculty').get(
     authenticateFaculty,
     getActiveNotices

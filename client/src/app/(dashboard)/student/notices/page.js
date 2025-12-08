@@ -225,7 +225,17 @@ export default function StudentNoticesPage() {
                   </div>
 
                   {/* Title */}
-                  <h2 className="text-xl font-semibold text-gray-900 mb-2">{notice.title}</h2>
+                  <h2 className="text-xl font-semibold text-gray-900 mb-1">{notice.title}</h2>
+
+                  {/* Course info when published by faculty */}
+                  {notice.createdByModel === "Faculty" && (notice.courseCode || notice.courseName) && (
+                    <p className="text-sm text-blue-700 mb-2">
+                      {notice.courseCode ? `${notice.courseCode}` : ""}
+                      {notice.courseName ? ` – ${notice.courseName}` : ""}
+                      {notice.section ? ` • Sec ${notice.section}` : ""}
+                      {notice.semester ? ` • Sem ${notice.semester}` : ""}
+                    </p>
+                  )}
 
                   {/* Content Preview */}
                   <p className="text-gray-700 mb-3 line-clamp-3">

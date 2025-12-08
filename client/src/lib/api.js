@@ -531,6 +531,21 @@ class ApiService {
     });
   }
 
+  // Faculty class notices
+  async getFacultyClassNotices(params = {}) {
+    const query = new URLSearchParams(params).toString();
+    const qs = query ? `?${query}` : '';
+    return this.request(`/notices/faculty/class${qs}`, { method: 'GET' });
+  }
+
+  async createFacultyClassNotice(formData) {
+    // formData must be FormData with fields: courseId, title, content, optional section/priority/publishDate/expiryDate/tags, and optional attachment
+    return this.request('/notices/faculty/class', {
+      method: 'POST',
+      body: formData
+    });
+  }
+
   // Study Material endpoints
   async getFacultyCourses() {
     return this.request('/study-materials/faculty/courses', {
