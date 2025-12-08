@@ -21,7 +21,7 @@ export default function ViewNoticePage() {
       try {
         setLoading(true);
         const response = await apiService.request(`/notices/${noticeId}`);
-        
+
         if (response.success && response.data) {
           setNotice(response.data.notice);
         } else {
@@ -89,7 +89,7 @@ export default function ViewNoticePage() {
       <div className="p-6">
         <div className="text-center">
           <h2 className="text-xl font-semibold text-red-600">Access Denied</h2>
-          <p className="text-gray-600 mt-2">You don't have permission to access this page.</p>
+          <p className="text-gray-600 mt-2">You don&apos;t have permission to access this page.</p>
         </div>
       </div>
     );
@@ -133,7 +133,7 @@ export default function ViewNoticePage() {
       <div className="p-6">
         <div className="text-center">
           <h3 className="text-lg font-medium text-gray-900 mb-2">Notice not found</h3>
-          <p className="text-gray-600">The notice you're looking for doesn't exist.</p>
+          <p className="text-gray-600">The notice you&apos;re looking for doesn&apos;t exist.</p>
           <button
             onClick={() => router.back()}
             className="mt-4 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
@@ -160,17 +160,16 @@ export default function ViewNoticePage() {
                 📌 PINNED
               </span>
             )}
-            <span className={`px-3 py-1 text-sm font-medium rounded-full border ${
-              notice.isActive 
-                ? 'bg-green-100 text-green-800 border-green-200' 
+            <span className={`px-3 py-1 text-sm font-medium rounded-full border ${notice.isActive
+                ? 'bg-green-100 text-green-800 border-green-200'
                 : 'bg-red-100 text-red-800 border-red-200'
-            }`}>
+              }`}>
               {notice.isActive ? '✓ ACTIVE' : '✗ INACTIVE'}
             </span>
           </div>
           <h1 className="text-3xl font-bold text-gray-900 mb-2">{notice.title}</h1>
         </div>
-        
+
         <div className="flex gap-2">
           <Link
             href={`/admin/notices/${notice._id}/edit`}
@@ -196,7 +195,7 @@ export default function ViewNoticePage() {
               <label className="text-sm font-medium text-gray-500">Published Date</label>
               <p className="text-gray-900">{formatDate(notice.publishDate)}</p>
             </div>
-            
+
             <div>
               <label className="text-sm font-medium text-gray-500">Target Audience</label>
               <p className="text-gray-900 capitalize">{notice.audience}</p>
@@ -272,7 +271,7 @@ export default function ViewNoticePage() {
                   </div>
                 </div>
               )}
-              
+
               {notice.targetBranches?.length > 0 && (
                 <div>
                   <label className="text-sm font-medium text-gray-500">Target Branches</label>

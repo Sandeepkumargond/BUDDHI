@@ -14,7 +14,7 @@ import {
   departmentsData,
   facultyData,
   studentData,
-   coursesData, 
+  coursesData,
 } from "@/lib/roushaniData";
 import { apiService } from "@/lib/api";
 
@@ -32,11 +32,10 @@ const StatCard = ({ title, value, subtitle }) => (
 const TabButton = ({ active, onClick, children }) => (
   <button
     onClick={onClick}
-    className={`px-4 py-2 rounded-lg text-sm font-medium transition ${
-      active
+    className={`px-4 py-2 rounded-lg text-sm font-medium transition ${active
         ? "bg-[#E9F2FF] text-blue-600 shadow-inner"
         : "text-gray-600 hover:bg-gray-50"
-    }`}
+      }`}
   >
     {children}
   </button>
@@ -52,7 +51,7 @@ export default function DepartmentDetailsPage() {
   const department =
     departmentsData.find((d) => d.id === deptId) || departmentsData[0];
 
-     // UI state
+  // UI state
   const [activeTab, setActiveTab] = useState("overview");
   const [showHodModal, setShowHodModal] = useState(false);
   const [selectedHod, setSelectedHod] = useState(department.hod);
@@ -68,29 +67,29 @@ export default function DepartmentDetailsPage() {
   // Derived data
   const [faculties, setFaculties] = useState([]);
   // Fetch faculty list from backend for this department
-    // Fetch department details from backend
-    useEffect(() => {
-      let mounted = true;
-      (async () => {
-        if (!localDept?.code) return;
-        setLoadingDept(true);
-        try {
-          const res = await apiService.adminGetDepartment(localDept.code);
-          const dept = res?.data?.department || res?.department || null;
-          const stats = res?.data?.stats || res?.stats || { facultyCount: faculties.length, studentCount: 0 };
-          if (mounted && dept) {
-            setBackendDept(dept);
-            setDeptStats(stats);
-            if (dept?.hod?._id) setSelectedHod(dept.hod._id);
-          }
-        } catch (e) {
-          // fallback: keep static department
-        } finally {
-          if (mounted) setLoadingDept(false);
+  // Fetch department details from backend
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      if (!localDept?.code) return;
+      setLoadingDept(true);
+      try {
+        const res = await apiService.adminGetDepartment(localDept.code);
+        const dept = res?.data?.department || res?.department || null;
+        const stats = res?.data?.stats || res?.stats || { facultyCount: faculties.length, studentCount: 0 };
+        if (mounted && dept) {
+          setBackendDept(dept);
+          setDeptStats(stats);
+          if (dept?.hod?._id) setSelectedHod(dept.hod._id);
         }
-      })();
-      return () => { mounted = false; };
-    }, [localDept.code, faculties.length]);
+      } catch (e) {
+        // fallback: keep static department
+      } finally {
+        if (mounted) setLoadingDept(false);
+      }
+    })();
+    return () => { mounted = false; };
+  }, [localDept.code, faculties.length]);
   useEffect(() => {
     let mounted = true;
     (async () => {
@@ -130,10 +129,10 @@ export default function DepartmentDetailsPage() {
         if (!mounted) return;
         const mapped = list.map(st => ({
           id: st._id,
-            name: `${st.firstName || ''} ${st.lastName || ''}`.trim(),
-            roll: st.rollNo || st.enrollmentNo || '',
-            year: st.program || '',
-            semester: st.semester || '',
+          name: `${st.firstName || ''} ${st.lastName || ''}`.trim(),
+          roll: st.rollNo || st.enrollmentNo || '',
+          year: st.program || '',
+          semester: st.semester || '',
         }));
         setStudents(mapped);
       } catch (e) {
@@ -159,28 +158,28 @@ export default function DepartmentDetailsPage() {
   }, [backendDept, localDept]);
 
   // ⭐ Courses list for this department
-const departmentCourses = useMemo(
-  () => coursesData.filter((c) => c.departmentId === localDept.id),
-  [localDept]
-);
+  const departmentCourses = useMemo(
+    () => coursesData.filter((c) => c.departmentId === localDept.id),
+    [localDept]
+  );
 
-const [courses, setCourses] = useState(departmentCourses);
+  const [courses, setCourses] = useState(departmentCourses);
 
-useEffect(() => {
-  let mounted = true;
-  (async () => {
-    try {
-      const res = await apiService.adminListCoursesByDepartment(localDept.id);
-      const fetched = res?.data?.courses || res?.courses || [];
-      if (mounted && Array.isArray(fetched)) setCourses(fetched);
-    } catch (e) {
-      // fallback to local static if API not available
-      if (mounted) setCourses(departmentCourses);
-    }
-  })();
-  return () => { mounted = false; };
-}, [localDept.id]);
- 
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      try {
+        const res = await apiService.adminListCoursesByDepartment(localDept.id);
+        const fetched = res?.data?.courses || res?.courses || [];
+        if (mounted && Array.isArray(fetched)) setCourses(fetched);
+      } catch (e) {
+        // fallback to local static if API not available
+        if (mounted) setCourses(departmentCourses);
+      }
+    })();
+    return () => { mounted = false; };
+  }, [localDept.id, departmentCourses]);
+
   // Pagination (simple)
   const FACULTY_PER_PAGE = 6;
   const STUDENT_PER_PAGE = 8;
@@ -212,12 +211,12 @@ useEffect(() => {
 
 
   const courseColumns = [
-  { header: "Course Name", accessor: "name" },
-  { header: "Course Code", accessor: "code", className: "hidden md:table-cell" },
-  { header: "Credits", accessor: "credits", className: "hidden md:table-cell" },
-  { header: "Semester", accessor: "semester", className: "hidden md:table-cell" },
-  { header: "Actions", accessor: "action" },
-];
+    { header: "Course Name", accessor: "name" },
+    { header: "Course Code", accessor: "code", className: "hidden md:table-cell" },
+    { header: "Credits", accessor: "credits", className: "hidden md:table-cell" },
+    { header: "Semester", accessor: "semester", className: "hidden md:table-cell" },
+    { header: "Actions", accessor: "action" },
+  ];
 
   // Renderers
   const renderFacultyRow = (f) => (
@@ -284,21 +283,21 @@ useEffect(() => {
   );
 
   const renderCourseRow = (c) => (
-  <tr key={c.id} className="border-b border-gray-100 hover:bg-[#F7FBFF]">
-    <td className="p-4">{c.name}</td>
-    <td className="hidden md:table-cell p-4">{c.code}</td>
-    <td className="hidden md:table-cell p-4">{c.credits}</td>
-    <td className="hidden md:table-cell p-4">{c.semester ?? "-"}</td>
-    <td className="p-4">
-      <div className="flex items-center gap-2">
-        <button className="text-sm px-3 py-1 rounded-md border border-red-200 text-red-600 hover:bg-red-50"
-          onClick={() => handleDeleteCourse(c.id)}>
-          Delete
-        </button>
-      </div>
-    </td>
-  </tr>
-);
+    <tr key={c.id} className="border-b border-gray-100 hover:bg-[#F7FBFF]">
+      <td className="p-4">{c.name}</td>
+      <td className="hidden md:table-cell p-4">{c.code}</td>
+      <td className="hidden md:table-cell p-4">{c.credits}</td>
+      <td className="hidden md:table-cell p-4">{c.semester ?? "-"}</td>
+      <td className="p-4">
+        <div className="flex items-center gap-2">
+          <button className="text-sm px-3 py-1 rounded-md border border-red-200 text-red-600 hover:bg-red-50"
+            onClick={() => handleDeleteCourse(c.id)}>
+            Delete
+          </button>
+        </div>
+      </td>
+    </tr>
+  );
 
 
   // Handlers
@@ -327,15 +326,15 @@ useEffect(() => {
     router.push("/admin/departments");
   }
 
-   async function handleDeleteCourse(id) {
-  try {
-    await apiService.adminDeleteCourse(id);
-    setCourses((prev) => prev.filter((c) => (c._id || c.id) !== id));
-    toast.success("Course deleted");
-  } catch (e) {
-    toast.error(e.message || "Failed to delete course");
+  async function handleDeleteCourse(id) {
+    try {
+      await apiService.adminDeleteCourse(id);
+      setCourses((prev) => prev.filter((c) => (c._id || c.id) !== id));
+      toast.success("Course deleted");
+    } catch (e) {
+      toast.error(e.message || "Failed to delete course");
+    }
   }
-}
 
   // UI
   return (
@@ -555,135 +554,135 @@ useEffect(() => {
 
 
           {activeTab === "courses" && (
-  <div>
-    <div className="flex items-center justify-between mb-4">
-      <div>
-        <h3 className="text-lg font-semibold text-gray-700">Courses</h3>
-        <p className="text-sm text-gray-500">All courses under this department.</p>
-      </div>
+            <div>
+              <div className="flex items-center justify-between mb-4">
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-700">Courses</h3>
+                  <p className="text-sm text-gray-500">All courses under this department.</p>
+                </div>
 
-      {/* ⭐ Add Course Button */}
-      <FormModal
-        table="course"
-        type="create"
-        departmentId={localDept.id}
-        onCreate={(newCourse) => setCourses((prev) => [newCourse, ...prev])}
-      />
-    </div>
+                {/* ⭐ Add Course Button */}
+                <FormModal
+                  table="course"
+                  type="create"
+                  departmentId={localDept.id}
+                  onCreate={(newCourse) => setCourses((prev) => [newCourse, ...prev])}
+                />
+              </div>
 
-    <div className="bg-white rounded-xl border border-gray-100 overflow-hidden">
-      <Table
-        columns={courseColumns}
-        renderRow={renderCourseRow}
-        data={courses.map((c) => ({
-          id: c._id || c.id,
-          name: c.name,
-          code: c.code,
-          credits: c.credits,
-          semester: c.semester,
-        }))}
-      />
-    </div>
-  </div>
-)}
+              <div className="bg-white rounded-xl border border-gray-100 overflow-hidden">
+                <Table
+                  columns={courseColumns}
+                  renderRow={renderCourseRow}
+                  data={courses.map((c) => ({
+                    id: c._id || c.id,
+                    name: c.name,
+                    code: c.code,
+                    credits: c.credits,
+                    semester: c.semester,
+                  }))}
+                />
+              </div>
+            </div>
+          )}
 
         </div>
       </div>
 
       {/* HOD Modal (custom) */}
-     {showHodModal && (
-  <div className="fixed inset-0 z-50 flex items-center justify-center">
-    <div className="absolute inset-0 bg-black/40" onClick={() => setShowHodModal(false)} />
-    
-    <div className="relative bg-white rounded-2xl w-full max-w-lg p-6 z-10 shadow-lg border border-gray-100">
+      {showHodModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div className="absolute inset-0 bg-black/40" onClick={() => setShowHodModal(false)} />
 
-      {/* Close Icon */}
-      <button
-        onClick={() => setShowHodModal(false)}
-        className="absolute top-3 right-3 w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 text-gray-500 text-xl"
-      >
-        ✕
-      </button>
+          <div className="relative bg-white rounded-2xl w-full max-w-lg p-6 z-10 shadow-lg border border-gray-100">
 
-      <h3 className="text-lg font-semibold text-gray-800 mb-3">Change Head of Department</h3>
-      <p className="text-sm text-gray-500 mb-4">
-        Select a faculty member from this department to assign as HOD.
-      </p>
+            {/* Close Icon */}
+            <button
+              onClick={() => setShowHodModal(false)}
+              className="absolute top-3 right-3 w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 text-gray-500 text-xl"
+            >
+              ✕
+            </button>
 
-      <div className="space-y-3">
-        <label className="text-sm text-gray-600">Select HOD</label>
-        <select
-          value={selectedHod}
-          onChange={(e) => setSelectedHod(e.target.value)}
-          className="w-full border rounded-md p-2"
-        >
-          <option value="">-- Select --</option>
-          {faculties.map((f) => (
-            <option key={f.id} value={f.id}>
-              {f.name} — {f.designation}
-            </option>
-          ))}
-        </select>
-      </div>
+            <h3 className="text-lg font-semibold text-gray-800 mb-3">Change Head of Department</h3>
+            <p className="text-sm text-gray-500 mb-4">
+              Select a faculty member from this department to assign as HOD.
+            </p>
 
-      <div className="mt-6 flex items-center justify-end gap-3">
-        <button
-          onClick={() => setShowHodModal(false)}
-          className="px-4 py-2 rounded-lg border"
-        >
-          Cancel
-        </button>
-        <button
-          onClick={handleApplyHod}
-          className="px-4 py-2 rounded-lg bg-blue-600 text-white disabled:opacity-50"
-          disabled={hodLoading}
-        >
-          {hodLoading ? 'Saving...' : 'Apply'}
-        </button>
-      </div>
-    </div>
-  </div>
-)}
-
-    {/* Faculty View Modal */}
-    {showFacultyModal && (
-      <div className="fixed inset-0 z-50 flex items-center justify-center">
-        <div className="absolute inset-0 bg-black/40" onClick={() => { setShowFacultyModal(false); setFacultyDetails(null); }} />
-        <div className="relative bg-white rounded-2xl w-full max-w-xl p-6 z-10 shadow-lg border border-gray-100">
-          <button
-            onClick={() => { setShowFacultyModal(false); setFacultyDetails(null); }}
-            className="absolute top-3 right-3 w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 text-gray-500 text-xl"
-          >✕</button>
-          {facultyLoading && <p className="text-sm text-gray-500">Loading...</p>}
-          {!facultyLoading && facultyDetails && !facultyDetails.error && (
-            <div className="space-y-4">
-              <h3 className="text-lg font-semibold text-gray-800">Faculty Details</h3>
-              <div className="flex items-center gap-4">
-                <div className="w-16 h-16 rounded-full overflow-hidden bg-gray-100">
-                  <Image src={facultyDetails.imageUrl || '/avatar.png'} alt={facultyDetails.firstName || ''} width={64} height={64} />
-                </div>
-                <div>
-                  <p className="font-medium text-gray-700">{facultyDetails.firstName} {facultyDetails.lastName}</p>
-                  <p className="text-xs text-gray-500">{facultyDetails.email}</p>
-                  <p className="text-xs text-gray-500">{facultyDetails.mobile}</p>
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-3 text-sm">
-                <div className="text-gray-500">Department</div>
-                <div className="text-gray-700">{facultyDetails.department}</div>
-                <div className="text-gray-500">Designation</div>
-                <div className="text-gray-700">{Array.isArray(facultyDetails.designation) ? facultyDetails.designation.join(', ') : facultyDetails.designation}</div>
-                <div className="text-gray-500">Account Status</div>
-                <div className="text-gray-700">{facultyDetails.accountStatus}</div>
-              </div>
+            <div className="space-y-3">
+              <label className="text-sm text-gray-600">Select HOD</label>
+              <select
+                value={selectedHod}
+                onChange={(e) => setSelectedHod(e.target.value)}
+                className="w-full border rounded-md p-2"
+              >
+                <option value="">-- Select --</option>
+                {faculties.map((f) => (
+                  <option key={f.id} value={f.id}>
+                    {f.name} — {f.designation}
+                  </option>
+                ))}
+              </select>
             </div>
-          )}
-          {!facultyLoading && facultyDetails?.error && (
-            <p className="text-sm text-red-500">{facultyDetails.error}</p>
-          )}
+
+            <div className="mt-6 flex items-center justify-end gap-3">
+              <button
+                onClick={() => setShowHodModal(false)}
+                className="px-4 py-2 rounded-lg border"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleApplyHod}
+                className="px-4 py-2 rounded-lg bg-blue-600 text-white disabled:opacity-50"
+                disabled={hodLoading}
+              >
+                {hodLoading ? 'Saving...' : 'Apply'}
+              </button>
+            </div>
+          </div>
         </div>
-      </div>
-    )}
+      )}
+
+      {/* Faculty View Modal */}
+      {showFacultyModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div className="absolute inset-0 bg-black/40" onClick={() => { setShowFacultyModal(false); setFacultyDetails(null); }} />
+          <div className="relative bg-white rounded-2xl w-full max-w-xl p-6 z-10 shadow-lg border border-gray-100">
+            <button
+              onClick={() => { setShowFacultyModal(false); setFacultyDetails(null); }}
+              className="absolute top-3 right-3 w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 text-gray-500 text-xl"
+            >✕</button>
+            {facultyLoading && <p className="text-sm text-gray-500">Loading...</p>}
+            {!facultyLoading && facultyDetails && !facultyDetails.error && (
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold text-gray-800">Faculty Details</h3>
+                <div className="flex items-center gap-4">
+                  <div className="w-16 h-16 rounded-full overflow-hidden bg-gray-100">
+                    <Image src={facultyDetails.imageUrl || '/avatar.png'} alt={facultyDetails.firstName || ''} width={64} height={64} />
+                  </div>
+                  <div>
+                    <p className="font-medium text-gray-700">{facultyDetails.firstName} {facultyDetails.lastName}</p>
+                    <p className="text-xs text-gray-500">{facultyDetails.email}</p>
+                    <p className="text-xs text-gray-500">{facultyDetails.mobile}</p>
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-3 text-sm">
+                  <div className="text-gray-500">Department</div>
+                  <div className="text-gray-700">{facultyDetails.department}</div>
+                  <div className="text-gray-500">Designation</div>
+                  <div className="text-gray-700">{Array.isArray(facultyDetails.designation) ? facultyDetails.designation.join(', ') : facultyDetails.designation}</div>
+                  <div className="text-gray-500">Account Status</div>
+                  <div className="text-gray-700">{facultyDetails.accountStatus}</div>
+                </div>
+              </div>
+            )}
+            {!facultyLoading && facultyDetails?.error && (
+              <p className="text-sm text-red-500">{facultyDetails.error}</p>
+            )}
+          </div>
+        </div>
+      )}
 
     </div>
   );
