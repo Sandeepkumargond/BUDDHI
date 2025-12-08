@@ -1045,6 +1045,40 @@ class ApiService {
       body: { status, adminRemarks },
     });
   }
+
+  // Bonafide Certificates
+  async applyBonafide(formData) {
+    return this.request('/bonafide/student/apply', {
+      method: 'POST',
+      body: formData,
+    });
+  }
+
+  async getMyBonafides(status = '', page = 1, limit = 20) {
+    let url = '/bonafide/student/my?';
+    if (status) url += `status=${status}&`;
+    url += `page=${page}&limit=${limit}`;
+    return this.request(url, { method: 'GET' });
+  }
+
+  async getMyBonafideById(bonafideId) {
+    return this.request(`/bonafide/student/${bonafideId}`, { method: 'GET' });
+  }
+
+  async getAllBonafides(status = '', search = '', page = 1, limit = 20) {
+    let url = '/bonafide/admin/all?';
+    if (status) url += `status=${status}&`;
+    if (search) url += `search=${encodeURIComponent(search)}&`;
+    url += `page=${page}&limit=${limit}`;
+    return this.request(url, { method: 'GET' });
+  }
+
+  async reviewBonafide(bonafideId, status, rejectionReason = '') {
+    return this.request(`/bonafide/admin/${bonafideId}/review`, {
+      method: 'PATCH',
+      body: { status, rejectionReason },
+    });
+  }
 }
 
 

@@ -39,6 +39,7 @@ const menusByRole = {
     { Icon: FaChalkboardTeacher, label: "Faculties", href: "/student/faculties" },
     { Icon: FaBriefcase, label: "Opportunities", href: "/student/opportunities" },
     { Icon: FaMoneyBillWave, label: "Scholarships", href: "/student/scholarships" },
+    { Icon: FaIdCard, label: "Bonafide", href: "/student/bonafide" },
     { Icon: FaCalendarAlt, label: "Leave", href: "/student/leaves" },
   ],
 
@@ -118,6 +119,7 @@ const menusByRole = {
       ]
     },
     { Icon: FaMoneyBillWave, label: "Scholarships", href: "/admin/scholarships" },
+    { Icon: FaIdCard, label: "Bonafide", href: "/admin/bonafide" },
     { Icon: FaCalendarAlt, label: "Leave Management", href: "/admin/leaves" },
 
   ],
