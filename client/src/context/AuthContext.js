@@ -1,5 +1,5 @@
 "use client";
-import { createContext, useContext, useState, useEffect } from 'react';
+import { createContext, useContext, useState, useEffect, useRef } from 'react';
 import { apiService } from '@/lib/api';
 
 const AuthContext = createContext({});
@@ -17,6 +17,7 @@ export const AuthProvider = ({ children }) => {
   const [role, setRole] = useState(null);
   const [loading, setLoading] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const bootstrapAttempted = useRef(false);
 
   // Lightweight JWT decoder (no verification, just payload parse)
   const decodeJwt = (token) => {
@@ -30,47 +31,95 @@ export const AuthProvider = ({ children }) => {
   };
 
   useEffect(() => {
+    // Only run bootstrap once per app load
+    if (bootstrapAttempted.current) return;
+    bootstrapAttempted.current = true;
+
     const bootstrap = async () => {
       const savedRole = localStorage.getItem('userRole');
+      
+      // If no saved role, user is not authenticated
       if (!savedRole) {
         setLoading(false);
+        setIsAuthenticated(false);
         return;
       }
 
+      setRole(savedRole);
+      let authSuccess = false;
+
+      // Strategy 1: Try to refresh token first (most reliable)
       try {
-        // Try to refresh access token using refresh cookie
+        console.log('[Auth] Attempting token refresh for role:', savedRole);
         const refreshRes = await apiService.refreshAccessToken(savedRole);
         const tokens = refreshRes?.data || {};
 
-        setRole(savedRole);
-
-        // Try to get user id from access token and fetch user by id
-        const accessToken = tokens.accessToken;
-        const decoded = accessToken ? decodeJwt(accessToken) : null;
-        const userId = decoded?._id;
-        if (userId) {
+        if (tokens.accessToken) {
+          // Token refresh succeeded, now fetch user profile
           try {
-            const profileRes = await apiService.getById(savedRole, userId);
-            const userData = profileRes.data?.user || profileRes.data?.superAdmin || profileRes.data?.admin || profileRes.data?.subAdmin || profileRes.data?.student || profileRes.data?.faculty || profileRes.data;
-            if (userData) setUser(userData);
-          } catch (e) {
-            // If fetching by id fails, still keep user null but stay authenticated
-            console.warn('Profile fetch by id failed:', e?.message || e);
+            const profileRes = await apiService.getProfile(savedRole);
+            const userData = 
+              profileRes.data?.user || 
+              profileRes.data?.superAdmin || 
+              profileRes.data?.admin || 
+              profileRes.data?.subAdmin || 
+              profileRes.data?.student || 
+              profileRes.data?.faculty;
+            
+            if (userData) {
+              setUser(userData);
+              console.log('[Auth] Session restored successfully');
+              authSuccess = true;
+            } else {
+              console.warn('[Auth] Profile returned no user data');
+            }
+          } catch (profileErr) {
+            console.warn('[Auth] Profile fetch failed, but session may still be valid:', profileErr?.message);
+            // Don't fail here - the refresh succeeded, so user is authenticated
+            authSuccess = true;
           }
         }
+      } catch (refreshErr) {
+        console.warn('[Auth] Token refresh failed:', refreshErr?.message);
+        // Don't clear auth yet - try the fallback
+      }
 
-        // Mark authenticated after attempting to fetch user
+      // Strategy 2: If refresh failed, try direct profile call
+      if (!authSuccess) {
+        try {
+          console.log('[Auth] Attempting direct profile fetch (fallback)');
+          const profileRes = await apiService.getProfile(savedRole);
+          const userData = 
+            profileRes.data?.user || 
+            profileRes.data?.superAdmin || 
+            profileRes.data?.admin || 
+            profileRes.data?.subAdmin || 
+            profileRes.data?.student || 
+            profileRes.data?.faculty;
+          
+          if (userData) {
+            setUser(userData);
+            console.log('[Auth] Session restored via profile endpoint');
+            authSuccess = true;
+          }
+        } catch (profileErr) {
+          console.error('[Auth] Direct profile fetch also failed:', profileErr?.message);
+        }
+      }
+
+      // Set authentication state based on whether at least one strategy worked
+      if (authSuccess) {
         setIsAuthenticated(true);
-      } catch (err) {
-        // Refresh failed; clear auth
-        console.error('Session bootstrap refresh failed:', err);
+      } else {
+        // Both strategies failed - clear authentication
+        console.error('[Auth] All restoration strategies failed - clearing session');
         localStorage.removeItem('userRole');
         setUser(null);
         setRole(null);
         setIsAuthenticated(false);
-      } finally {
-        setLoading(false);
       }
+
+      setLoading(false);
     };
 
     bootstrap();
