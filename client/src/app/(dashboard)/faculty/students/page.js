@@ -433,17 +433,36 @@ function FacultyStudentsPage() {
 
           {/* Selected Class Info */}
           {selectedClass && (
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+            <div className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm">
               <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="font-semibold text-blue-900">
-                    {selectedClass.course.code} - {selectedClass.course.name}
-                  </h3>
-                  <p className="text-sm text-blue-700">
-                    Semester {selectedClass.semester} | Section {selectedClass.section || 'All'} | Batch {selectedClass.batch || 'All'}
-                  </p>
+                <div className="flex-1">
+                  <div className="flex items-center gap-3 mb-2">
+                    <h3 className="font-bold text-xl text-gray-900">
+                      {selectedClass.course.code}
+                    </h3>
+                    <span className="text-gray-400">|</span>
+                    <h4 className="font-semibold text-lg text-gray-800">
+                      {selectedClass.course.name}
+                    </h4>
+                  </div>
+                  <div className="flex items-center gap-4 text-sm text-gray-600">
+                    <span className="flex items-center gap-1">
+                      <strong>Semester:</strong> {selectedClass.semester}
+                    </span>
+                    <span className="text-gray-300">•</span>
+                    <span className="flex items-center gap-1">
+                      <strong>Section:</strong> {selectedClass.section || 'All'}
+                    </span>
+                    <span className="text-gray-300">•</span>
+                    <span className="flex items-center gap-1">
+                      <strong>Batch:</strong> {selectedClass.batch || 'All'}
+                    </span>
+                  </div>
                 </div>
-                <span className="text-2xl font-bold text-blue-600">{students.length} Students</span>
+                <div className="flex flex-col items-end">
+                  <span className="text-3xl font-bold text-gray-800">{students.length}</span>
+                  <span className="text-sm text-gray-600">Students</span>
+                </div>
               </div>
             </div>
           )}

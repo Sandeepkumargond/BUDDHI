@@ -118,7 +118,7 @@ export default function StudyMaterialPage() {
         <div className="flex items-center gap-3">
           <Link
             href="/faculty/study-material/upload"
-            className="px-4 py-2 rounded bg-blue-600 text-white hover:bg-blue-700"
+            className="px-4 py-2 rounded bg-[#C3EBFA] text-gray-600 hover:bg-[#A8DBF2]"
           >
             + Upload Material
           </Link>
@@ -240,7 +240,7 @@ export default function StudyMaterialPage() {
               <p className="text-gray-600">Start by uploading your first study material.</p>
               <Link
                 href="/faculty/study-material/upload"
-                className="mt-4 inline-block bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
+                className="mt-4 inline-block bg-[#C3EBFA] text-gray-600 px-4 py-2 rounded-lg hover:bg-[#A8DBF2]"
               >
                 Upload Material
               </Link>

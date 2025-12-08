@@ -2,13 +2,13 @@
 
 import { useEffect, useState } from "react";
 import { apiService } from "@/lib/api";
+import { useAuth } from "@/context/AuthContext";
 
 export default function StudentStudyMaterialsPage() {
+  const { user } = useAuth();
   const [semester, setSemester] = useState("");
   const [course, setCourse] = useState("");
-  const [className, setClassName] = useState("");
   const [courseOptions, setCourseOptions] = useState([]);
-  const [classOptions, setClassOptions] = useState([]);
   const [materials, setMaterials] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -26,13 +26,10 @@ export default function StudentStudyMaterialsPage() {
         const res = await apiService.request(`/study-materials/student/options${qs}`);
         const courses = Array.isArray(res?.courses) ? res.courses : [];
         const types = Array.isArray(res?.types) ? res.types : [];
-        const classes = Array.isArray(res?.classes) ? res.classes : [];
         setCourseOptions(courses);
         setTypeOptions(types);
-        setClassOptions(classes);
         // Reset selections if no longer valid
         if (course && !courses.includes(course)) setCourse("");
-        if (className && !classes.includes(className)) setClassName("");
         if (type && !types.includes(type)) setType("");
       } catch (err) {
         // Non-blocking: keep previous options if call fails
@@ -51,7 +48,7 @@ export default function StudentStudyMaterialsPage() {
   useEffect(() => {
     fetchMaterials();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [semester, course, type, className]);
+  }, [semester, course, type]);
 
   const fetchMaterials = async () => {
     setLoading(true);
@@ -61,13 +58,18 @@ export default function StudentStudyMaterialsPage() {
       if (semester) params.semester = semester;
       if (course) params.course = course;
       if (type) params.materialType = type;
-      if (className) params.class = className;
       // Example endpoint; adjust to server routes if different
       const query = new URLSearchParams(params).toString();
       const res = await apiService.request(`/study-materials/student${query ? `?${query}` : ""}`);
       const list = res?.data?.materials || res?.materials || [];
-      // Server already applies filters and audience targeting; just set safely
-      setMaterials(Array.isArray(list) ? list : []);
+      // Annotate with submitted state based on server-side submissions for current user
+      const uid = user?._id || user?.id;
+      const annotated = Array.isArray(list) ? list.map((m) => {
+        const subs = Array.isArray(m.submissions) ? m.submissions : [];
+        const hasMine = uid ? subs.some((s) => String(s.studentId) === String(uid)) : false;
+        return { ...m, _submitted: hasMine };
+      }) : [];
+      setMaterials(annotated);
     } catch (err) {
       setError(err?.message || "Failed to fetch materials");
     } finally {
@@ -99,7 +101,8 @@ export default function StudentStudyMaterialsPage() {
     if (!file) return alert("Please choose a file");
     try {
       const fd = new FormData();
-      fd.append("materialId", item.id || item._id);
+      const id = item.id || item._id;
+      fd.append("materialId", id);
       // Only assignments/homework are submittable; infer from materialType
       const submitType = (item.materialType === 'assignment') ? 'assignment' : (item.materialType === 'homework' ? 'homework' : 'assignment');
       fd.append("type", submitType);
@@ -107,6 +110,8 @@ export default function StudentStudyMaterialsPage() {
       // You can attach optional text answers, links, etc.
       const res = await apiService.request("/study-materials/student/submit", { method: "POST", body: fd });
       alert(res?.message || "Submitted successfully");
+      // Mark locally as submitted in state; disable the button and clear selected file
+      setMaterials((prev) => prev.map((m) => ((m.id || m._id) === id) ? { ...m, _submitted: true, _selectedFile: undefined } : m));
     } catch (err) {
       alert(err?.message || "Submission failed");
     }
@@ -114,6 +119,7 @@ export default function StudentStudyMaterialsPage() {
 
   const MaterialRow = ({ item }) => {
     const isInteractive = item.materialType === "assignment" || item.materialType === "homework";
+    const submitted = item._submitted === true;
     return (
       <div className="rounded-xl p-4 bg-white" style={{ border: "1px solid #e5e7eb", boxShadow: "0 6px 18px rgba(2,6,23,0.06)" }}>
         <div className="flex justify-between items-center">
@@ -143,13 +149,24 @@ export default function StudentStudyMaterialsPage() {
 
         {isInteractive && (
           <div className="mt-4">
-            <label className="block text-sm mb-2">Submit your {item.type}</label>
-            <input type="file" className="border rounded p-2 w-full" onChange={(e) => item._selectedFile = e.target.files?.[0]} />
+            <label className="block text-sm mb-2">{submitted ? 'Submission status: Submitted' : `Submit your ${item.materialType}`}</label>
+            {!submitted && (
+              <input
+                type="file"
+                className="border rounded p-2 w-full"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  const id = item.id || item._id;
+                  setMaterials((prev) => prev.map((m) => ((m.id || m._id) === id) ? { ...m, _selectedFile: file } : m));
+                }}
+              />
+            )}
             <div className="flex justify-end mt-2">
-              <button onClick={() => handleSubmit(item, item._selectedFile)}
+              <button onClick={() => !submitted && handleSubmit(item, item._selectedFile)}
+                      disabled={submitted}
                       className="px-4 py-2 rounded-md text-white"
-                      style={{ background: "#22c55e" }}>
-                Submit
+                      style={{ background: submitted ? "#94a3b8" : "#22c55e" }}>
+                {submitted ? 'Submitted' : 'Submit'}
               </button>
             </div>
           </div>
@@ -164,7 +181,7 @@ export default function StudentStudyMaterialsPage() {
         <div className="p-5" style={{ color: "#0f172a" }}>
           <h2 className="text-lg font-semibold mb-4">Study Materials</h2>
 
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
               <label className="block text-sm mb-1">Semester</label>
               <select className="border w-full p-2 rounded" value={semester} onChange={(e)=>setSemester(e.target.value)}>
@@ -183,21 +200,20 @@ export default function StudentStudyMaterialsPage() {
                 ))}
               </select>
             </div>
-            <div>
-              <label className="block text-sm mb-1">Class</label>
-              <select className="border w-full p-2 rounded" value={className} onChange={(e)=>setClassName(e.target.value)}>
-                <option value="">All</option>
-                {classOptions.map((c) => (
-                  <option key={c} value={c}>{c}</option>
-                ))}
-              </select>
-            </div>
+            
             
             <div>
               <label className="block text-sm mb-1">Type</label>
               <select className="border w-full p-2 rounded" value={type} onChange={(e)=>setType(e.target.value)}>
                 <option value="">All Types</option>
-                {typeOptions.map((t) => (
+                <option value="lecture_notes">Lecture Notes</option>
+                <option value="assignment">Assignment</option>
+                <option value="reference_book">Reference Book</option>
+                <option value="question_paper">Question Paper</option>
+                <option value="lab_manual">Lab Manual</option>
+                <option value="presentation">Presentation</option>
+                <option value="other">Other</option>
+                {typeOptions && typeOptions.filter(t => !['lecture_notes','assignment','reference_book','question_paper','lab_manual','presentation','other'].includes(t)).map((t) => (
                   <option key={t} value={t}>{t}</option>
                 ))}
               </select>
