@@ -61,7 +61,8 @@ export const listStudentSchedule = asyncHandler(async (req, res) => {
 
   const filters = { branch: String(branch), semester: Number(semester), section: String(section) };
   const slots = await Schedule.find(filters)
-    .populate('course faculty', 'title firstName lastName')
+    .populate('course', 'name code')
+    .populate('faculty', 'firstName lastName')
     .lean();
   return res.status(200).json(new ApiResponse(200, { slots, filters }, 'Student schedule'));
 });
@@ -71,7 +72,7 @@ export const listFacultySchedule = asyncHandler(async (req, res) => {
   // Fallback to authenticated faculty if param missing or mismatched
   if (!facultyId && req.user?._id) facultyId = String(req.user._id);
   const slots = await Schedule.find({ faculty: facultyId })
-    .populate('course', 'title')
+    .populate('course', 'name code')
     .lean();
   return res.status(200).json(new ApiResponse(200, { slots, facultyId }, 'Faculty schedule'));
 });
@@ -92,4 +93,46 @@ export const deleteSlot = asyncHandler(async (req, res) => {
   const slot = await Schedule.findByIdAndDelete(id);
   if (!slot) throw new ApiError(404, 'Slot not found');
   return res.status(200).json(new ApiResponse(200, {}, 'Slot deleted'));
+});
+
+// Seed demo schedule for the currently logged-in faculty
+export const seedForCurrentFaculty = asyncHandler(async (req, res) => {
+  const facultyId = req.user?._id;
+  if (!facultyId) throw new ApiError(401, 'Faculty not found');
+
+  // Create/find a demo course
+  const { Course } = await import('../models/course.model.js');
+  const { Faculty } = await import('../models/faculty.model.js');
+  const faculty = await Faculty.findById(facultyId);
+  if (!faculty) throw new ApiError(404, 'Faculty not found');
+
+  let course = await Course.findOne({ code: 'CSE501' });
+  if (!course) {
+    course = await Course.create({ name: 'Algorithms', code: 'CSE501', department: 'CSE' });
+  }
+
+  const existing = await Schedule.find({ faculty: facultyId });
+  if (existing.length > 0) {
+    return res.status(200).json(new ApiResponse(200, { created: 0 }, 'Faculty already has schedule'));
+  }
+
+  const base = {
+    course: course._id,
+    faculty: facultyId,
+    branch: 'CSE',
+    semester: 5,
+    section: 'B',
+  };
+
+  const docs = [
+    { ...base, room: 'R-201', dayOfWeek: 1, startMins: 9 * 60, endMins: 10 * 60 },
+    { ...base, room: 'R-201', dayOfWeek: 3, startMins: 11 * 60, endMins: 12 * 60 },
+  ];
+
+  await Schedule.insertMany(docs);
+  const slots = await Schedule.find({ faculty: facultyId })
+    .populate('course', 'name code')
+    .populate('faculty', 'firstName lastName');
+
+  return res.status(201).json(new ApiResponse(201, { slots }, 'Seeded demo schedule for current faculty'));
 });

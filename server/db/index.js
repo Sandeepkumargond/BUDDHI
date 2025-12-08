@@ -115,6 +115,42 @@ const connectDB = async () => {
         } catch (e) {
             console.warn('Department seeding warning:', e.message);
         }
+
+        // Optional: Seed a demo schedule for the first student/faculty to visualize timetable
+        try {
+            const seedFlag = (process.env.SEED_SCHEDULE || 'true').toLowerCase() === 'true';
+            if (seedFlag) {
+                const { Schedule } = await import('../models/schedule.model.js');
+                const { Student } = await import('../models/student.model.js');
+                const { Faculty } = await import('../models/faculty.model.js');
+                const { Course } = await import('../models/course.model.js');
+
+                const student = await Student.findOne().select('branch semester section').lean();
+                const faculty = await Faculty.findOne().select('_id').lean();
+                if (student && faculty) {
+                    const group = {
+                        branch: String(student.branch || 'CSE'),
+                        semester: Number(student.semester || 5),
+                        section: String(student.section || 'A')
+                    };
+                    const existing = await Schedule.countDocuments(group);
+                    if (existing === 0) {
+                        let course = await Course.findOne({ code: 'DEMO-ALG' });
+                        if (!course) {
+                            course = await Course.create({ name: 'Algorithms', code: 'DEMO-ALG', credits: 4, semester: group.semester, departmentId: 1 });
+                        }
+                        const slots = [
+                            { dayOfWeek: 2, startMins: 10*60, endMins: 11*60, room: 'R-101' },
+                            { dayOfWeek: 3, startMins: 13*60, endMins: 14*60, room: 'R-201' },
+                        ].map(s => ({ ...group, ...s, course: course._id, faculty: faculty._id, createdBy: faculty._id }));
+                        await Schedule.insertMany(slots);
+                        console.log('Seeded demo schedule for', group.branch, 'sem', group.semester, 'section', group.section);
+                    }
+                }
+            }
+        } catch (e) {
+            console.warn('Schedule seeding warning:', e.message);
+        }
     } catch (error) {
         console.error("MongoDB connection failed:", error.message);
         console.error("Hint: If you're behind a DNS/firewall that blocks SRV lookups, set MONGODB_URI_DIRECT to a non-SRV connection string (mongodb://host:27017/db). Also ensure network access to the cluster.");
