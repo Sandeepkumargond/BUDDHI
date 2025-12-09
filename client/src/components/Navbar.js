@@ -23,7 +23,8 @@ const Navbar = () => {
           const stats = await getComplaintStats();
           setComplaintCount(stats.pending || 0);
         } catch (error) {
-          console.error("Error loading complaint stats:", error);
+          // Silently fail - don't spam console if server is down
+          setComplaintCount(0);
         }
       };
       loadStats();

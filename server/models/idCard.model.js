@@ -11,11 +11,6 @@ const idCardFormSchema = new Schema(
             type: String,
             required: true,
         },
-        fee: {
-            type: Number,
-            required: true,
-            default: 100
-        },
         instructions: {
             type: String,
             default: "Please fill all the details carefully and upload required documents."

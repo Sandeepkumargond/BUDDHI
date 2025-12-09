@@ -9,10 +9,10 @@ import mongoose from "mongoose";
 
 // Create ID Card Form
 export const createIdCardForm = asyncHandler(async (req, res) => {
-    const { title, academicYear, fee, instructions, requiredDocuments, deadline } = req.body;
+    const { title, academicYear, instructions, requiredDocuments, deadline } = req.body;
 
-    if (!academicYear || !fee || !deadline) {
-        throw new ApiError(400, "Academic year, fee, and deadline are required");
+    if (!academicYear || !deadline) {
+        throw new ApiError(400, "Academic year and deadline are required");
     }
 
     // Deactivate all previous forms

@@ -1,6 +1,12 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Image from "next/image";
+import { apiService } from "@/lib/api";
+
+const showToast = {
+  success: (msg) => alert(msg),
+  error: (msg) => alert(msg),
+};
 
 const ViewRequestsPage = () => {
   // Modal states for Add College
@@ -30,57 +36,30 @@ const ViewRequestsPage = () => {
   const [collegeFormErrors, setCollegeFormErrors] = useState({});
   const [isSubmittingCollege, setIsSubmittingCollege] = useState(false);
 
-  // Mock data for college requests
-  const [requests, setRequests] = useState([
-    {
-      id: 1,
-      collegeName: "ABC Engineering College",
-      adminName: "Dr. Rajesh Kumar",
-      email: "admin@abcengg.edu.in",
-      phone: "+91 9876543210",
-      location: "Mumbai, Maharashtra",
-      establishedYear: 2005,
-      affiliation: "University of Mumbai",
-      totalStudents: 2500,
-      totalFaculty: 150,
-      requestDate: "2024-11-15",
-      status: "pending",
-      documents: ["registration_certificate.pdf", "affiliation_letter.pdf", "noc.pdf"]
-    },
-    {
-      id: 2,
-      collegeName: "XYZ Medical College",
-      adminName: "Dr. Priya Sharma",
-      email: "admin@xyzmed.edu.in",
-      phone: "+91 9876543211",
-      location: "Delhi, NCR",
-      establishedYear: 1998,
-      affiliation: "Delhi University",
-      totalStudents: 1200,
-      totalFaculty: 200,
-      requestDate: "2024-11-14",
-      status: "pending",
-      documents: ["medical_council_approval.pdf", "university_letter.pdf"]
-    },
-    {
-      id: 3,
-      collegeName: "PQR Arts College",
-      adminName: "Prof. Amit Patel",
-      email: "admin@pqrarts.edu.in",
-      phone: "+91 9876543212",
-      location: "Pune, Maharashtra",
-      establishedYear: 2010,
-      affiliation: "Pune University",
-      totalStudents: 800,
-      totalFaculty: 80,
-      requestDate: "2024-11-13",
-      status: "pending",
-      documents: ["arts_council_approval.pdf", "building_plan.pdf"]
-    }
-  ]);
-
+  // Requests state
+  const [requests, setRequests] = useState([]);
+  const [loading, setLoading] = useState(false);
   const [selectedRequest, setSelectedRequest] = useState(null);
   const [filterStatus, setFilterStatus] = useState("all");
+
+  // Load requests from backend
+  const loadRequests = async () => {
+    setLoading(true);
+    try {
+      const statusFilter = filterStatus === "all" ? null : filterStatus;
+      const res = await apiService.superAdminListCollegeRequests(statusFilter);
+      setRequests(res?.data?.requests || []);
+    } catch (error) {
+      console.error("Error loading requests:", error);
+      showToast.error("Failed to load requests");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadRequests();
+  }, [filterStatus]);
 
   // College form handling functions
   const handleCollegeFormChange = (e) => {
@@ -154,21 +133,21 @@ const ViewRequestsPage = () => {
 
   const handleCollegeFormSubmit = async (e) => {
     e.preventDefault();
-    
+
     if (!validateCollegeForm()) {
       return;
     }
 
     setIsSubmittingCollege(true);
-    
+
     try {
       // Simulate API call
       await new Promise(resolve => setTimeout(resolve, 2000));
-      
+
       console.log("College data:", collegeFormData);
-      
+
       showToast.success("College added successfully!");
-      
+
       // Reset form and close modal
       setCollegeFormData({
         collegeName: "",
@@ -193,7 +172,7 @@ const ViewRequestsPage = () => {
         infrastructure: ""
       });
       setShowAddCollegeModal(false);
-      
+
     } catch (error) {
       showToast.error("Error adding college. Please try again.");
     } finally {
@@ -201,32 +180,34 @@ const ViewRequestsPage = () => {
     }
   };
 
-  const handleApprove = (id) => {
-    setRequests(prev => 
-      prev.map(req => 
-        req.id === id ? { ...req, status: "approved" } : req
-      )
-    );
-    setSelectedRequest(null);
-    showToast.success("College request approved successfully!");
-  };
-
-  const handleReject = (id) => {
-    const reason = prompt("Please enter rejection reason:");
-    if (reason) {
-      setRequests(prev => 
-        prev.map(req => 
-          req.id === id ? { ...req, status: "rejected", rejectionReason: reason } : req
-        )
-      );
+  const handleApprove = async (id) => {
+    try {
+      await apiService.superAdminApproveRequest(id);
+      showToast.success("College request approved successfully!");
+      await loadRequests();
       setSelectedRequest(null);
-      showToast.success("College request rejected.");
+    } catch (error) {
+      console.error("Error approving request:", error);
+      showToast.error("Failed to approve request");
     }
   };
 
-  const filteredRequests = requests.filter(req => 
-    filterStatus === "all" || req.status === filterStatus
-  );
+  const handleReject = async (id) => {
+    const reason = prompt("Please enter rejection reason:");
+    if (reason && reason.trim()) {
+      try {
+        await apiService.superAdminRejectRequest(id, reason.trim());
+        showToast.success("College request rejected.");
+        await loadRequests();
+        setSelectedRequest(null);
+      } catch (error) {
+        console.error("Error rejecting request:", error);
+        showToast.error("Failed to reject request");
+      }
+    }
+  };
+
+  const filteredRequests = requests;
 
   const getStatusColor = (status) => {
     switch (status) {
@@ -250,12 +231,12 @@ const ViewRequestsPage = () => {
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
             </svg>
- Add College
+            Add College
           </button>
-          
+
           <div className="flex items-center gap-2">
             <label className="text-sm font-medium text-gray-700">Filter:</label>
-            <select 
+            <select
               value={filterStatus}
               onChange={(e) => setFilterStatus(e.target.value)}
               className="border border-gray-300 rounded-md px-3 py-1 text-sm"
@@ -294,11 +275,11 @@ const ViewRequestsPage = () => {
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
               {filteredRequests.map((request) => (
-                <tr key={request.id} className="hover:bg-gray-50">
+                <tr key={request._id} className="hover:bg-gray-50">
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div>
                       <div className="font-medium text-gray-900">{request.collegeName}</div>
-                      <div className="text-sm text-gray-500">{request.location}</div>
+                      <div className="text-sm text-gray-500">{request.city}, {request.state}</div>
                       <div className="text-xs text-gray-400">Est. {request.establishedYear}</div>
                     </div>
                   </td>
@@ -310,7 +291,7 @@ const ViewRequestsPage = () => {
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {request.requestDate}
+                    {new Date(request.createdAt).toLocaleDateString()}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <span className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(request.status)}`}>
@@ -328,13 +309,13 @@ const ViewRequestsPage = () => {
                       {request.status === "pending" && (
                         <>
                           <button
-                            onClick={() => handleApprove(request.id)}
+                            onClick={() => handleApprove(request._id)}
                             className="text-green-600 hover:text-green-900"
                           >
                             Approve
                           </button>
                           <button
-                            onClick={() => handleReject(request.id)}
+                            onClick={() => handleReject(request._id)}
                             className="text-red-600 hover:text-red-900"
                           >
                             Reject
@@ -372,7 +353,7 @@ const ViewRequestsPage = () => {
                 </button>
               </div>
             </div>
-            
+
             <div className="p-6 space-y-6">
               {/* College Information */}
               <div>
@@ -384,7 +365,7 @@ const ViewRequestsPage = () => {
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700">Location</label>
-                    <p className="mt-1 text-sm text-gray-900">{selectedRequest.location}</p>
+                    <p className="mt-1 text-sm text-gray-900">{selectedRequest.city}, {selectedRequest.state}</p>
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700">Established Year</label>
@@ -423,38 +404,42 @@ const ViewRequestsPage = () => {
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700">Request Date</label>
-                    <p className="mt-1 text-sm text-gray-900">{selectedRequest.requestDate}</p>
+                    <p className="mt-1 text-sm text-gray-900">{new Date(selectedRequest.createdAt).toLocaleDateString()}</p>
                   </div>
                 </div>
               </div>
 
               {/* Documents */}
-              <div>
-                <h3 className="text-lg font-medium mb-3">Submitted Documents</h3>
-                <div className="space-y-2">
-                  {selectedRequest.documents.map((doc, index) => (
-                    <div key={index} className="flex items-center gap-2 p-3 bg-gray-50 rounded-lg">
-                      <Image src="/home.png" alt="document" width={16} height={16} />
-                      <span className="text-sm text-gray-900">{doc}</span>
-                      <button className="ml-auto text-blue-600 hover:text-blue-800 text-sm">
-                        Download
-                      </button>
-                    </div>
-                  ))}
+              {selectedRequest.documents && selectedRequest.documents.length > 0 && (
+                <div>
+                  <h3 className="text-lg font-medium mb-3">Submitted Documents</h3>
+                  <div className="space-y-2">
+                    {selectedRequest.documents.map((doc, index) => (
+                      <div key={index} className="flex items-center gap-2 p-3 bg-gray-50 rounded-lg">
+                        <Image src="/home.png" alt="document" width={16} height={16} />
+                        <a href={doc} target="_blank" rel="noopener noreferrer" className="text-sm text-blue-600 hover:underline flex-1">
+                          Document {index + 1}
+                        </a>
+                        <a href={doc} download className="ml-auto text-blue-600 hover:text-blue-800 text-sm">
+                          Download
+                        </a>
+                      </div>
+                    ))}
+                  </div>
                 </div>
-              </div>
+              )}
 
               {/* Action Buttons */}
               {selectedRequest.status === "pending" && (
                 <div className="flex gap-3 pt-4 border-t border-gray-200">
                   <button
-                    onClick={() => handleApprove(selectedRequest.id)}
+                    onClick={() => handleApprove(selectedRequest._id)}
                     className="flex-1 bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 transition-colors"
                   >
                     Approve Request
                   </button>
                   <button
-                    onClick={() => handleReject(selectedRequest.id)}
+                    onClick={() => handleReject(selectedRequest._id)}
                     className="flex-1 bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700 transition-colors"
                   >
                     Reject Request
@@ -492,7 +477,7 @@ const ViewRequestsPage = () => {
                 </button>
               </div>
             </div>
-            
+
             <form onSubmit={handleCollegeFormSubmit} className="p-6">
               {/* College Information */}
               <div className="mb-8">
@@ -507,9 +492,8 @@ const ViewRequestsPage = () => {
                       name="collegeName"
                       value={collegeFormData.collegeName}
                       onChange={handleCollegeFormChange}
-                      className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                        collegeFormErrors.collegeName ? 'border-red-500' : 'border-gray-300'
-                      }`}
+                      className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${collegeFormErrors.collegeName ? 'border-red-500' : 'border-gray-300'
+                        }`}
                       placeholder="Enter college name"
                     />
                     {collegeFormErrors.collegeName && <p className="text-red-500 text-xs mt-1">{collegeFormErrors.collegeName}</p>}
@@ -523,9 +507,8 @@ const ViewRequestsPage = () => {
                       name="collegeType"
                       value={collegeFormData.collegeType}
                       onChange={handleCollegeFormChange}
-                      className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                        collegeFormErrors.collegeType ? 'border-red-500' : 'border-gray-300'
-                      }`}
+                      className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${collegeFormErrors.collegeType ? 'border-red-500' : 'border-gray-300'
+                        }`}
                     >
                       <option value="">Select college type</option>
                       <option value="engineering">Engineering</option>
@@ -550,9 +533,8 @@ const ViewRequestsPage = () => {
                       name="establishedYear"
                       value={collegeFormData.establishedYear}
                       onChange={handleCollegeFormChange}
-                      className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                        collegeFormErrors.establishedYear ? 'border-red-500' : 'border-gray-300'
-                      }`}
+                      className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${collegeFormErrors.establishedYear ? 'border-red-500' : 'border-gray-300'
+                        }`}
                       placeholder="e.g., 2005"
                       min="1800"
                       max={new Date().getFullYear()}
@@ -569,9 +551,8 @@ const ViewRequestsPage = () => {
                       name="affiliation"
                       value={collegeFormData.affiliation}
                       onChange={handleCollegeFormChange}
-                      className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                        collegeFormErrors.affiliation ? 'border-red-500' : 'border-gray-300'
-                      }`}
+                      className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${collegeFormErrors.affiliation ? 'border-red-500' : 'border-gray-300'
+                        }`}
                       placeholder="e.g., University of Mumbai"
                     />
                     {collegeFormErrors.affiliation && <p className="text-red-500 text-xs mt-1">{collegeFormErrors.affiliation}</p>}
@@ -585,9 +566,8 @@ const ViewRequestsPage = () => {
                       name="recognitionType"
                       value={collegeFormData.recognitionType}
                       onChange={handleCollegeFormChange}
-                      className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                        collegeFormErrors.recognitionType ? 'border-red-500' : 'border-gray-300'
-                      }`}
+                      className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${collegeFormErrors.recognitionType ? 'border-red-500' : 'border-gray-300'
+                        }`}
                     >
                       <option value="">Select recognition type</option>
                       <option value="ugc">UGC Recognized</option>
@@ -688,9 +668,8 @@ const ViewRequestsPage = () => {
                       value={collegeFormData.address}
                       onChange={handleCollegeFormChange}
                       rows="3"
-                      className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                        collegeFormErrors.address ? 'border-red-500' : 'border-gray-300'
-                      }`}
+                      className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${collegeFormErrors.address ? 'border-red-500' : 'border-gray-300'
+                        }`}
                       placeholder="Enter complete address"
                     />
                     {collegeFormErrors.address && <p className="text-red-500 text-xs mt-1">{collegeFormErrors.address}</p>}
@@ -705,9 +684,8 @@ const ViewRequestsPage = () => {
                       name="state"
                       value={collegeFormData.state}
                       onChange={handleCollegeFormChange}
-                      className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                        collegeFormErrors.state ? 'border-red-500' : 'border-gray-300'
-                      }`}
+                      className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${collegeFormErrors.state ? 'border-red-500' : 'border-gray-300'
+                        }`}
                       placeholder="e.g., Maharashtra"
                     />
                     {collegeFormErrors.state && <p className="text-red-500 text-xs mt-1">{collegeFormErrors.state}</p>}
@@ -722,9 +700,8 @@ const ViewRequestsPage = () => {
                       name="city"
                       value={collegeFormData.city}
                       onChange={handleCollegeFormChange}
-                      className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                        collegeFormErrors.city ? 'border-red-500' : 'border-gray-300'
-                      }`}
+                      className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${collegeFormErrors.city ? 'border-red-500' : 'border-gray-300'
+                        }`}
                       placeholder="e.g., Mumbai"
                     />
                     {collegeFormErrors.city && <p className="text-red-500 text-xs mt-1">{collegeFormErrors.city}</p>}
@@ -739,9 +716,8 @@ const ViewRequestsPage = () => {
                       name="pincode"
                       value={collegeFormData.pincode}
                       onChange={handleCollegeFormChange}
-                      className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                        collegeFormErrors.pincode ? 'border-red-500' : 'border-gray-300'
-                      }`}
+                      className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${collegeFormErrors.pincode ? 'border-red-500' : 'border-gray-300'
+                        }`}
                       placeholder="e.g., 400001"
                       maxLength="6"
                     />
@@ -763,9 +739,8 @@ const ViewRequestsPage = () => {
                       name="adminName"
                       value={collegeFormData.adminName}
                       onChange={handleCollegeFormChange}
-                      className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                        collegeFormErrors.adminName ? 'border-red-500' : 'border-gray-300'
-                      }`}
+                      className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${collegeFormErrors.adminName ? 'border-red-500' : 'border-gray-300'
+                        }`}
                       placeholder="Full name of the admin"
                     />
                     {collegeFormErrors.adminName && <p className="text-red-500 text-xs mt-1">{collegeFormErrors.adminName}</p>}
@@ -780,9 +755,8 @@ const ViewRequestsPage = () => {
                       name="adminDesignation"
                       value={collegeFormData.adminDesignation}
                       onChange={handleCollegeFormChange}
-                      className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                        collegeFormErrors.adminDesignation ? 'border-red-500' : 'border-gray-300'
-                      }`}
+                      className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${collegeFormErrors.adminDesignation ? 'border-red-500' : 'border-gray-300'
+                        }`}
                       placeholder="e.g., Principal, Director"
                     />
                     {collegeFormErrors.adminDesignation && <p className="text-red-500 text-xs mt-1">{collegeFormErrors.adminDesignation}</p>}
@@ -797,9 +771,8 @@ const ViewRequestsPage = () => {
                       name="email"
                       value={collegeFormData.email}
                       onChange={handleCollegeFormChange}
-                      className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                        collegeFormErrors.email ? 'border-red-500' : 'border-gray-300'
-                      }`}
+                      className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${collegeFormErrors.email ? 'border-red-500' : 'border-gray-300'
+                        }`}
                       placeholder="admin@college.edu"
                     />
                     {collegeFormErrors.email && <p className="text-red-500 text-xs mt-1">{collegeFormErrors.email}</p>}
@@ -814,9 +787,8 @@ const ViewRequestsPage = () => {
                       name="phone"
                       value={collegeFormData.phone}
                       onChange={handleCollegeFormChange}
-                      className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                        collegeFormErrors.phone ? 'border-red-500' : 'border-gray-300'
-                      }`}
+                      className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${collegeFormErrors.phone ? 'border-red-500' : 'border-gray-300'
+                        }`}
                       placeholder="+91 9876543210"
                     />
                     {collegeFormErrors.phone && <p className="text-red-500 text-xs mt-1">{collegeFormErrors.phone}</p>}

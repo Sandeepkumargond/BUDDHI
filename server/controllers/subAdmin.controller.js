@@ -599,12 +599,74 @@ export const createFaculty = asyncHandler(async (req, res, next) => {
 
 
 export const getAllStudents = asyncHandler(async (req, res) => {
-    const students = await Student.find().select("-password -refreshToken");
+    const students = await Student.find().select("-password -refreshToken").lean();
+
+    // Import models
+    const { Attendance } = await import("../models/attendance.model.js");
+    const { GradeCard } = await import("../models/gradeCard.model.js");
+    
+    // Fetch attendance and grade data for all students
+    const enrichedStudents = await Promise.all(students.map(async (student) => {
+        // Calculate attendance percentage
+        let attendancePercentage = 0;
+        try {
+            const attendanceRecords = await Attendance.find({
+                'records.studentId': student._id
+            });
+            
+            let totalClasses = 0;
+            let presentCount = 0;
+            
+            attendanceRecords.forEach(record => {
+                const studentRecord = record.records.find(r => r.studentId.toString() === student._id.toString());
+                if (studentRecord) {
+                    totalClasses++;
+                    if (studentRecord.status === 'present') {
+                        presentCount++;
+                    }
+                }
+            });
+            
+            if (totalClasses > 0) {
+                attendancePercentage = Math.round((presentCount / totalClasses) * 100);
+            }
+        } catch (err) {
+            console.error(`Error calculating attendance for student ${student._id}:`, err);
+        }
+        
+        // Calculate CGPA from grade cards
+        let cgpa = 0;
+        try {
+            const gradeCards = await GradeCard.find({
+                studentId: student._id
+            }).sort({ semester: -1 });
+            
+            if (gradeCards.length > 0) {
+                // Use the most recent grade card's SGPA or calculate from all cards
+                const latestCard = gradeCards[0];
+                cgpa = latestCard.sgpa || 0;
+                
+                // If multiple semesters, calculate cumulative CGPA
+                if (gradeCards.length > 1) {
+                    const totalSGPA = gradeCards.reduce((sum, card) => sum + (card.sgpa || 0), 0);
+                    cgpa = parseFloat((totalSGPA / gradeCards.length).toFixed(2));
+                }
+            }
+        } catch (err) {
+            console.error(`Error calculating CGPA for student ${student._id}:`, err);
+        }
+        
+        return {
+            ...student,
+            attendance: attendancePercentage,
+            cgpa: cgpa
+        };
+    }));
 
     return res.status(200).json(
         new ApiResponse(
             200,
-            { students },
+            { students: enrichedStudents },
             "All students fetched successfully"
         )
     );
@@ -630,26 +692,42 @@ export const bulkCreateStudents = asyncHandler(async (req, res, next) => {
         try {
             const { firstName, lastName, email, personalMail, gender, program, branch, semester, section, batch, mobile, registrationNumber, dateOfAdmission, password, dateOfBirth } = studentData;
 
-            // Validate required fields
-            const required = { firstName, lastName, email, gender, personalMail, program, branch, semester, mobile, registrationNumber, dateOfAdmission, password };
+            // Validate required fields (email and password are now optional)
+            const required = { firstName, lastName, gender, personalMail, program, branch, semester, mobile, registrationNumber, dateOfAdmission };
             for (const [k, v] of Object.entries(required)) {
                 if (v === undefined || v === null || v === '') {
                     throw new Error(`${k} is required`);
                 }
             }
 
+            // Generate unique university email if not provided
+            let universityEmail = email;
+            if (!universityEmail) {
+                universityEmail = await generateUniqueEmail(firstName);
+            }
+
             // Check for existing student
             const existingStudent = await Student.findOne(
-                { $or: [{ email }, { personalMail }, { registrationNumber }] }
+                { $or: [{ email: universityEmail }, { personalMail }, { registrationNumber }] }
             );
 
             if (existingStudent) {
                 throw new Error("Student with provided email, personal mail or registration number already exists");
             }
 
+            // Generate secure password if not provided
+            let studentPassword = password;
+            if (!studentPassword) {
+                studentPassword = generateSecurePassword(14);
+            }
+
             // Validate program/branch mapping
             if (!rollPrefixMap[program] || !rollPrefixMap[program][branch]) {
-                throw new Error(`Invalid program/branch mapping for ${program} - ${branch}`);
+                const validPrograms = Object.keys(rollPrefixMap).join(', ');
+                const validBranches = program && rollPrefixMap[program] 
+                    ? Object.keys(rollPrefixMap[program]).join(', ') 
+                    : 'CSE, ECE, EEE, ME, CE';
+                throw new Error(`Invalid program/branch: "${program}" - "${branch}". Valid programs: ${validPrograms}. Valid branches for ${program || 'B.Tech'}: ${validBranches}`);
             }
 
             const prefix = rollPrefixMap[program][branch];
@@ -660,7 +738,7 @@ export const bulkCreateStudents = asyncHandler(async (req, res, next) => {
             const student = new Student({
                 firstName,
                 lastName,
-                email,
+                email: universityEmail,
                 enrollmentNo,
                 rollNo,
                 dateOfBirth,
@@ -674,24 +752,39 @@ export const bulkCreateStudents = asyncHandler(async (req, res, next) => {
                 batch,
                 mobile,
                 registrationNumber,
-                password
+                password: studentPassword
             });
 
             await student.save();
 
+            // Send credentials email (non-blocking - don't fail bulk operation if email fails)
+            try {
+                await sendCredentialsEmail({
+                    recipientEmail: personalMail,
+                    firstName,
+                    lastName,
+                    universityEmail,
+                    password: studentPassword,
+                    userType: 'Student'
+                });
+            } catch (emailError) {
+                console.error(`Warning: Failed to send email for ${firstName} ${lastName}:`, emailError.message);
+            }
+
             results.success.push({
                 row: rowNumber,
                 name: `${firstName} ${lastName}`,
-                email,
+                email: universityEmail,
                 rollNo,
-                registrationNumber
+                registrationNumber,
+                message: "Student created and credentials email sent"
             });
 
         } catch (error) {
             results.failed.push({
                 row: rowNumber,
                 name: `${studentData.firstName || ''} ${studentData.lastName || ''}`.trim() || 'Unknown',
-                email: studentData.email || 'N/A',
+                email: studentData.personalMail || studentData.email || 'N/A',
                 error: error.message
             });
         }
@@ -716,3 +809,47 @@ export const bulkCreateStudents = asyncHandler(async (req, res, next) => {
 export const forgotPassword = createForgotPasswordHandler(SubAdmin, "SubAdmin");
 export const verifyPasswordResetOTP = createVerifyOTPHandler();
 export const resetPassword = createResetPasswordHandler(SubAdmin, "SubAdmin");
+
+// Delete student
+export const deleteStudent = asyncHandler(async (req, res, next) => {
+    const { studentId, email, enrollmentNo, rollNo, registrationNumber } = req.body || {};
+
+    const filters = [];
+    if (studentId) filters.push({ _id: studentId });
+    if (email) filters.push({ email });
+    if (enrollmentNo) filters.push({ enrollmentNo });
+    if (rollNo) filters.push({ rollNo });
+    if (registrationNumber) filters.push({ registrationNumber });
+
+    if (!filters.length) {
+        throw new ApiError(400, "Provide at least one identifier: studentId, email, enrollmentNo, rollNo, or registrationNumber");
+    }
+
+    // Fetch to capture any assets before deletion
+    const studentToDelete = await Student.findOne({ $or: filters }).select("-password");
+
+    if (!studentToDelete) {
+        throw new ApiError(404, "Student not found");
+    }
+
+    // Perform deletion
+    const deletedStudent = await Student.findOneAndDelete({ $or: filters }).select("-password");
+
+    // Best-effort cleanup of avatar image if stored on ImageKit
+    try {
+        if (deletedStudent?.imageUrl) {
+            const fileId = await getFileIdFromUrl(deletedStudent.imageUrl);
+            if (fileId) await deleteFromImageKit(fileId);
+        }
+    } catch (err) {
+        // Non-fatal: log context if a logger exists in the codebase
+    }
+
+    return res.status(200).json(
+        new ApiResponse(
+            200,
+            deletedStudent,
+            "Student deleted successfully"
+        )
+    );
+});

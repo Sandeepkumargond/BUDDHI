@@ -72,8 +72,13 @@ export async function getAllComplaints(filters = {}) {
 }
 
 export async function getComplaintStats() {
-  const res = await apiService.request('/hostel/admin/complaints/stats');
-  return res.data || {};
+  try {
+    const res = await apiService.request('/hostel/admin/complaints/stats', { silent: true });
+    return res.data || {};
+  } catch (error) {
+    // Return empty stats if API fails (server might not be running)
+    return { pending: 0, resolved: 0, total: 0 };
+  }
 }
 
 export async function getComplaintDetail(complaintId) {
