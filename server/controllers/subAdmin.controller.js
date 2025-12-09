@@ -12,6 +12,7 @@ import { Faculty } from "../models/faculty.model.js";
 import { deptartmentMap } from "../configs/maps.js";
 import { getFacultyById, getFacultyDetailsById } from "./faculty.controller.js";
 import { createForgotPasswordHandler, createVerifyOTPHandler, createResetPasswordHandler } from "../utils/passwordReset.js";
+import { generateUniqueEmail, generateSecurePassword, sendCredentialsEmail } from "../utils/credentialsGenerator.js";
 
 export const getSubAdminById = asyncHandler(async (req, res) => {
     const subAdminId = req.params.id;
@@ -366,18 +367,37 @@ export const updateSubAdminImage = asyncHandler(async (req, res, next) => {
 export const createStudent = asyncHandler(async (req, res, next) => {
     const { firstName, lastName, email, personalMail, gender, program, branch, semester, section, batch, mobile, registrationNumber, dateOfAdmission, password, dateOfBirth } = req.body;
 
-    const values = { firstName, lastName, email, gender, personalMail, program, branch, semester, mobile, registrationNumber, dateOfAdmission, password };
+    // Check required fields (email and password are now optional - will be auto-generated)
+    const values = { firstName, lastName, gender, personalMail, program, branch, semester, mobile, registrationNumber, dateOfAdmission };
     for (const [k, v] of Object.entries(values)) {
         if (v === undefined) throw new ApiError(400, `${k} is required`);
     }
 
+    // Generate unique university email if not provided
+    let universityEmail = email;
+    if (!universityEmail) {
+        universityEmail = await generateUniqueEmail(firstName);
+    } else {
+        // Check if provided email already exists
+        const existingEmail = await Student.findOne({ email: universityEmail.toLowerCase() });
+        if (existingEmail) {
+            throw new ApiError(400, "Student with provided email already exists");
+        }
+    }
 
+    // Check if personal email already exists
     const existingStudent = await Student.findOne(
-        { $or: [{ email }, { personalMail }, { registrationNumber }] }
+        { $or: [{ personalMail }, { registrationNumber }] }
     );
 
     if (existingStudent) {
-        throw new ApiError(400, "Student with provided email, personal mail or registration number already exists");
+        throw new ApiError(400, "Student with provided personal mail or registration number already exists");
+    }
+
+    // Generate secure password if not provided
+    let studentPassword = password;
+    if (!studentPassword) {
+        studentPassword = generateSecurePassword(14);
     }
 
     if (!rollPrefixMap[program] || !rollPrefixMap[program][branch]) {
@@ -394,7 +414,7 @@ export const createStudent = asyncHandler(async (req, res, next) => {
     const student = new Student({
         firstName,
         lastName,
-        email,
+        email: universityEmail,
         enrollmentNo,
         rollNo,
         dateOfBirth,
@@ -408,10 +428,25 @@ export const createStudent = asyncHandler(async (req, res, next) => {
         batch,
         mobile,
         registrationNumber,
-        password
+        password: studentPassword
     });
 
     await student.save();
+
+    // Send credentials email to personal mail
+    try {
+        await sendCredentialsEmail({
+            recipientEmail: personalMail,
+            firstName,
+            lastName,
+            universityEmail,
+            password: studentPassword,
+            userType: 'Student'
+        });
+    } catch (emailError) {
+        console.error('Warning: Failed to send credentials email:', emailError.message);
+        // Continue even if email fails - student account is already created
+    }
 
     const createdStudent = await getStudentDetailsById(student?._id);
 
@@ -425,7 +460,7 @@ export const createStudent = asyncHandler(async (req, res, next) => {
             {
                 student: createdStudent,
             },
-            "Student created successfully"
+            "Student created successfully. Credentials have been sent to personal email."
         )
     );
 });
