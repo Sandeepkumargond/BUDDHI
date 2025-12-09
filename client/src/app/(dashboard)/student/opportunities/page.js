@@ -155,16 +155,14 @@ export default function OpportunitiesPage() {
                         <span className="font-medium">{internship.companyName}</span>
                       </div>
                     </div>
-                    {internship.applyLink && (
-                      <a
-                        href={internship.applyLink}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
-                      >
-                        Apply Now <FaExternalLinkAlt />
-                      </a>
-                    )}
+                    <a
+                      href="https://www.google.com/about/careers/applications/jobs/results/74939955737961158-software-engineer-iii-google-cloud"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+                    >
+                      Apply Now <FaExternalLinkAlt />
+                    </a>
                   </div>
 
                   <p className="text-gray-700 dark:text-gray-300 mb-4">{internship.description}</p>
