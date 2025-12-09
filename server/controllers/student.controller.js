@@ -202,7 +202,9 @@ export const refreshStudentAccessToken = asyncHandler(async (req, res) => {
         }
 
         if (incomingRefreshToken !== student.refreshToken) {
-            throw new ApiError(401, "Refresh Token is expired or used");
+            // Clear the invalid refresh token
+            await Student.findByIdAndUpdate(student._id, { $unset: { refreshToken: 1 } });
+            throw new ApiError(401, "Refresh Token is expired or used. Please log in again.");
         }
 
         const options = {
@@ -225,7 +227,11 @@ export const refreshStudentAccessToken = asyncHandler(async (req, res) => {
                 )
             )
     } catch (error) {
-        throw new ApiError(401, error?.message || "Invalid Refresh Token")
+        // Clear cookies on token refresh failure
+        const options = { httpOnly: true, secure: true, sameSite: 'None' };
+        res.clearCookie("accessToken", options);
+        res.clearCookie("refreshToken", options);
+        throw new ApiError(401, error?.message || "Invalid Refresh Token. Please log in again.")
     }
 });
 

@@ -104,9 +104,16 @@ class ApiService {
         endpoint: error?.endpoint || endpoint,
         type: error?.constructor?.name || typeof error
       };
-      console.error('API request failed:', message);
-      console.error('Error details:', errorInfo);
-      console.error('Full error object:', error);
+      
+      // Reduce noise for expected session expiry errors
+      const isSessionError = message.includes('Session expired') || message.includes('Session invalid');
+      if (!isSessionError) {
+        console.error('API request failed:', message);
+        console.error('Error details:', errorInfo);
+        console.error('Full error object:', error);
+      } else {
+        console.log('Session expired, please log in again');
+      }
       throw error;
     }
   }

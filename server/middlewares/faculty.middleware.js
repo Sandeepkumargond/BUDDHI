@@ -10,6 +10,7 @@ export const authenticateFaculty = asyncHandler(async (req, res, next) => {
         if (!token) {
             throw new ApiError(401, "Unauthorized: No token provided");
         }
+        
         const decodedToken = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
 
         const faculty = await getFacultyDetailsById(decodedToken?._id);
@@ -21,6 +22,18 @@ export const authenticateFaculty = asyncHandler(async (req, res, next) => {
         req.user = faculty;
         next();
     } catch (error) {
+        // If it's already an ApiError, throw it as is
+        if (error instanceof ApiError) {
+            throw error;
+        }
+        // For JWT errors, provide specific message
+        if (error.name === 'JsonWebTokenError') {
+            throw new ApiError(401, "Unauthorized: Invalid token");
+        }
+        if (error.name === 'TokenExpiredError') {
+            throw new ApiError(401, "Unauthorized: Token expired");
+        }
+        // For other errors
         throw new ApiError(401, error.message || "Unauthorized: Invalid or expired token");
     }
 });

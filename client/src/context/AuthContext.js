@@ -81,8 +81,20 @@ export const AuthProvider = ({ children }) => {
           }
         }
       } catch (refreshErr) {
+        // Check if it's a session expired error
+        const errorMsg = refreshErr?.message || '';
+        if (errorMsg.includes('Session expired') || errorMsg.includes('Session invalid') || errorMsg.includes('Refresh Token')) {
+          console.log('[Auth] Session expired - user needs to log in again');
+          // Clear everything immediately for expired sessions
+          localStorage.removeItem('userRole');
+          setUser(null);
+          setRole(null);
+          setIsAuthenticated(false);
+          setLoading(false);
+          return; // Exit early, no need to try fallback
+        }
         console.warn('[Auth] Token refresh failed:', refreshErr?.message);
-        // Don't clear auth yet - try the fallback
+        // Don't clear auth yet - try the fallback for other errors
       }
 
       // Strategy 2: If refresh failed, try direct profile call

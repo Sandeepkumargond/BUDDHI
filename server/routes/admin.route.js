@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { loginAdmin, logoutAdmin, refreshAdminAccessToken, changeAdminPassword, updateAdminAccountDetails, updateAdminImage, createStudent, updateStudent, createFaculty, createSubAdmin, deleteStudent, deleteFaculty, deleteSubAdmin, getAllFaculty, getAllSubAdmins, getAdminById, getAllStudents, getMyProfile, getDashboardStats } from "../controllers/admin.controller.js";
+import { loginAdmin, logoutAdmin, refreshAdminAccessToken, changeAdminPassword, updateAdminAccountDetails, updateAdminImage, createStudent, updateStudent, createFaculty, createSubAdmin, deleteStudent, deleteFaculty, deleteSubAdmin, getAllFaculty, getAllSubAdmins, getAdminById, getAllStudents, getMyProfile, getDashboardStats, bulkCreateStudents } from "../controllers/admin.controller.js";
 import { getSubAdminById } from "../controllers/subAdmin.controller.js";
 import { adminGetFeePaymentById, adminGetReceiptRedirect, adminListFeePayments, adminCreateFeeStructure, adminGetFeeStructureById, adminListFeeStructures, adminPublishFeeStructure, adminUpdateFeeStructure, adminDeleteFeeStructure, getStudentFeeRecords } from "../controllers/feePayment.controller.js";
 import { validateAdminFeePaymentQuery, validateCreateFeeStructure } from "../middlewares/feePayment.middleware.js";
@@ -48,6 +48,11 @@ router.route('/update-image').patch(
 router.route('/create-student').post(
     authenticateAdmin,
     createStudent
+)
+
+router.route('/bulk-create-students').post(
+    authenticateAdmin,
+    bulkCreateStudents
 )
 
 router.route('/update-student/:id').patch(
