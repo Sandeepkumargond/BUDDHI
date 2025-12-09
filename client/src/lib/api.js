@@ -111,22 +111,9 @@ class ApiService {
       if (!isSessionError) {
         console.error('API request failed:', message);
         console.error('Error details:', errorInfo);
-        console.error('Full error object:', error);
       } else {
         console.log('Session expired, please log in again');
       }
-      console.error('API request failed:', message);
-      console.error('Error details:', errorInfo);
-      console.error('Full error object:', error);
-      try {
-        const safe = {
-          message: (error && error.message) ? error.message : String(error || 'Unknown error'),
-          status: (error && error.status) ? error.status : undefined,
-          url: (error && error.url) ? error.url : undefined,
-          endpoint: (error && error.endpoint) ? error.endpoint : endpoint
-        };
-        if (!silent) console.error('API request failed:', safe);
-      } catch {}
       throw error;
     }
   }
