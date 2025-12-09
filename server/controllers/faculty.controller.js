@@ -5,6 +5,7 @@ import { Faculty } from "../models/faculty.model.js";
 import jwt from "jsonwebtoken";
 import { deleteFromImageKit, getFileIdFromUrl, uploadImageOnImageKit } from "../utils/ImageKit.js";
 import mongoose from "mongoose";
+import { createForgotPasswordHandler, createVerifyOTPHandler, createResetPasswordHandler } from "../utils/passwordReset.js";
 
 export const getFacultyById = asyncHandler(async (req, res) => {
     const facultyId = req.params.id;
@@ -206,7 +207,9 @@ export const refreshFacultyAccessToken = asyncHandler(async (req, res) => {
         }
 
         if (incomingRefreshToken !== faculty.refreshToken) {
-            throw new ApiError(401, "Refresh Token is expired or used");
+            // Clear the invalid refresh token
+            await Faculty.findByIdAndUpdate(faculty._id, { $unset: { refreshToken: 1 } });
+            throw new ApiError(401, "Refresh Token is expired or used. Please log in again.");
         }
 
         const options = {
@@ -229,7 +232,11 @@ export const refreshFacultyAccessToken = asyncHandler(async (req, res) => {
                 )
             )
     } catch (error) {
-        throw new ApiError(401, error?.message || "Invalid Refresh Token")
+        // Clear cookies on token refresh failure
+        const options = { httpOnly: true, secure: true, sameSite: 'None' };
+        res.clearCookie("accessToken", options);
+        res.clearCookie("refreshToken", options);
+        throw new ApiError(401, error?.message || "Invalid Refresh Token. Please log in again.")
     }
 });
 
@@ -472,3 +479,7 @@ export const listPublicFaculties = asyncHandler(async (req, res) => {
     );
 });
 
+// Password reset handlers
+export const forgotPassword = createForgotPasswordHandler(Faculty, "Faculty");
+export const verifyPasswordResetOTP = createVerifyOTPHandler();
+export const resetPassword = createResetPasswordHandler(Faculty, "Faculty");

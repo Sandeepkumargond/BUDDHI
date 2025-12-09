@@ -78,6 +78,14 @@ const studyMaterialSchema = new mongoose.Schema({
     required: [true, 'File size is required'],
     max: [50 * 1024 * 1024, 'File size cannot exceed 50MB'] // 50MB limit
   },
+  // Optional: multiple attachments (in addition to primary file fields above)
+  attachments: [{
+    fileName: { type: String },
+    fileUrl: { type: String },
+    fileId: { type: String },
+    fileType: { type: String },
+    fileSize: { type: Number }
+  }],
   
   // Faculty who uploaded
   uploadedBy: {

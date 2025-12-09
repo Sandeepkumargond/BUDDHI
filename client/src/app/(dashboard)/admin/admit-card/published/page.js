@@ -1,22 +1,38 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { apiService } from "@/lib/api";
 
 export default function AdminPublishedAdmitCardsPage() {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
-  const [filters, setFilters] = useState({ departmentCode: "", semester: "", published: "true" });
+  const [filters, setFilters] = useState({ departmentCode: "", semester: "" });
+  const [departments, setDepartments] = useState([]);
 
-  const load = async () => {
+  // Load department options once
+  useEffect(() => {
+    let active = true;
+    const loadDepartments = async () => {
+      try {
+        const res = await apiService.adminListDepartments();
+        const list = res?.data?.departments || [];
+        if (active) setDepartments(list);
+      } catch (e) {
+        if (active) setDepartments([]);
+      }
+    };
+    loadDepartments();
+    return () => { active = false; };
+  }, []);
+
+  const load = useCallback(async () => {
     setLoading(true);
     setMessage("");
     try {
-      const params = {};
+      const params = { published: true };
       if (filters.departmentCode) params.departmentCode = filters.departmentCode;
       if (filters.semester) params.semester = filters.semester;
-      if (filters.published) params.published = filters.published;
       const res = await apiService.adminListAdmitCards(params);
       setItems(res?.data?.admitCards || []);
     } catch (err) {
@@ -25,7 +41,7 @@ export default function AdminPublishedAdmitCardsPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [filters]);
 
   useEffect(() => { load(); }, [load]);
 
@@ -45,15 +61,19 @@ export default function AdminPublishedAdmitCardsPage() {
       {message ? <div className="text-sm text-red-600">{message}</div> : null}
 
       <div className="bg-white p-4 rounded-md space-y-3">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
           <div>
             <label className="block text-sm font-medium">Department</label>
-            <input
-              placeholder="e.g., CSE"
+            <select
               className="w-full border rounded p-2"
               value={filters.departmentCode}
-              onChange={(e) => setFilters({ ...filters, departmentCode: e.target.value.toUpperCase() })}
-            />
+              onChange={(e) => setFilters({ ...filters, departmentCode: e.target.value })}
+            >
+              <option value="">Select department…</option>
+              {departments.map((d) => (
+                <option key={d._id || d.code} value={d.code}>{d.code} - {d.name}</option>
+              ))}
+            </select>
           </div>
           <div>
             <label className="block text-sm font-medium">Semester</label>
@@ -65,21 +85,8 @@ export default function AdminPublishedAdmitCardsPage() {
               onChange={(e) => setFilters({ ...filters, semester: e.target.value })}
             />
           </div>
-          <div>
-            <label className="block text-sm font-medium">Published</label>
-            <select
-              className="w-full border rounded p-2"
-              value={filters.published}
-              onChange={(e) => setFilters({ ...filters, published: e.target.value })}
-            >
-              <option value="">All</option>
-              <option value="true">Published</option>
-            </select>
-          </div>
           <div className="flex items-end">
-            <button className="px-4 py-2 bg-[#C3EBFA] text-gray-600 rounded hover:bg-[#A8DBF2]" onClick={load} disabled={loading}>
-              {loading ? "Loading…" : "Apply Filters"}
-            </button>
+            <div className="text-sm text-gray-600">{loading ? "Loading…" : `Total: ${items.length}`}</div>
           </div>
         </div>
 

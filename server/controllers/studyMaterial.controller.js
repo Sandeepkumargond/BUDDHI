@@ -7,19 +7,15 @@ import { Course } from "../models/course.model.js";
 import { Faculty } from "../models/faculty.model.js";
 import { StudentRegistration } from "../models/registrationForm.model.js";
 
-// Create/Upload study material (Faculty)
+// Create/Upload study material (Faculty) - supports single or multiple files
 const uploadMaterial = asyncHandler(async (req, res) => {
     console.log('📚 Creating study material - Request body:', req.body);
-    console.log('� Academic year received:', req.body.academicYear);
-    console.log('�📎 File attached:', req.file ? 'Yes' : 'No');
-    
-    if (req.file) {
-        console.log('📁 File details:', {
-            originalname: req.file.originalname,
-            mimetype: req.file.mimetype,
-            size: req.file.size,
-            path: req.file.path
-        });
+    console.log('📅 Academic year received:', req.body.academicYear);
+    const files = Array.isArray(req.files) && req.files.length > 0 ? req.files : (req.file ? [req.file] : []);
+    console.log('📎 Files attached:', files.length);
+    if (files.length > 0) {
+        const f0 = files[0];
+        console.log('📁 First file details:', { originalname: f0.originalname, mimetype: f0.mimetype, size: f0.size, path: f0.path });
     }
 
     const {
@@ -44,7 +40,7 @@ const uploadMaterial = asyncHandler(async (req, res) => {
         throw new ApiError(400, "All required fields must be provided");
     }
 
-    if (!req.file) {
+    if (!files.length) {
         throw new ApiError(400, "Study material file is required");
     }
 
@@ -65,19 +61,19 @@ const uploadMaterial = asyncHandler(async (req, res) => {
     }
 
     try {
-        // Upload file to ImageKit
+        // Upload files to ImageKit (one or many)
         console.log('📤 Uploading study material to ImageKit...');
-        const uploadResult = await uploadStudyMaterial(req.file, {
-            title,
-            subject,
-            courseCode,
-            semester,
-            branch,
-            materialType
-        });
-
-        if (uploadResult.error) {
-            throw new ApiError(500, `File upload failed: ${uploadResult.message}`);
+        const uploads = [];
+        for (const f of files) {
+            // Validate size limit per file (max 50MB)
+            if (f.size > 50 * 1024 * 1024) {
+                throw new ApiError(400, `File ${f.originalname} exceeds 50MB limit`);
+            }
+            const up = await uploadStudyMaterial(f, { title, subject, courseCode, semester, branch, materialType });
+            if (up.error) {
+                throw new ApiError(500, `File upload failed: ${up.message}`);
+            }
+            uploads.push(up);
         }
 
         // Create study material record
@@ -91,6 +87,15 @@ const uploadMaterial = asyncHandler(async (req, res) => {
             console.log('📅 Generated academic year:', finalAcademicYear);
         }
 
+        const primary = uploads[0];
+        const attachments = uploads.map((u, idx) => ({
+            fileUrl: u.url,
+            fileName: u.fileName,
+            fileId: u.fileId,
+            fileSize: u.fileSize,
+            fileType: (files[idx]?.mimetype || files[0].mimetype)
+        }));
+
         const materialData = {
             title,
             description,
@@ -99,11 +104,12 @@ const uploadMaterial = asyncHandler(async (req, res) => {
             semester: parseInt(semester),
             branch,
             materialType,
-            fileUrl: uploadResult.url,
-            fileName: uploadResult.fileName,
-            fileId: uploadResult.fileId,
-            fileSize: uploadResult.fileSize,
-            fileType: req.file.mimetype,
+            fileUrl: primary.url,
+            fileName: primary.fileName,
+            fileId: primary.fileId,
+            fileSize: primary.fileSize,
+            fileType: (files[0]?.mimetype || ''),
+            attachments,
             uploadedBy: req.user._id,
             tags: parsedTags,
             targetAudience: parsedTargetAudience,
@@ -674,72 +680,76 @@ const listStudentMaterials = asyncHandler(async (req, res) => {
 // Student submission upload (assignment/homework)
 const submitStudentMaterial = asyncHandler(async (req, res) => {
     const { materialId, type } = req.body;
-    if (!materialId || !req.file) {
-        throw new ApiError(400, 'materialId and file are required');
+    const files = Array.isArray(req.files) && req.files.length > 0 ? req.files : (req.file ? [req.file] : []);
+    if (!materialId || !files.length) {
+        throw new ApiError(400, 'materialId and at least one file are required');
     }
     const material = await StudyMaterial.findById(materialId);
     if (!material) throw new ApiError(404, 'Material not found');
     if (!['assignment','homework'].includes(type)) {
         throw new ApiError(400, 'Invalid submission type');
     }
+    const results = [];
+    for (const one of files) {
+        // Upload student submission to storage
+        const uploadResult = await uploadStudyMaterial(one, {
+            title: `${material.title}-submission`,
+            subject: material.subject,
+            courseCode: material.courseCode,
+            semester: material.semester,
+            branch: material.branch,
+            materialType: `student-${type}`
+        });
+        let finalUrl = uploadResult?.url;
+        let finalFileName = uploadResult?.fileName;
+        let finalFileSize = uploadResult?.fileSize;
 
-    // Upload student submission to storage
-    const uploadResult = await uploadStudyMaterial(req.file, {
-        title: `${material.title}-submission`,
-        subject: material.subject,
-        courseCode: material.courseCode,
-        semester: material.semester,
-        branch: material.branch,
-        materialType: `student-${type}`
-    });
-    let finalUrl = uploadResult?.url;
-    let finalFileName = uploadResult?.fileName;
-    let finalFileSize = uploadResult?.fileSize;
-
-    // Fallback: if remote upload fails, persist file locally under public/submissions
-    if (uploadResult?.error) {
-        try {
-            const fs = await import('fs');
-            const path = await import('path');
-            const submissionsDir = path.resolve('./public/submissions');
-            if (!fs.existsSync(submissionsDir)) {
-                fs.mkdirSync(submissionsDir, { recursive: true });
-            }
-            const ext = req.file.originalname.split('.').pop();
-            const safeTitle = `${material.title}-submission`.replace(/[^a-zA-Z0-9]/g, '_');
-            const localName = `${safeTitle}_${Date.now()}.${ext}`;
-            const destPath = path.join(submissionsDir, localName);
-            // Move from temp path to submissions
-            fs.renameSync(req.file.path, destPath);
-            // Construct public URL (served by Express static on /public)
-            finalUrl = `/public/submissions/${localName}`;
-            finalFileName = localName;
+        // Fallback: if remote upload fails, persist file locally under public/submissions
+        if (uploadResult?.error) {
             try {
-                const stat = fs.statSync(destPath);
-                finalFileSize = stat.size;
-            } catch {}
-        } catch (err) {
-            throw new ApiError(500, `File upload failed: ${uploadResult.message || 'unknown'}; local save error: ${err?.message || err}`);
+                const fs = await import('fs');
+                const path = await import('path');
+                const submissionsDir = path.resolve('./public/submissions');
+                if (!fs.existsSync(submissionsDir)) {
+                    fs.mkdirSync(submissionsDir, { recursive: true });
+                }
+                const ext = one.originalname.split('.').pop();
+                const safeTitle = `${material.title}-submission`.replace(/[^a-zA-Z0-9]/g, '_');
+                const localName = `${safeTitle}_${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
+                const destPath = path.join(submissionsDir, localName);
+                // Move from temp path to submissions
+                fs.renameSync(one.path, destPath);
+                // Construct public URL (served by Express static on /public)
+                finalUrl = `/public/submissions/${localName}`;
+                finalFileName = localName;
+                try {
+                    const stat = fs.statSync(destPath);
+                    finalFileSize = stat.size;
+                } catch {}
+            } catch (err) {
+                throw new ApiError(500, `File upload failed: ${uploadResult.message || 'unknown'}; local save error: ${err?.message || err}`);
+            }
+        }
+
+        // Append a submission entry
+        try {
+            material.submissions = Array.isArray(material.submissions) ? material.submissions : [];
+            material.submissions.push({
+                studentId: req.user?._id,
+                type,
+                fileUrl: finalUrl,
+                fileName: finalFileName,
+                fileSize: finalFileSize,
+                at: new Date()
+            });
+            results.push({ url: finalUrl, name: finalFileName });
+        } catch (e) {
+            console.warn('Could not persist submission, continuing:', e?.message || e);
         }
     }
 
-    // Append a submission entry (if submissions field exists, push; else ignore persistence)
-    try {
-        material.submissions = Array.isArray(material.submissions) ? material.submissions : [];
-        material.submissions.push({
-            studentId: req.user?._id,
-            type,
-            fileUrl: finalUrl,
-            fileName: finalFileName,
-            fileSize: finalFileSize,
-            at: new Date()
-        });
-        await material.save();
-    } catch (e) {
-        console.warn('Could not persist submission, continuing:', e?.message || e);
-    }
-
-    return res.status(200).json(new ApiResponse(200, { url: finalUrl }, 'Submission uploaded'));
+    await material.save();
+    return res.status(200).json(new ApiResponse(200, { uploads: results }, 'Submissions uploaded'));
 });
 
 export {

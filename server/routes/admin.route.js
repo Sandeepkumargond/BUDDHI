@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { loginAdmin, logoutAdmin, refreshAdminAccessToken, changeAdminPassword, updateAdminAccountDetails, updateAdminImage, createStudent, updateStudent, createFaculty, createSubAdmin, deleteStudent, deleteFaculty, deleteSubAdmin, getAllFaculty, getAllSubAdmins, getAdminById, getAllStudents, getMyProfile, getDashboardStats } from "../controllers/admin.controller.js";
+import { loginAdmin, logoutAdmin, refreshAdminAccessToken, changeAdminPassword, updateAdminAccountDetails, updateAdminImage, createStudent, updateStudent, createFaculty, createSubAdmin, deleteStudent, deleteFaculty, deleteSubAdmin, getAllFaculty, getAllSubAdmins, getAdminById, getAllStudents, getMyProfile, getDashboardStats, bulkCreateStudents, forgotPassword, verifyPasswordResetOTP, resetPassword } from "../controllers/admin.controller.js";
 import { getSubAdminById } from "../controllers/subAdmin.controller.js";
 import { adminGetFeePaymentById, adminGetReceiptRedirect, adminListFeePayments, adminCreateFeeStructure, adminGetFeeStructureById, adminListFeeStructures, adminPublishFeeStructure, adminUpdateFeeStructure, adminDeleteFeeStructure, getStudentFeeRecords } from "../controllers/feePayment.controller.js";
 import { validateAdminFeePaymentQuery, validateCreateFeeStructure } from "../middlewares/feePayment.middleware.js";
@@ -11,11 +11,16 @@ import { adminGetAdmitCardByDeptSem, adminPublishAdmitCard, adminListAdmitCards,
 import { adminGetDepartmentByCode, adminUpdateDepartmentHod, adminListDepartments, adminCreateDepartment, adminUpdateDepartment, adminDeleteDepartment } from "../controllers/department.controller.js";
 import { adminListStudents } from "../controllers/admin.controller.js";
 import { assignCourseToFaculty, removeCourseFromFaculty } from "../controllers/attendance.controller.js";
-import { getStudentRiskAnalytics } from "../controllers/analytics.controller.js";
+import { getStudentRiskAnalytics, getMonthlyFinanceAnalytics } from "../controllers/analytics.controller.js";
 
 const router = Router();
 
 router.route('/login').post(loginAdmin);
+
+// Forgot Password Routes
+router.route('/forgot-password').post(forgotPassword);
+router.route('/verify-otp').post(verifyPasswordResetOTP);
+router.route('/reset-password').post(resetPassword);
 
 router.route('/profile').get(
     authenticateAdmin,
@@ -48,6 +53,11 @@ router.route('/update-image').patch(
 router.route('/create-student').post(
     authenticateAdmin,
     createStudent
+)
+
+router.route('/bulk-create-students').post(
+    authenticateAdmin,
+    bulkCreateStudents
 )
 
 router.route('/update-student/:id').patch(
@@ -277,6 +287,11 @@ router.route('/dashboard-stats').get(
 router.route('/analytics/risk-trends').get(
     authenticateAdmin,
     getStudentRiskAnalytics
+);
+
+router.route('/analytics/finance').get(
+    authenticateAdmin,
+    getMonthlyFinanceAnalytics
 );
 
 // Keep generic id route last

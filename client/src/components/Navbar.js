@@ -23,7 +23,8 @@ const Navbar = () => {
           const stats = await getComplaintStats();
           setComplaintCount(stats.pending || 0);
         } catch (error) {
-          console.error("Error loading complaint stats:", error);
+          // Silently fail - don't spam console if server is down
+          setComplaintCount(0);
         }
       };
       loadStats();
@@ -75,16 +76,6 @@ const Navbar = () => {
 
   return (
     <div className='flex items-center justify-between p-4'>
-      {/* SEARCH BAR */}
-      <div className='hidden md:flex items-center gap-2 text-xs rounded-full ring-[1.5px] ring-gray-300 px-2'>
-        <Image src="/search.png" alt="" width={14} height={14}/>
-        <input
-          type="text"
-          placeholder="Search..."
-          defaultValue=""
-          className="w-[200px] p-2 bg-transparent outline-none"
-        />
-      </div>
       {/* ICONS AND USER */}
       <div className='flex items-center gap-6 justify-end w-full'>
         {/* Complaints Icon (for Admin) */}
@@ -103,11 +94,6 @@ const Navbar = () => {
           </div>
         )}
 
-        <div className='bg-white rounded-full w-7 h-7 flex items-center justify-center cursor-pointer relative'>
-          <Image src="/announcement.png" alt="" width={20} height={20}/>
-          <div className='absolute -top-3 -right-3 w-5 h-5 flex items-center justify-center bg-purple-500 text-white rounded-full text-xs'>1</div>
-        </div>
-        
         {/* USER PROFILE */}
         <div className="relative" ref={dropdownRef}>
           <div

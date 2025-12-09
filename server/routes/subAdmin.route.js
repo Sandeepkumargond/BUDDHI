@@ -1,9 +1,14 @@
 import { Router } from "express";
-import { changeSubAdminPassword, createFaculty, createStudent, updateStudent, getMyProfile, loginSubAdmin, logoutSubAdmin, refreshSubAdminAccessToken, updateSubAdminAccountDetails, updateSubAdminImage, getAllStudents} from "../controllers/subAdmin.controller.js";
+import { changeSubAdminPassword, createFaculty, createStudent, updateStudent, deleteStudent, getMyProfile, loginSubAdmin, logoutSubAdmin, refreshSubAdminAccessToken, updateSubAdminAccountDetails, updateSubAdminImage, getAllStudents, bulkCreateStudents, forgotPassword, verifyPasswordResetOTP, resetPassword} from "../controllers/subAdmin.controller.js";
 import { authenticateSubAdmin } from "../middlewares/subAdmin.middleware.js";
 import { upload } from "../middlewares/multer.middleware.js";
 
 const router = Router();
+
+// Password reset routes (public)
+router.route('/forgot-password').post(forgotPassword);
+router.route('/verify-otp').post(verifyPasswordResetOTP);
+router.route('/reset-password').post(resetPassword);
 
 router.route('/login').post(loginSubAdmin);
 
@@ -35,9 +40,19 @@ router.route('/update-image').patch(
     updateSubAdminImage
 );
 
-router.route('/create-student').post(
+router.route('/update-student/:id').patch(
     authenticateSubAdmin,
-    createStudent
+    updateStudent
+)
+
+router.route('/delete-student').delete(
+    authenticateSubAdmin,
+    deleteStudent
+)
+
+router.route('/bulk-create-students').post(
+    authenticateSubAdmin,
+    bulkCreateStudents
 )
 
 router.route('/update-student/:id').patch(

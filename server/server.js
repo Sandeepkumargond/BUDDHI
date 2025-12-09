@@ -17,8 +17,8 @@ const allowedOrigins = (process.env.CORS_ORIGIN || 'http://localhost:3000')
     .filter(Boolean);
 
 app.use(cors({
-        origin: allowedOrigins,
-        credentials: true,
+    origin: allowedOrigins,
+    credentials: true,
 }));
 
 app.use(express.json({ limit: "16kb" }));
@@ -47,7 +47,17 @@ import leaveRoutes from "./routes/leave.route.js";
 import scholarshipRoutes from "./routes/scholarship.route.js";
 import bonafideRoutes from "./routes/bonafide.route.js";
 import pyqRoutes from "./routes/pyq.route.js";
+import idCardRoutes from "./routes/idCard.route.js";
+import idCardStudentRoutes from "./routes/idCardStudent.route.js";
+import libraryRoutes from "./routes/library.route.js";
+import messageRoutes from "./routes/message.route.js";
+import collegeRequestRoutes from "./routes/collegeRequest.routes.js";
 import ApiError from "./utils/ApiError.js";
+import { createServer } from 'http';
+import { initializeSocket } from './socket.js';
+
+// Create HTTP server for Socket.io
+const httpServer = createServer(app);
 
 // route declarations
 app.use("/api/v1/health", healthCheckRoutes);
@@ -68,6 +78,11 @@ app.use("/api/v1/leaves", leaveRoutes);
 app.use("/api/v1/scholarships", scholarshipRoutes);
 app.use("/api/v1/bonafide", bonafideRoutes);
 app.use("/api/v1/pyq", pyqRoutes);
+app.use("/api/v1/id-card", idCardRoutes);
+app.use("/api/v1/id-card-student", idCardStudentRoutes);
+app.use("/api/v1/library", libraryRoutes);
+app.use("/api/v1/messages", messageRoutes);
+app.use("/api/v1/college-requests", collegeRequestRoutes);
 
 // Centralized error handler to ensure JSON responses instead of default HTML
 app.use((err, req, res, next) => {
@@ -89,7 +104,10 @@ app.use((err, req, res, next) => {
 });
 
 connectDB().then(() => {
-    app.listen(PORT, () => {
+    // Initialize Socket.io
+    initializeSocket(httpServer);
+
+    httpServer.listen(PORT, () => {
         console.log(`Server is running on port ${PORT}`);
     });
 }).catch((error) => {

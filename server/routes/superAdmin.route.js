@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { changeSuperAdminPassword, createAdmin, deleteAdmin, getAllAdmins, getMyProfile, getSuperAdminById, loginSuperAdmin, logoutSuperAdmin, refreshSuperAdminAccessToken, registerSuperAdmin, updateSuperAdminAccountDetails, updateSuperAdminImage } from "../controllers/superAdmin.controller.js";
+import { changeSuperAdminPassword, createAdmin, deleteAdmin, getAllAdmins, getMyProfile, getSuperAdminById, loginSuperAdmin, logoutSuperAdmin, refreshSuperAdminAccessToken, registerSuperAdmin, updateSuperAdminAccountDetails, updateSuperAdminImage, forgotPassword, verifyPasswordResetOTP, resetPassword } from "../controllers/superAdmin.controller.js";
 import { authenticateSuperAdmin } from "../middlewares/superAdmin.middleware.js";
 import { upload } from "../middlewares/multer.middleware.js"
 
@@ -7,6 +7,11 @@ const router = Router();
 
 
 router.route("/register").post(registerSuperAdmin);
+
+// Password reset routes (public)
+router.route('/forgot-password').post(forgotPassword);
+router.route('/verify-otp').post(verifyPasswordResetOTP);
+router.route('/reset-password').post(resetPassword);
 
 router.route("/login").post(loginSuperAdmin);
 

@@ -185,3 +185,54 @@ export const getStudentRiskAnalytics = asyncHandler(async (req, res) => {
         throw new ApiError(500, `ML Service Failed: ${error.response?.statusText || error.message}`);
     }
 });
+
+// Get Monthly Finance Analytics - Income from fee payments
+export const getMonthlyFinanceAnalytics = asyncHandler(async (req, res) => {
+    const currentYear = new Date().getFullYear();
+    const { year = currentYear } = req.query;
+
+    // Aggregate successful fee payments by month
+    const monthlyData = await FeePayment.aggregate([
+        {
+            $match: {
+                docType: "payment",
+                transactionStatus: { $in: ["success", "completed"] },
+                transactionDate: {
+                    $gte: new Date(`${year}-01-01`),
+                    $lte: new Date(`${year}-12-31`)
+                }
+            }
+        },
+        {
+            $group: {
+                _id: { $month: "$transactionDate" },
+                income: { $sum: "$amount" },
+                count: { $sum: 1 }
+            }
+        },
+        {
+            $sort: { _id: 1 }
+        }
+    ]);
+
+    // Create array for all 12 months
+    const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+    const chartData = months.map((name, index) => {
+        const monthData = monthlyData.find(m => m._id === index + 1);
+        return {
+            name,
+            income: monthData ? monthData.income : 0,
+            expense: 0, // Placeholder - can be extended with actual expense tracking
+            count: monthData ? monthData.count : 0
+        };
+    });
+
+    return res.status(200).json(
+        new ApiResponse(200, {
+            year: parseInt(year),
+            data: chartData,
+            totalIncome: chartData.reduce((sum, m) => sum + m.income, 0),
+            totalTransactions: chartData.reduce((sum, m) => sum + m.count, 0)
+        }, "Monthly finance analytics fetched successfully")
+    );
+});

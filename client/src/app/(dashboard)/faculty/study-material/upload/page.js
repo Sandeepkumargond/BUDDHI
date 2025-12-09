@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { apiService } from "@/lib/api";
-import { FaBook, FaFileAlt, FaBookOpen, FaQuestionCircle, FaFlask, FaChartBar, FaPaperclip, FaUpload, FaList, FaGraduationCap, FaBullseye, FaFile } from 'react-icons/fa';
+import { FaBook, FaFileAlt, FaBookOpen, FaQuestionCircle, FaFlask, FaChartBar, FaPaperclip, FaUpload, FaList, FaGraduationCap, FaBullseye, FaFile, FaPlus } from 'react-icons/fa';
 
 export default function UploadStudyMaterialPage() {
   const router = useRouter();
@@ -26,7 +26,7 @@ export default function UploadStudyMaterialPage() {
     language: "English"
   });
 
-  const [file, setFile] = useState(null);
+  const [files, setFiles] = useState([]);
   const [targetAudience, setTargetAudience] = useState({
     semesters: [],
     branches: []
@@ -180,35 +180,43 @@ export default function UploadStudyMaterialPage() {
   };
 
   const handleFileChange = (e) => {
-    const selectedFile = e.target.files[0];
-    if (selectedFile) {
-      // Check file size (50MB limit)
-      if (selectedFile.size > 50 * 1024 * 1024) {
-        alert('File size must be less than 50MB');
+    const list = Array.from(e.target.files || []);
+    if (!list.length) return;
+    const allowedTypes = [
+      'application/pdf',
+      'application/msword',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      'application/vnd.ms-powerpoint',
+      'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+      'text/plain',
+      'image/jpeg',
+      'image/png',
+      'video/mp4',
+      'application/zip'
+    ];
+    for (const f of list) {
+      if (f.size > 50 * 1024 * 1024) {
+        alert(`File ${f.name} exceeds 50MB`);
         return;
       }
-      
-      // Check file type
-      const allowedTypes = [
-        'application/pdf',
-        'application/msword',
-        'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-        'application/vnd.ms-powerpoint',
-        'application/vnd.openxmlformats-officedocument.presentationml.presentation',
-        'text/plain',
-        'image/jpeg',
-        'image/png',
-        'video/mp4',
-        'application/zip'
-      ];
-      
-      if (!allowedTypes.includes(selectedFile.type)) {
-        alert('Please select a valid file type (PDF, DOC, PPT, TXT, JPG, PNG, MP4, ZIP)');
+      if (!allowedTypes.includes(f.type)) {
+        alert(`Unsupported type for ${f.name}`);
         return;
       }
-      
-      setFile(selectedFile);
     }
+    setFiles((prev) => {
+      const merged = [...prev, ...list];
+      const seen = new Set();
+      const unique = [];
+      for (const f of merged) {
+        const key = `${f.name}::${f.size}`;
+        if (!seen.has(key)) {
+          seen.add(key);
+          unique.push(f);
+        }
+      }
+      return unique;
+    });
   };
 
   const handleSemesterToggle = (semester) => {
@@ -244,8 +252,8 @@ export default function UploadStudyMaterialPage() {
       newErrors.description = 'Description is required';
     }
     
-    if (!file) {
-      newErrors.file = 'Study material file is required';
+    if (!files || files.length === 0) {
+      newErrors.file = 'At least one file is required';
     }
     
     setErrors(newErrors);
@@ -282,8 +290,8 @@ export default function UploadStudyMaterialPage() {
       
       submitFormData.append('targetAudience', JSON.stringify(targetAudience));
       
-      // Add file
-      submitFormData.append('material', file);
+      // Add files (support multiple)
+      (files || []).forEach((f) => submitFormData.append('material', f));
       
       const response = await apiService.request('/study-materials/faculty/upload', {
         method: 'POST',
@@ -470,6 +478,7 @@ export default function UploadStudyMaterialPage() {
               id="material"
               onChange={handleFileChange}
               accept=".pdf,.doc,.docx,.ppt,.pptx,.txt,.jpg,.jpeg,.png,.mp4,.zip"
+              multiple
               className="hidden"
               required
             />
@@ -487,22 +496,36 @@ export default function UploadStudyMaterialPage() {
                 </span>
               </span>
             </label>
-            {file && (
+            <div className="flex justify-center mt-3">
+              <button
+                type="button"
+                onClick={() => document.getElementById('material')?.click()}
+                className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md text-white"
+                style={{ background: '#2563eb' }}
+              >
+                <FaPlus /> Add more files
+              </button>
+            </div>
+            {Array.isArray(files) && files.length > 0 && (
               <div className="mt-3 p-3 bg-gray-50 rounded-lg">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <span className="text-sm font-medium text-gray-700 flex items-center gap-2"><FaFile style={{ color: '#C9CCFF' }} /> {file.name}</span>
-                    <p className="text-xs text-gray-500">
-                      {(file.size / 1024 / 1024).toFixed(2)} MB • {file.type}
-                    </p>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => setFile(null)}
-                    className="text-red-600 hover:text-red-700 text-sm"
-                  >
-                    Remove
-                  </button>
+                <div className="space-y-2">
+                  {files.map((f, idx) => (
+                    <div key={idx} className="flex items-center justify-between">
+                      <div>
+                        <span className="text-sm font-medium text-gray-700 flex items-center gap-2"><FaFile style={{ color: '#C9CCFF' }} /> {f.name}</span>
+                        <p className="text-xs text-gray-500">
+                          {(f.size / 1024 / 1024).toFixed(2)} MB • {f.type}
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setFiles((prev)=> prev.filter((_, i) => i !== idx))}
+                        className="text-red-600 hover:text-red-700 text-sm"
+                      >
+                        Remove
+                      </button>
+                    </div>
+                  ))}
                 </div>
               </div>
             )}

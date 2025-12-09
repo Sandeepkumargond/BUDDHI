@@ -29,8 +29,6 @@ export default function RequestRegisterForm() {
   const [errors, setErrors] = useState({});
   const [status, setStatus] = useState(null);
 
-  const scriptURL = process.env.NEXT_PUBLIC_REQUEST_SCRIPT_URL || "";
-
   const handleChange = (e) => {
     const { name, value } = e.target;
     setForm((prev) => ({ ...prev, [name]: value }));
@@ -85,21 +83,23 @@ export default function RequestRegisterForm() {
     setStatus("loading");
 
     try {
-      if (scriptURL) {
-        const formData = new FormData();
-        Object.keys(form).forEach((key) => {
-          if (form[key] !== undefined && form[key] !== null) formData.append(key, String(form[key]));
-        });
+      const formData = new FormData();
 
-        documents.forEach((file, idx) => {
-          formData.append("documents", file, file.name);
-        });
+      // Append all form fields
+      Object.keys(form).forEach((key) => {
+        if (form[key] !== undefined && form[key] !== null && form[key] !== '') {
+          formData.append(key, String(form[key]));
+        }
+      });
 
-        await fetch(scriptURL, {
-          method: "POST",
-          body: formData,
-        });
-      }
+      // Append documents
+      documents.forEach((file) => {
+        formData.append('documents', file);
+      });
+
+      // Use the backend API
+      const { apiService } = await import('@/lib/api');
+      await apiService.submitCollegeRequest(formData);
 
       setStatus("success");
       setForm({
@@ -127,6 +127,7 @@ export default function RequestRegisterForm() {
       setDocuments([]);
       setErrors({});
     } catch (err) {
+      console.error("Submission error:", err);
       setStatus("error");
     }
   };
@@ -299,12 +300,12 @@ export default function RequestRegisterForm() {
 
         {/* Submit */}
         <div className="flex items-center gap-3 mt-4">
-          <button type="submit" disabled={!scriptURL || status === "loading"} className={`rounded-md px-4 py-2 bg-blue-600 text-white hover:bg-blue-700 ${!scriptURL ? 'opacity-60 cursor-not-allowed' : ''}`}>
-            {status === "loading" ? "Sending..." : (scriptURL ? "Request Access" : "Request Unavailable")}
+          <button type="submit" disabled={status === "loading"} className="rounded-md px-4 py-2 bg-blue-600 text-white hover:bg-blue-700">
+            {status === "loading" ? "Sending..." : "Request Access"}
           </button>
 
-          {status === "success" && <span className="text-green-600">Request submitted.</span>}
-          {status === "error" && <span className="text-red-600">Submission failed. Try again.</span>}
+          {status === "success" && <span className="text-green-600">Request submitted successfully! Our team will review it soon.</span>}
+          {status === "error" && <span className="text-red-600">Submission failed. Please try again.</span>}
         </div>
       </form>
     </div>

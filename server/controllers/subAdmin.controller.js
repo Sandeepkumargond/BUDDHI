@@ -11,6 +11,8 @@ import { generateEnrollmentNo, generateFacultyId, generateRollNo } from "../util
 import { Faculty } from "../models/faculty.model.js";
 import { deptartmentMap } from "../configs/maps.js";
 import { getFacultyById, getFacultyDetailsById } from "./faculty.controller.js";
+import { createForgotPasswordHandler, createVerifyOTPHandler, createResetPasswordHandler } from "../utils/passwordReset.js";
+import { generateUniqueEmail, generateSecurePassword, sendCredentialsEmail } from "../utils/credentialsGenerator.js";
 
 export const getSubAdminById = asyncHandler(async (req, res) => {
     const subAdminId = req.params.id;
@@ -203,7 +205,9 @@ export const refreshSubAdminAccessToken = asyncHandler(async (req, res) => {
         }
 
         if (incomingRefreshToken !== subAdmin.refreshToken) {
-            throw new ApiError(401, "Refresh Token is expired or used");
+            // Clear the invalid refresh token
+            await SubAdmin.findByIdAndUpdate(subAdmin._id, { $unset: { refreshToken: 1 } });
+            throw new ApiError(401, "Refresh Token is expired or used. Please log in again.");
         }
 
         const options = {
@@ -226,7 +230,11 @@ export const refreshSubAdminAccessToken = asyncHandler(async (req, res) => {
                 )
             )
     } catch (error) {
-        throw new ApiError(401, error?.message || "Invalid Refresh Token")
+        // Clear cookies on token refresh failure
+        const options = { httpOnly: true, secure: true, sameSite: 'None' };
+        res.clearCookie("accessToken", options);
+        res.clearCookie("refreshToken", options);
+        throw new ApiError(401, error?.message || "Invalid Refresh Token. Please log in again.")
     }
 });
 
@@ -359,18 +367,37 @@ export const updateSubAdminImage = asyncHandler(async (req, res, next) => {
 export const createStudent = asyncHandler(async (req, res, next) => {
     const { firstName, lastName, email, personalMail, gender, program, branch, semester, section, batch, mobile, registrationNumber, dateOfAdmission, password, dateOfBirth } = req.body;
 
-    const values = { firstName, lastName, email, gender, personalMail, program, branch, semester, mobile, registrationNumber, dateOfAdmission, password };
+    // Check required fields (email and password are now optional - will be auto-generated)
+    const values = { firstName, lastName, gender, personalMail, program, branch, semester, mobile, registrationNumber, dateOfAdmission };
     for (const [k, v] of Object.entries(values)) {
         if (v === undefined) throw new ApiError(400, `${k} is required`);
     }
 
+    // Generate unique university email if not provided
+    let universityEmail = email;
+    if (!universityEmail) {
+        universityEmail = await generateUniqueEmail(firstName);
+    } else {
+        // Check if provided email already exists
+        const existingEmail = await Student.findOne({ email: universityEmail.toLowerCase() });
+        if (existingEmail) {
+            throw new ApiError(400, "Student with provided email already exists");
+        }
+    }
 
+    // Check if personal email already exists
     const existingStudent = await Student.findOne(
-        { $or: [{ email }, { personalMail }, { registrationNumber }] }
+        { $or: [{ personalMail }, { registrationNumber }] }
     );
 
     if (existingStudent) {
-        throw new ApiError(400, "Student with provided email, personal mail or registration number already exists");
+        throw new ApiError(400, "Student with provided personal mail or registration number already exists");
+    }
+
+    // Generate secure password if not provided
+    let studentPassword = password;
+    if (!studentPassword) {
+        studentPassword = generateSecurePassword(14);
     }
 
     if (!rollPrefixMap[program] || !rollPrefixMap[program][branch]) {
@@ -387,7 +414,7 @@ export const createStudent = asyncHandler(async (req, res, next) => {
     const student = new Student({
         firstName,
         lastName,
-        email,
+        email: universityEmail,
         enrollmentNo,
         rollNo,
         dateOfBirth,
@@ -401,10 +428,25 @@ export const createStudent = asyncHandler(async (req, res, next) => {
         batch,
         mobile,
         registrationNumber,
-        password
+        password: studentPassword
     });
 
     await student.save();
+
+    // Send credentials email to personal mail
+    try {
+        await sendCredentialsEmail({
+            recipientEmail: personalMail,
+            firstName,
+            lastName,
+            universityEmail,
+            password: studentPassword,
+            userType: 'Student'
+        });
+    } catch (emailError) {
+        console.error('Warning: Failed to send credentials email:', emailError.message);
+        // Continue even if email fails - student account is already created
+    }
 
     const createdStudent = await getStudentDetailsById(student?._id);
 
@@ -418,7 +460,7 @@ export const createStudent = asyncHandler(async (req, res, next) => {
             {
                 student: createdStudent,
             },
-            "Student created successfully"
+            "Student created successfully. Credentials have been sent to personal email."
         )
     );
 });
@@ -467,18 +509,37 @@ export const updateStudent = asyncHandler(async (req, res, next) => {
 export const createFaculty = asyncHandler(async (req, res, next) => {
     const { firstName, lastName, email, personalMail, gender, department, mobile, joiningDate, password, dateOfBirth } = req.body;
 
-    const values = { firstName, lastName, email, personalMail, gender, department, mobile, joiningDate, password, dateOfBirth };
+    // Check required fields (email and password are now optional - will be auto-generated)
+    const values = { firstName, lastName, personalMail, gender, department, mobile, joiningDate, dateOfBirth };
     for (const [k, v] of Object.entries(values)) {
         if (v === undefined) throw new ApiError(400, `${k} is required`);
     }
 
+    // Generate unique university email if not provided
+    let universityEmail = email;
+    if (!universityEmail) {
+        universityEmail = await generateUniqueEmail(firstName);
+    } else {
+        // Check if provided email already exists
+        const existingEmail = await Faculty.findOne({ email: universityEmail.toLowerCase() });
+        if (existingEmail) {
+            throw new ApiError(400, "Faculty with provided email already exists");
+        }
+    }
 
+    // Check if personal email already exists
     const existingFaculty = await Faculty.findOne(
-        { $or: [{ email }, { personalMail }] }
+        { personalMail }
     );
 
     if (existingFaculty) {
-        throw new ApiError(400, "Faculty with provided email, personal mail or registration number already exists");
+        throw new ApiError(400, "Faculty with provided personal mail already exists");
+    }
+
+    // Generate secure password if not provided
+    let facultyPassword = password;
+    if (!facultyPassword) {
+        facultyPassword = generateSecurePassword(14);
     }
 
     if (!deptartmentMap[department]) {
@@ -491,7 +552,7 @@ export const createFaculty = asyncHandler(async (req, res, next) => {
     const faculty = new Faculty({
         firstName,
         lastName,
-        email,
+        email: universityEmail,
         personalMail,
         facultyId,
         dateOfBirth,
@@ -499,10 +560,25 @@ export const createFaculty = asyncHandler(async (req, res, next) => {
         gender,
         joiningDate,
         mobile,
-        password
+        password: facultyPassword
     });
 
     await faculty.save();
+
+    // Send credentials email to personal mail
+    try {
+        await sendCredentialsEmail({
+            recipientEmail: personalMail,
+            firstName,
+            lastName,
+            universityEmail,
+            password: facultyPassword,
+            userType: 'Faculty'
+        });
+    } catch (emailError) {
+        console.error('Warning: Failed to send credentials email:', emailError.message);
+        // Continue even if email fails - faculty account is already created
+    }
 
     const createdFaculty = await getFacultyDetailsById(faculty?._id);
 
@@ -516,21 +592,264 @@ export const createFaculty = asyncHandler(async (req, res, next) => {
             {
                 faculty: createdFaculty,
             },
-            "Faculty created successfully"
+            "Faculty created successfully. Credentials have been sent to personal email."
         )
     );
 });
 
 
 export const getAllStudents = asyncHandler(async (req, res) => {
-    const students = await Student.find().select("-password -refreshToken");
+    const students = await Student.find().select("-password -refreshToken").lean();
+
+    // Import models
+    const { Attendance } = await import("../models/attendance.model.js");
+    const { GradeCard } = await import("../models/gradeCard.model.js");
+    
+    // Fetch attendance and grade data for all students
+    const enrichedStudents = await Promise.all(students.map(async (student) => {
+        // Calculate attendance percentage
+        let attendancePercentage = 0;
+        try {
+            const attendanceRecords = await Attendance.find({
+                'records.studentId': student._id
+            });
+            
+            let totalClasses = 0;
+            let presentCount = 0;
+            
+            attendanceRecords.forEach(record => {
+                const studentRecord = record.records.find(r => r.studentId.toString() === student._id.toString());
+                if (studentRecord) {
+                    totalClasses++;
+                    if (studentRecord.status === 'present') {
+                        presentCount++;
+                    }
+                }
+            });
+            
+            if (totalClasses > 0) {
+                attendancePercentage = Math.round((presentCount / totalClasses) * 100);
+            }
+        } catch (err) {
+            console.error(`Error calculating attendance for student ${student._id}:`, err);
+        }
+        
+        // Calculate CGPA from grade cards
+        let cgpa = 0;
+        try {
+            const gradeCards = await GradeCard.find({
+                studentId: student._id
+            }).sort({ semester: -1 });
+            
+            if (gradeCards.length > 0) {
+                // Use the most recent grade card's SGPA or calculate from all cards
+                const latestCard = gradeCards[0];
+                cgpa = latestCard.sgpa || 0;
+                
+                // If multiple semesters, calculate cumulative CGPA
+                if (gradeCards.length > 1) {
+                    const totalSGPA = gradeCards.reduce((sum, card) => sum + (card.sgpa || 0), 0);
+                    cgpa = parseFloat((totalSGPA / gradeCards.length).toFixed(2));
+                }
+            }
+        } catch (err) {
+            console.error(`Error calculating CGPA for student ${student._id}:`, err);
+        }
+        
+        return {
+            ...student,
+            attendance: attendancePercentage,
+            cgpa: cgpa
+        };
+    }));
 
     return res.status(200).json(
         new ApiResponse(
             200,
-            { students },
+            { students: enrichedStudents },
             "All students fetched successfully"
         )
     );
 });
 
+// Bulk create students from Excel/CSV
+export const bulkCreateStudents = asyncHandler(async (req, res, next) => {
+    const { students } = req.body;
+
+    if (!students || !Array.isArray(students) || students.length === 0) {
+        throw new ApiError(400, "Students array is required and must not be empty");
+    }
+
+    const results = {
+        success: [],
+        failed: []
+    };
+
+    for (let i = 0; i < students.length; i++) {
+        const studentData = students[i];
+        const rowNumber = i + 2; // Excel row (header is row 1)
+
+        try {
+            const { firstName, lastName, email, personalMail, gender, program, branch, semester, section, batch, mobile, registrationNumber, dateOfAdmission, password, dateOfBirth } = studentData;
+
+            // Validate required fields (email and password are now optional)
+            const required = { firstName, lastName, gender, personalMail, program, branch, semester, mobile, registrationNumber, dateOfAdmission };
+            for (const [k, v] of Object.entries(required)) {
+                if (v === undefined || v === null || v === '') {
+                    throw new Error(`${k} is required`);
+                }
+            }
+
+            // Generate unique university email if not provided
+            let universityEmail = email;
+            if (!universityEmail) {
+                universityEmail = await generateUniqueEmail(firstName);
+            }
+
+            // Check for existing student
+            const existingStudent = await Student.findOne(
+                { $or: [{ email: universityEmail }, { personalMail }, { registrationNumber }] }
+            );
+
+            if (existingStudent) {
+                throw new Error("Student with provided email, personal mail or registration number already exists");
+            }
+
+            // Generate secure password if not provided
+            let studentPassword = password;
+            if (!studentPassword) {
+                studentPassword = generateSecurePassword(14);
+            }
+
+            // Validate program/branch mapping
+            if (!rollPrefixMap[program] || !rollPrefixMap[program][branch]) {
+                const validPrograms = Object.keys(rollPrefixMap).join(', ');
+                const validBranches = program && rollPrefixMap[program] 
+                    ? Object.keys(rollPrefixMap[program]).join(', ') 
+                    : 'CSE, ECE, EEE, ME, CE';
+                throw new Error(`Invalid program/branch: "${program}" - "${branch}". Valid programs: ${validPrograms}. Valid branches for ${program || 'B.Tech'}: ${validBranches}`);
+            }
+
+            const prefix = rollPrefixMap[program][branch];
+            const admissionYear = new Date(dateOfAdmission).getFullYear();
+            const enrollmentNo = await generateEnrollmentNo();
+            const { raw: rollSeq, formatted: rollNo } = await generateRollNo(prefix, admissionYear);
+
+            const student = new Student({
+                firstName,
+                lastName,
+                email: universityEmail,
+                enrollmentNo,
+                rollNo,
+                dateOfBirth,
+                dateOfAdmission,
+                personalMail,
+                program,
+                gender,
+                branch,
+                semester,
+                section,
+                batch,
+                mobile,
+                registrationNumber,
+                password: studentPassword
+            });
+
+            await student.save();
+
+            // Send credentials email (non-blocking - don't fail bulk operation if email fails)
+            try {
+                await sendCredentialsEmail({
+                    recipientEmail: personalMail,
+                    firstName,
+                    lastName,
+                    universityEmail,
+                    password: studentPassword,
+                    userType: 'Student'
+                });
+            } catch (emailError) {
+                console.error(`Warning: Failed to send email for ${firstName} ${lastName}:`, emailError.message);
+            }
+
+            results.success.push({
+                row: rowNumber,
+                name: `${firstName} ${lastName}`,
+                email: universityEmail,
+                rollNo,
+                registrationNumber,
+                message: "Student created and credentials email sent"
+            });
+
+        } catch (error) {
+            results.failed.push({
+                row: rowNumber,
+                name: `${studentData.firstName || ''} ${studentData.lastName || ''}`.trim() || 'Unknown',
+                email: studentData.personalMail || studentData.email || 'N/A',
+                error: error.message
+            });
+        }
+    }
+
+    return res.status(200).json(
+        new ApiResponse(
+            200,
+            {
+                total: students.length,
+                successCount: results.success.length,
+                failedCount: results.failed.length,
+                success: results.success,
+                failed: results.failed
+            },
+            `Bulk upload completed: ${results.success.length} succeeded, ${results.failed.length} failed`
+        )
+    );
+});
+
+// Password reset handlers
+export const forgotPassword = createForgotPasswordHandler(SubAdmin, "SubAdmin");
+export const verifyPasswordResetOTP = createVerifyOTPHandler();
+export const resetPassword = createResetPasswordHandler(SubAdmin, "SubAdmin");
+
+// Delete student
+export const deleteStudent = asyncHandler(async (req, res, next) => {
+    const { studentId, email, enrollmentNo, rollNo, registrationNumber } = req.body || {};
+
+    const filters = [];
+    if (studentId) filters.push({ _id: studentId });
+    if (email) filters.push({ email });
+    if (enrollmentNo) filters.push({ enrollmentNo });
+    if (rollNo) filters.push({ rollNo });
+    if (registrationNumber) filters.push({ registrationNumber });
+
+    if (!filters.length) {
+        throw new ApiError(400, "Provide at least one identifier: studentId, email, enrollmentNo, rollNo, or registrationNumber");
+    }
+
+    // Fetch to capture any assets before deletion
+    const studentToDelete = await Student.findOne({ $or: filters }).select("-password");
+
+    if (!studentToDelete) {
+        throw new ApiError(404, "Student not found");
+    }
+
+    // Perform deletion
+    const deletedStudent = await Student.findOneAndDelete({ $or: filters }).select("-password");
+
+    // Best-effort cleanup of avatar image if stored on ImageKit
+    try {
+        if (deletedStudent?.imageUrl) {
+            const fileId = await getFileIdFromUrl(deletedStudent.imageUrl);
+            if (fileId) await deleteFromImageKit(fileId);
+        }
+    } catch (err) {
+        // Non-fatal: log context if a logger exists in the codebase
+    }
+
+    return res.status(200).json(
+        new ApiResponse(
+            200,
+            deletedStudent,
+            "Student deleted successfully"
+        )
+    );
+});

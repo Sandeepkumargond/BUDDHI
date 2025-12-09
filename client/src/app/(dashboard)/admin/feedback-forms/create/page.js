@@ -10,10 +10,11 @@ export default function CreateFeedbackFormPage() {
   const router = useRouter();
   const { role } = useAuth();
   const [loading, setLoading] = useState(false);
+  const [loadingDepartments, setLoadingDepartments] = useState(true);
   const [departments, setDepartments] = useState([]);
 
   const [formData, setFormData] = useState({
-    title: "",
+    title: "Feedback Form",
     description: "",
     department: "",
     branch: "",
@@ -40,11 +41,22 @@ export default function CreateFeedbackFormPage() {
   }, [role, router]);
 
   const fetchDepartments = async () => {
+    setLoadingDepartments(true);
     try {
       const res = await apiService.getAllDepartments();
-      setDepartments(res.data?.departments || []);
+      console.log("Departments API response:", res);
+      if (res.data?.departments) {
+        console.log("Setting departments:", res.data.departments);
+        setDepartments(res.data.departments);
+      } else {
+        console.warn("No departments in response:", res);
+        setDepartments([]);
+      }
     } catch (error) {
       console.error("Failed to fetch departments:", error);
+      showToast.error("Failed to load departments");
+    } finally {
+      setLoadingDepartments(false);
     }
   };
 
@@ -81,7 +93,6 @@ export default function CreateFeedbackFormPage() {
     e.preventDefault();
 
     if (
-      !formData.title ||
       !formData.department ||
       !formData.batch ||
       !formData.startDate ||
@@ -134,32 +145,21 @@ export default function CreateFeedbackFormPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Form Title *
-            </label>
-            <input
-              type="text"
-              name="title"
-              value={formData.title}
-              onChange={handleInputChange}
-              placeholder="e.g., Semester 1 Faculty Feedback 2024"
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
               Department *
             </label>
             <select
               name="department"
               value={formData.department}
               onChange={handleInputChange}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              disabled={loadingDepartments}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed"
             >
-              <option value="">Select Department</option>
+              <option value="">
+                {loadingDepartments ? "Loading departments..." : "Select Department"}
+              </option>
               {departments.map((dept) => (
                 <option key={dept._id} value={dept.name}>
-                  {dept.name}
+                  {dept.name} ({dept.code})
                 </option>
               ))}
             </select>

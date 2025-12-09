@@ -12,6 +12,36 @@ export const useAuth = () => {
   return context;
 };
 
+// Safe localStorage wrapper to prevent errors
+const safeLocalStorage = {
+  getItem: (key) => {
+    try {
+      return typeof window !== 'undefined' ? localStorage.getItem(key) : null;
+    } catch (e) {
+      console.warn('localStorage.getItem failed:', e);
+      return null;
+    }
+  },
+  setItem: (key, value) => {
+    try {
+      if (typeof window !== 'undefined') {
+        localStorage.setItem(key, value);
+      }
+    } catch (e) {
+      console.warn('localStorage.setItem failed:', e);
+    }
+  },
+  removeItem: (key) => {
+    try {
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem(key);
+      }
+    } catch (e) {
+      console.warn('localStorage.removeItem failed:', e);
+    }
+  }
+};
+
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [role, setRole] = useState(null);
@@ -36,7 +66,7 @@ export const AuthProvider = ({ children }) => {
     bootstrapAttempted.current = true;
 
     const bootstrap = async () => {
-      const savedRole = localStorage.getItem('userRole');
+      const savedRole = safeLocalStorage.getItem('userRole');
       
       // If no saved role, user is not authenticated
       if (!savedRole) {
@@ -81,8 +111,44 @@ export const AuthProvider = ({ children }) => {
           }
         }
       } catch (refreshErr) {
-        console.warn('[Auth] Token refresh failed:', refreshErr?.message);
-        // Don't clear auth yet - try the fallback
+        // Check if it's a DEFINITE session expired error
+        const errorMsg = (refreshErr?.message || '').toLowerCase();
+        const isDefiniteSessionError = 
+          errorMsg.includes('session expired') || 
+          errorMsg.includes('session invalid') || 
+          errorMsg.includes('refresh token is expired') ||
+          errorMsg.includes('refresh token is used') ||
+          errorMsg.includes('invalid refresh token') ||
+          refreshErr?.status === 401;
+        
+        // Check if it's a network/server error (not an auth error)
+        const isNetworkError = 
+          errorMsg.includes('failed to fetch') ||
+          errorMsg.includes('network error') ||
+          errorMsg.includes('unable to reach') ||
+          !errorMsg; // Empty error message often means network issue
+        
+        if (isDefiniteSessionError) {
+          console.log('[Auth] Session definitely expired - user needs to log in again');
+          // Clear everything immediately for expired sessions
+          safeLocalStorage.removeItem('userRole');
+          setUser(null);
+          setRole(null);
+          setIsAuthenticated(false);
+          setLoading(false);
+          return; // Exit early, no need to try fallback
+        }
+        
+        if (isNetworkError) {
+          console.warn('[Auth] Network error during token refresh - keeping session, will retry later');
+          // For network errors, keep the user logged in and set a flag
+          setIsAuthenticated(true);
+          setLoading(false);
+          return; // Don't clear session for network issues
+        }
+        
+        console.warn('[Auth] Token refresh failed (non-auth error):', refreshErr?.message);
+        // Don't clear auth for network errors or server errors - try the fallback
       }
 
       // Strategy 2: If refresh failed, try direct profile call
@@ -105,7 +171,21 @@ export const AuthProvider = ({ children }) => {
             authSuccess = true;
           }
         } catch (profileErr) {
-          console.error('[Auth] Direct profile fetch also failed:', profileErr?.message);
+          const errorMsg = (profileErr?.message || '').toLowerCase();
+          const isDefiniteAuthError = 
+            profileErr?.status === 401 || 
+            profileErr?.status === 403 ||
+            errorMsg.includes('session expired') ||
+            errorMsg.includes('unauthorized') ||
+            errorMsg.includes('not authenticated');
+          
+          if (isDefiniteAuthError) {
+            console.error('[Auth] Profile fetch failed with auth error:', profileErr?.message);
+          } else {
+            console.warn('[Auth] Profile fetch failed with non-auth error (keeping session):', profileErr?.message);
+            // For network/server errors, assume session is still valid
+            authSuccess = true;
+          }
         }
       }
 
@@ -113,9 +193,9 @@ export const AuthProvider = ({ children }) => {
       if (authSuccess) {
         setIsAuthenticated(true);
       } else {
-        // Both strategies failed - clear authentication
-        console.error('[Auth] All restoration strategies failed - clearing session');
-        localStorage.removeItem('userRole');
+        // Both strategies failed with definite auth errors - clear authentication
+        console.error('[Auth] All restoration strategies failed with auth errors - clearing session');
+        safeLocalStorage.removeItem('userRole');
         setUser(null);
         setRole(null);
         setIsAuthenticated(false);
@@ -129,31 +209,52 @@ export const AuthProvider = ({ children }) => {
 
   const checkAuthStatus = async () => {
     try {
-      const savedRole = localStorage.getItem('userRole');
-      if (savedRole) {
-        console.log('Checking auth status for role:', savedRole);
-        const profileData = await apiService.getProfile(savedRole);
-        console.log('Profile data received:', profileData);
-        
-        const userData = profileData.data?.user || profileData.data?.superAdmin || profileData.data?.admin || profileData.data?.subAdmin || profileData.data?.student || profileData.data?.faculty || profileData.data?.alumni;
-        
-        if (userData) {
-          setUser(userData);
-          setRole(savedRole);
-          setIsAuthenticated(true);
-        } else {
-          throw new Error('No user data found in response');
-        }
+      const savedRole = safeLocalStorage.getItem('userRole');
+      if (!savedRole) {
+        setIsAuthenticated(false);
+        return;
+      }
+      
+      console.log('Checking auth status for role:', savedRole);
+      const profileData = await apiService.getProfile(savedRole);
+      console.log('Profile data received:', profileData);
+      
+      const userData = profileData.data?.user || profileData.data?.superAdmin || profileData.data?.admin || profileData.data?.subAdmin || profileData.data?.student || profileData.data?.faculty || profileData.data?.alumni;
+      
+      if (userData) {
+        setUser(userData);
+        setRole(savedRole);
+        setIsAuthenticated(true);
+      } else {
+        throw new Error('No user data found in response');
       }
     } catch (error) {
       console.error('Auth status check failed:', error);
-      // User not authenticated or token expired
-      localStorage.removeItem('userRole');
-      setUser(null);
-      setRole(null);
-      setIsAuthenticated(false);
-    } finally {
-      setLoading(false);
+      
+      // Only clear auth if it's a DEFINITE authentication error
+      const errorMsg = error?.message?.toLowerCase() || '';
+      const isDefiniteAuthError = 
+        error?.status === 401 || 
+        error?.status === 403 || 
+        errorMsg.includes('session expired') ||
+        errorMsg.includes('session invalid') ||
+        errorMsg.includes('unauthorized') ||
+        errorMsg.includes('not authenticated') ||
+        errorMsg.includes('invalid token') ||
+        errorMsg.includes('token expired') ||
+        errorMsg.includes('refresh token');
+      
+      if (isDefiniteAuthError) {
+        console.log('Definite authentication error detected - clearing session');
+        safeLocalStorage.removeItem('userRole');
+        setUser(null);
+        setRole(null);
+        setIsAuthenticated(false);
+      } else {
+        // For network errors, server errors, or other issues - keep the user logged in
+        console.warn('Non-auth error in checkAuthStatus - keeping user logged in:', error?.message);
+        // Don't change the authentication state for transient errors
+      }
     }
   };
 
@@ -170,7 +271,7 @@ export const AuthProvider = ({ children }) => {
           setUser(userData);
           setRole(selectedRole);
           setIsAuthenticated(true);
-          localStorage.setItem('userRole', selectedRole);
+          safeLocalStorage.setItem('userRole', selectedRole);
           return { success: true, user: userData };
         } else {
           console.error('No user data in successful response:', response);
@@ -199,7 +300,7 @@ export const AuthProvider = ({ children }) => {
       setUser(null);
       setRole(null);
       setIsAuthenticated(false);
-      localStorage.removeItem('userRole');
+      safeLocalStorage.removeItem('userRole');
     }
   };
 

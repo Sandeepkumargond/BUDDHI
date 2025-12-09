@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { FaPlus, FaFile } from 'react-icons/fa';
 import { apiService } from "@/lib/api";
 import { useAuth } from "@/context/AuthContext";
 
@@ -97,8 +98,8 @@ export default function StudentStudyMaterialsPage() {
     }
   };
 
-  const handleSubmit = async (item, file) => {
-    if (!file) return alert("Please choose a file");
+  const handleSubmit = async (item, files) => {
+    if (!files || files.length === 0) return alert("Please choose file(s)");
     try {
       const fd = new FormData();
       const id = item.id || item._id;
@@ -106,12 +107,12 @@ export default function StudentStudyMaterialsPage() {
       // Only assignments/homework are submittable; infer from materialType
       const submitType = (item.materialType === 'assignment') ? 'assignment' : (item.materialType === 'homework' ? 'homework' : 'assignment');
       fd.append("type", submitType);
-      fd.append("file", file);
+      (Array.isArray(files) ? files : [files]).forEach((f) => fd.append("files", f));
       // You can attach optional text answers, links, etc.
       const res = await apiService.request("/study-materials/student/submit", { method: "POST", body: fd });
       alert(res?.message || "Submitted successfully");
       // Mark locally as submitted in state; disable the button and clear selected file
-      setMaterials((prev) => prev.map((m) => ((m.id || m._id) === id) ? { ...m, _submitted: true, _selectedFile: undefined } : m));
+      setMaterials((prev) => prev.map((m) => ((m.id || m._id) === id) ? { ...m, _submitted: true, _selectedFiles: undefined } : m));
     } catch (err) {
       alert(err?.message || "Submission failed");
     }
@@ -120,7 +121,9 @@ export default function StudentStudyMaterialsPage() {
   const MaterialRow = ({ item }) => {
     const isInteractive = item.materialType === "assignment" || item.materialType === "homework";
     const submitted = item._submitted === true;
-    const [selectedFile, setSelectedFile] = useState(undefined);
+    const [selectedFiles, setSelectedFiles] = useState([]);
+    const id = item.id || item._id;
+    const inputId = `submit-files-${id}`;
     return (
       <div className="rounded-xl p-4 bg-white" style={{ border: "1px solid #e5e7eb", boxShadow: "0 6px 18px rgba(2,6,23,0.06)" }}>
         <div className="flex justify-between items-center">
@@ -148,31 +151,87 @@ export default function StudentStudyMaterialsPage() {
           </div>
         </div>
 
+        {Array.isArray(item.attachments) && item.attachments.length > 1 && (
+          <div className="mt-3">
+            <div className="text-sm font-medium" style={{ color: "#0f172a" }}>Additional files</div>
+            <ul className="mt-2 space-y-1 list-disc list-inside">
+              {item.attachments.slice(1).map((att, i) => (
+                <li key={i} className="text-sm" style={{ color: "#334155" }}>
+                  <a
+                    href={(String(att.fileUrl).startsWith('/public') || String(att.fileUrl).startsWith('public')) ? `${apiService.baseURL.replace(/\/api\/v1$/, '')}${String(att.fileUrl).startsWith('public') ? `/${att.fileUrl}` : att.fileUrl}` : att.fileUrl}
+                    target="_blank" rel="noopener noreferrer"
+                    className="hover:underline"
+                  >
+                    {att.fileName || `Attachment ${i+1}`}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+
         {isInteractive && (
           <div className="mt-4">
             <label className="block text-sm mb-2">{submitted ? 'Submission status: Submitted' : `Submit your ${item.materialType}`}</label>
             {!submitted && (
               <div className="flex items-center gap-3">
                 <input
+                  id={inputId}
                   type="file"
                   accept="*/*"
+                  multiple
                   className="border rounded p-2 w-full"
                   onChange={(e) => {
-                    const file = e.target.files?.[0];
-                    setSelectedFile(file);
+                    const list = Array.from(e.target.files || []);
+                    if (!list.length) return;
+                    setSelectedFiles((prev) => {
+                      const merged = [...prev, ...list];
+                      const seen = new Set();
+                      const unique = [];
+                      for (const f of merged) {
+                        const key = `${f.name}::${f.size}`;
+                        if (!seen.has(key)) {
+                          seen.add(key);
+                          unique.push(f);
+                        }
+                      }
+                      return unique;
+                    });
                   }}
                 />
-                {selectedFile && (
-                  <span className="text-xs text-gray-600">{selectedFile.name}</span>
+                <button
+                  type="button"
+                  onClick={() => document.getElementById(inputId)?.click()}
+                  className="ml-3 inline-flex items-center gap-2 px-3 py-2 rounded-md text-white"
+                  style={{ background: "#2563eb" }}
+                >
+                  <FaPlus /> Add more files
+                </button>
+                {Array.isArray(selectedFiles) && selectedFiles.length > 0 && (
+                  <div className="mt-2 space-y-2 w-full">
+                    {selectedFiles.map((f, idx) => (
+                      <div key={idx} className="flex items-center justify-between bg-gray-50 p-2 rounded">
+                        <span className="text-xs text-gray-700 flex items-center gap-2"><FaFile style={{ color: '#C9CCFF' }} /> {f.name}</span>
+                        <button
+                          type="button"
+                          className="text-red-600 text-xs"
+                          onClick={() => setSelectedFiles((prev)=> prev.filter((_, i) => i !== idx))}
+                        >
+                          Remove
+                        </button>
+                      </div>
+                    ))}
+                  </div>
                 )}
               </div>
             )}
             <div className="flex justify-end mt-2">
-              <button onClick={() => !submitted && selectedFile && handleSubmit(item, selectedFile)}
-                      disabled={submitted}
-                      className="px-4 py-2 rounded-md text-white"
-                      style={{ background: submitted ? "#94a3b8" : (selectedFile ? "#22c55e" : "#94a3b8") }}>
-                {submitted ? 'Submitted' : (selectedFile ? 'Submit' : 'Choose file')}
+              <button
+                onClick={() => !submitted && selectedFiles.length > 0 && handleSubmit(item, selectedFiles)}
+                disabled={submitted}
+                className={`px-4 py-2 rounded-md text-white ${submitted ? 'bg-green-600/70 cursor-default' : (selectedFiles.length > 0 ? 'bg-green-600 hover:bg-green-700' : 'bg-slate-400 cursor-not-allowed')}`}
+              >
+                {submitted ? 'Submitted' : (selectedFiles.length > 0 ? 'Submit' : 'Choose files')}
               </button>
             </div>
           </div>

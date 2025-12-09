@@ -5,7 +5,7 @@ import { useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 // React Icons imports for sidebar items
 import { MdDashboard, MdAppRegistration, MdPayment, MdAnnouncement, MdPendingActions, MdAssessment, MdFeedback } from "react-icons/md";
-import { FaIdCard, FaGraduationCap, FaClipboardCheck, FaCommentDots, FaBookOpen, FaMoneyBillWave, FaChalkboardTeacher, FaUserGraduate, FaUserShield, FaBuilding, FaUserPlus, FaUserEdit, FaUniversity, FaBed, FaUserTie, FaBriefcase, FaCalendarAlt } from "react-icons/fa";
+import { FaIdCard, FaGraduationCap, FaClipboardCheck, FaCommentDots, FaBookOpen, FaMoneyBillWave, FaChalkboardTeacher, FaUserGraduate, FaUserShield, FaBuilding, FaUserPlus, FaUserEdit, FaUniversity, FaBed, FaUserTie, FaBriefcase, FaCalendarAlt, FaBook } from "react-icons/fa";
 import { FiSettings } from "react-icons/fi";
 
 const menusByRole = {
@@ -40,8 +40,11 @@ const menusByRole = {
     { Icon: FaBriefcase, label: "Opportunities", href: "/student/opportunities" },
     { Icon: FaMoneyBillWave, label: "Scholarships", href: "/student/scholarships" },
     { Icon: FaIdCard, label: "Bonafide", href: "/student/bonafide" },
+    { Icon: FaIdCard, label: "ID Card", href: "/student/id-card" },
     { Icon: FaCalendarAlt, label: "Leave", href: "/student/leaves" },
     { Icon: FaClipboardCheck, label: "PYQs", href: "/student/pyqs" },
+    { Icon: FaBook, label: "Library", href: "/student/library" },
+    { Icon: FaCommentDots, label: "Messages", href: "/student/messages" },
   ],
 
   faculty: [
@@ -49,7 +52,6 @@ const menusByRole = {
     { Icon: FaUserGraduate, label: "Students", href: "/faculty/students" },
     { Icon: FaClipboardCheck, label: "Attendance", href: "/faculty/attendance" },
     { Icon: FaGraduationCap, label: "Grade Management", href: "/faculty/grades" },
-    { Icon: MdAssessment, label: "Marks", href: "/faculty/marks" },
     { Icon: FaBookOpen, label: "Study Materials", href: "/faculty/study-material" },
     { Icon: MdAnnouncement, label: "Class Notices", href: "/faculty/class-notices" },
     { Icon: FaCalendarAlt, label: "Leave", href: "/faculty/leaves" },
@@ -121,7 +123,9 @@ const menusByRole = {
     },
     { Icon: FaMoneyBillWave, label: "Scholarships", href: "/admin/scholarships" },
     { Icon: FaIdCard, label: "Bonafide", href: "/admin/bonafide" },
+    { Icon: FaIdCard, label: "ID Card Management", href: "/admin/id-card" },
     { Icon: FaCalendarAlt, label: "Leave Management", href: "/admin/leaves" },
+    { Icon: FaBook, label: "Library Management", href: "/admin/library" },
 
   ],
 
@@ -130,6 +134,7 @@ const menusByRole = {
     { Icon: FaBriefcase, label: "Internships", href: "/alumni/internships" },
     { Icon: FaUserTie, label: "Referrals", href: "/alumni/referrals" },
     { Icon: FaMoneyBillWave, label: "Donations", href: "/alumni/donations" },
+    { Icon: FaCommentDots, label: "Messages", href: "/alumni/messages" },
     { Icon: FaUserGraduate, label: "Profile", href: "/alumni/profile" },
   ],
 
@@ -146,6 +151,7 @@ const menusByRole = {
         { label: "Manage PYQs", href: "/subadmin/pyqs/manage" }
       ]
     },
+    { Icon: FaBook, label: "Library Inventory", href: "/subadmin/library-inventory" },
   ],
 
   superadmin: [
@@ -153,13 +159,14 @@ const menusByRole = {
     { Icon: MdPendingActions, label: "View Requests", href: "/superadmin/requests" },
     { Icon: FaUniversity, label: "View All Colleges", href: "/superadmin/colleges" },
     { Icon: FaUserShield, label: "Manage Super Admins", href: "/superadmin/manage-superadmins" },
+    { Icon: FaBook, label: "Library Governance", href: "/superadmin/library-governance" },
   ]
 };
 
 const Menu = () => {
   const [openDropdowns, setOpenDropdowns] = useState({});
   const { role } = useAuth();
-  
+
   const currentRole = (role ?? "").toString().toLowerCase();
   const normalizedRole =
     currentRole === "collage_admin" || currentRole === "college_admin"

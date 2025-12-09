@@ -6,10 +6,10 @@ import Announcements from "@/components/Announcements";
 const SuperAdminPage = () => {
   // Mock data for dashboard stats
   const stats = {
-    totalColleges: 45,
-    activeColleges: 42,
-    pendingRequests: 8,
-    totalSuperAdmins: 3
+    totalColleges:4,
+    activeColleges: 1,
+    pendingRequests:3,
+    totalSuperAdmins: 1
   };
 
   const recentRequests = [
