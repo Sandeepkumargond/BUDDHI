@@ -121,6 +121,13 @@ export const AuthProvider = ({ children }) => {
           errorMsg.includes('invalid refresh token') ||
           refreshErr?.status === 401;
         
+        // Check if it's a network/server error (not an auth error)
+        const isNetworkError = 
+          errorMsg.includes('failed to fetch') ||
+          errorMsg.includes('network error') ||
+          errorMsg.includes('unable to reach') ||
+          !errorMsg; // Empty error message often means network issue
+        
         if (isDefiniteSessionError) {
           console.log('[Auth] Session definitely expired - user needs to log in again');
           // Clear everything immediately for expired sessions
@@ -131,6 +138,15 @@ export const AuthProvider = ({ children }) => {
           setLoading(false);
           return; // Exit early, no need to try fallback
         }
+        
+        if (isNetworkError) {
+          console.warn('[Auth] Network error during token refresh - keeping session, will retry later');
+          // For network errors, keep the user logged in and set a flag
+          setIsAuthenticated(true);
+          setLoading(false);
+          return; // Don't clear session for network issues
+        }
+        
         console.warn('[Auth] Token refresh failed (non-auth error):', refreshErr?.message);
         // Don't clear auth for network errors or server errors - try the fallback
       }

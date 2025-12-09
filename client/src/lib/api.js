@@ -105,20 +105,22 @@ class ApiService {
         endpoint: error?.endpoint || endpoint,
         type: error?.constructor?.name || typeof error
       };
-
-      // Reduce noise for expected session expiry errors
+      
+      // Reduce noise for expected errors
       const isSessionError = message.includes('Session expired') || message.includes('Session invalid');
-      if (!isSessionError) {
+      const isNetworkError = message.includes('Failed to fetch') || message.includes('Network error') || message.includes('Unable to reach');
+      
+      if (!isSessionError && !isNetworkError) {
         console.error('API request failed:', message);
         console.error('Error details:', errorInfo);
-      } else {
+      } else if (isSessionError) {
         console.log('Session expired, please log in again');
+      } else if (isNetworkError && !silent) {
+        console.warn('Network error - server may be unavailable:', endpoint);
       }
       throw error;
     }
-  }
-
-  // Health
+  }  // Health
   async health() {
     // No auth required; useful to detect server availability
     return this.request('/health', { method: 'GET' });
@@ -178,6 +180,28 @@ class ApiService {
     const token = res?.data?.accessToken;
     if (token) this.setAccessToken(token);
     return res;
+  }
+
+  // Change password for any authenticated role
+  async changePassword(role, { currentPassword, newPassword }) {
+    const roleEndpoints = {
+      'superadmin': '/super-admin/change-password',
+      'admin': '/admin/change-password',
+      'subadmin': '/sub-admin/change-password',
+      'student': '/student/change-password',
+      'faculty': '/faculty/change-password',
+      'alumni': '/alumni/change-password'
+    };
+
+    const endpoint = roleEndpoints[role];
+    if (!endpoint) {
+      throw new Error('Invalid role');
+    }
+
+    return this.request(endpoint, {
+      method: 'POST',
+      body: { currentPassword, newPassword },
+    });
   }
 
   // Create superadmin for testing
@@ -346,6 +370,10 @@ class ApiService {
     return this.request(`/admin/update-student/${id}`, { method: 'PATCH', body: payload });
   }
 
+  async adminDeleteStudent(studentId) {
+    return this.request('/admin/delete-student', { method: 'DELETE', body: { studentId } });
+  }
+
   async subAdminListStudents(params = {}) {
     const query = new URLSearchParams(params).toString();
     const qs = query ? `?${query}` : '';
@@ -358,6 +386,10 @@ class ApiService {
 
   async subAdminUpdateStudent(id, payload) {
     return this.request(`/sub-admin/update-student/${id}`, { method: 'PATCH', body: payload });
+  }
+
+  async subAdminDeleteStudent(studentId) {
+    return this.request('/sub-admin/delete-student', { method: 'DELETE', body: { studentId } });
   }
 
   // Departments (admin)
@@ -1154,6 +1186,46 @@ class ApiService {
   async getUnreadMessageCount() {
     return this.request('/messages/unread-count', {
       method: 'GET'
+    });
+  }
+
+  // ============ College Request Methods ============
+
+  // Submit college registration request (public)
+  async submitCollegeRequest(formData) {
+    return this.request('/college-requests/submit', {
+      method: 'POST',
+      body: formData
+    });
+  }
+
+  // SuperAdmin - Get all college requests
+  async superAdminListCollegeRequests(status = null) {
+    const params = status ? `?status=${status}` : '';
+    return this.request(`/college-requests${params}`, {
+      method: 'GET'
+    });
+  }
+
+  // SuperAdmin - Get college request by ID
+  async superAdminGetCollegeRequest(id) {
+    return this.request(`/college-requests/${id}`, {
+      method: 'GET'
+    });
+  }
+
+  // SuperAdmin - Approve college request
+  async superAdminApproveRequest(id) {
+    return this.request(`/college-requests/${id}/approve`, {
+      method: 'PATCH'
+    });
+  }
+
+  // SuperAdmin - Reject college request
+  async superAdminRejectRequest(id, reason) {
+    return this.request(`/college-requests/${id}/reject`, {
+      method: 'PATCH',
+      body: { reason }
     });
   }
 }

@@ -28,20 +28,20 @@ const UserCard = ({ type }) => {
 
   return (
     <div
-      className="rounded-2xl p-4 flex-1 min-w-[130px]
-      odd:bg-[#CFCEFF] even:bg-[#FAE27C]"
+      className="rounded-lg sm:rounded-xl lg:rounded-2xl p-3 sm:p-4 flex-1 min-w-[120px] sm:min-w-[130px]
+      odd:bg-[#CFCEFF] even:bg-[#FAE27C] transition-all hover:shadow-md"
     >
       <div className="flex justify-between items-center">
-        <span className="text-[10px] bg-white px-2 py-1 rounded-full text-green-600">
+        <span className="text-[9px] sm:text-[10px] bg-white px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-full text-green-600 font-medium">
           2024/25
         </span>
-        <Image src="/more.png" alt="" width={20} height={20} />
+        <Image src="/more.png" alt="" width={16} height={16} className="sm:w-5 sm:h-5 opacity-60" />
       </div>
 
-      <h1 className="text-2xl font-semibold my-4" title={error || ""}>
+      <h1 className="text-xl sm:text-2xl lg:text-3xl font-semibold my-2 sm:my-3 lg:my-4 truncate" title={error || ""}>
         {displayCount}
       </h1>
-      <h2 className="capitalize text-sm font-medium text-gray-500">
+      <h2 className="capitalize text-xs sm:text-sm font-medium text-gray-600">
         {displayType}s
       </h2>
     </div>

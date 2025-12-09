@@ -200,10 +200,40 @@ export default function StudentListPage() {
 
 
   /* ----------------------------
-        DELETE (Future)
+        DELETE
   ----------------------------- */
-  const handleDelete = (id) => {
-    showToast.error("Deletion feature coming soon");
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [studentToDelete, setStudentToDelete] = useState(null);
+
+  const handleDelete = (student) => {
+    setStudentToDelete(student);
+    setShowDeleteModal(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!studentToDelete) return;
+
+    try {
+      setLoading(true);
+      
+      if (role === "admin") {
+        await apiService.adminDeleteStudent(studentToDelete._id);
+      } else if (role === "subadmin") {
+        await apiService.subAdminDeleteStudent(studentToDelete._id);
+      }
+
+      showToast.success(`Student ${studentToDelete.firstName} ${studentToDelete.lastName} deleted successfully`);
+      setShowDeleteModal(false);
+      setStudentToDelete(null);
+      
+      // Refresh student list
+      await fetchStudents();
+    } catch (error) {
+      console.error("Delete error:", error);
+      showToast.error(error?.message || "Failed to delete student");
+    } finally {
+      setLoading(false);
+    }
   };
 
 
@@ -289,7 +319,7 @@ export default function StudentListPage() {
 
             {(role === "subadmin" || role === "admin") && (
               <button
-                onClick={() => handleDelete(item._id)}
+                onClick={() => handleDelete(item)}
                 className="w-7 h-7 bg-[#CFCEFF] hover:bg-[#BEBBFF] rounded-full flex items-center justify-center"
               >
                 <Image src="/delete.png" width={16} height={16} alt="delete" />
@@ -493,6 +523,47 @@ export default function StudentListPage() {
             </div>
           </div>
         </>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteModal && studentToDelete && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md">
+            <h2 className="text-xl font-bold mb-4 text-red-600">Delete Student</h2>
+            <p className="text-gray-700 mb-6">
+              Are you sure you want to delete <strong>{studentToDelete.firstName} {studentToDelete.lastName}</strong>?
+              <span className="block mt-2 text-sm text-gray-600">
+                Enrollment No: {studentToDelete.enrollmentNo}<br />
+                Roll No: {studentToDelete.rollNo}
+              </span>
+            </p>
+            <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-6">
+              <p className="text-sm text-yellow-800">
+                <strong>Warning:</strong> This action cannot be undone. The student will be permanently deleted from the system.
+              </p>
+            </div>
+            <div className="flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setShowDeleteModal(false);
+                  setStudentToDelete(null);
+                }}
+                disabled={loading}
+                className="px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmDelete}
+                disabled={loading}
+                className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 disabled:opacity-50"
+              >
+                {loading ? "Deleting..." : "Delete Student"}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
