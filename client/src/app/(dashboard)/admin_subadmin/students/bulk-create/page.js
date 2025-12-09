@@ -19,7 +19,6 @@ export default function BulkCreateStudentsPage() {
       {
         firstName: "John",
         lastName: "Doe",
-        email: "john.doe@college.edu",
         personalMail: "john.personal@gmail.com",
         gender: "Male",
         program: "B.Tech",
@@ -30,13 +29,11 @@ export default function BulkCreateStudentsPage() {
         mobile: "9876543210",
         registrationNumber: "REG001",
         dateOfAdmission: "2024-08-01",
-        dateOfBirth: "2005-05-15",
-        password: "student123"
+        dateOfBirth: "2005-05-15"
       },
       {
         firstName: "Jane",
         lastName: "Smith",
-        email: "jane.smith@college.edu",
         personalMail: "jane.personal@gmail.com",
         gender: "Female",
         program: "B.Tech",
@@ -47,8 +44,7 @@ export default function BulkCreateStudentsPage() {
         mobile: "9876543211",
         registrationNumber: "REG002",
         dateOfAdmission: "2024-08-01",
-        dateOfBirth: "2005-07-20",
-        password: "student123"
+        dateOfBirth: "2005-07-20"
       }
     ];
 
@@ -195,6 +191,7 @@ export default function BulkCreateStudentsPage() {
         <ul className="text-sm text-blue-800 space-y-1 list-disc list-inside">
           <li>Download the sample template and fill in student details</li>
           <li>All fields marked in the template are required</li>
+          <li><strong>Email and Password will be auto-generated</strong> and sent to personal email</li>
           <li>Date format: YYYY-MM-DD (e.g., 2024-08-01)</li>
           <li>Gender: Male, Female, or Other</li>
           <li>Program: B.Tech, M.Tech, or PhD</li>

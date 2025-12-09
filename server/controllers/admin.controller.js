@@ -806,11 +806,74 @@ export const adminListStudents = asyncHandler(async (req, res) => {
     if (semester) filters.semester = semester;
     if (program) filters.program = program;
 
-    const students = await Student.find(filters).select("-password -refreshToken");
+    const students = await Student.find(filters).select("-password -refreshToken").lean();
+    
+    // Import models at the top if not already imported
+    const { Attendance } = await import("../models/attendance.model.js");
+    const { GradeCard } = await import("../models/gradeCard.model.js");
+    
+    // Fetch attendance and grade data for all students
+    const enrichedStudents = await Promise.all(students.map(async (student) => {
+        // Calculate attendance percentage
+        let attendancePercentage = 0;
+        try {
+            const attendanceRecords = await Attendance.find({
+                'records.studentId': student._id
+            });
+            
+            let totalClasses = 0;
+            let presentCount = 0;
+            
+            attendanceRecords.forEach(record => {
+                const studentRecord = record.records.find(r => r.studentId.toString() === student._id.toString());
+                if (studentRecord) {
+                    totalClasses++;
+                    if (studentRecord.status === 'present') {
+                        presentCount++;
+                    }
+                }
+            });
+            
+            if (totalClasses > 0) {
+                attendancePercentage = Math.round((presentCount / totalClasses) * 100);
+            }
+        } catch (err) {
+            console.error(`Error calculating attendance for student ${student._id}:`, err);
+        }
+        
+        // Calculate CGPA from grade cards
+        let cgpa = 0;
+        try {
+            const gradeCards = await GradeCard.find({
+                studentId: student._id
+            }).sort({ semester: -1 });
+            
+            if (gradeCards.length > 0) {
+                // Use the most recent grade card's SGPA or calculate from all cards
+                const latestCard = gradeCards[0];
+                cgpa = latestCard.sgpa || 0;
+                
+                // If multiple semesters, calculate cumulative CGPA
+                if (gradeCards.length > 1) {
+                    const totalSGPA = gradeCards.reduce((sum, card) => sum + (card.sgpa || 0), 0);
+                    cgpa = parseFloat((totalSGPA / gradeCards.length).toFixed(2));
+                }
+            }
+        } catch (err) {
+            console.error(`Error calculating CGPA for student ${student._id}:`, err);
+        }
+        
+        return {
+            ...student,
+            attendance: attendancePercentage,
+            cgpa: cgpa
+        };
+    }));
+
     return res.status(200).json(
         new ApiResponse(
             200,
-            { students },
+            { students: enrichedStudents },
             "Students fetched successfully"
         )
     );
@@ -954,7 +1017,11 @@ export const bulkCreateStudents = asyncHandler(async (req, res, next) => {
 
             // Validate program/branch mapping
             if (!rollPrefixMap[program] || !rollPrefixMap[program][branch]) {
-                throw new Error(`Invalid program/branch mapping for ${program} - ${branch}`);
+                const validPrograms = Object.keys(rollPrefixMap).join(', ');
+                const validBranches = program && rollPrefixMap[program] 
+                    ? Object.keys(rollPrefixMap[program]).join(', ') 
+                    : 'CSE, ECE, EEE, ME, CE';
+                throw new Error(`Invalid program/branch: "${program}" - "${branch}". Valid programs: ${validPrograms}. Valid branches for ${program || 'B.Tech'}: ${validBranches}`);
             }
 
             const prefix = rollPrefixMap[program][branch];
@@ -1011,7 +1078,7 @@ export const bulkCreateStudents = asyncHandler(async (req, res, next) => {
             results.failed.push({
                 row: rowNumber,
                 name: `${studentData.firstName || ''} ${studentData.lastName || ''}`.trim() || 'Unknown',
-                email: studentData.email || 'N/A',
+                email: studentData.personalMail || studentData.email || 'N/A',
                 error: error.message
             });
         }

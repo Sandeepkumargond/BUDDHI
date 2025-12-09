@@ -105,20 +105,22 @@ class ApiService {
         endpoint: error?.endpoint || endpoint,
         type: error?.constructor?.name || typeof error
       };
-
-      // Reduce noise for expected session expiry errors
+      
+      // Reduce noise for expected errors
       const isSessionError = message.includes('Session expired') || message.includes('Session invalid');
-      if (!isSessionError) {
+      const isNetworkError = message.includes('Failed to fetch') || message.includes('Network error') || message.includes('Unable to reach');
+      
+      if (!isSessionError && !isNetworkError) {
         console.error('API request failed:', message);
         console.error('Error details:', errorInfo);
-      } else {
+      } else if (isSessionError) {
         console.log('Session expired, please log in again');
+      } else if (isNetworkError && !silent) {
+        console.warn('Network error - server may be unavailable:', endpoint);
       }
       throw error;
     }
-  }
-
-  // Health
+  }  // Health
   async health() {
     // No auth required; useful to detect server availability
     return this.request('/health', { method: 'GET' });
@@ -346,6 +348,10 @@ class ApiService {
     return this.request(`/admin/update-student/${id}`, { method: 'PATCH', body: payload });
   }
 
+  async adminDeleteStudent(studentId) {
+    return this.request('/admin/delete-student', { method: 'DELETE', body: { studentId } });
+  }
+
   async subAdminListStudents(params = {}) {
     const query = new URLSearchParams(params).toString();
     const qs = query ? `?${query}` : '';
@@ -358,6 +364,10 @@ class ApiService {
 
   async subAdminUpdateStudent(id, payload) {
     return this.request(`/sub-admin/update-student/${id}`, { method: 'PATCH', body: payload });
+  }
+
+  async subAdminDeleteStudent(studentId) {
+    return this.request('/sub-admin/delete-student', { method: 'DELETE', body: { studentId } });
   }
 
   // Departments (admin)
