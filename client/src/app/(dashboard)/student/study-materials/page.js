@@ -120,6 +120,7 @@ export default function StudentStudyMaterialsPage() {
   const MaterialRow = ({ item }) => {
     const isInteractive = item.materialType === "assignment" || item.materialType === "homework";
     const submitted = item._submitted === true;
+    const [selectedFile, setSelectedFile] = useState(undefined);
     return (
       <div className="rounded-xl p-4 bg-white" style={{ border: "1px solid #e5e7eb", boxShadow: "0 6px 18px rgba(2,6,23,0.06)" }}>
         <div className="flex justify-between items-center">
@@ -133,7 +134,7 @@ export default function StudentStudyMaterialsPage() {
           </div>
           <div className="flex gap-2">
             {item.fileUrl && (
-              <a href={item.fileUrl} target="_blank" rel="noopener noreferrer"
+                  <a href={(String(item.fileUrl).startsWith('/public') || String(item.fileUrl).startsWith('public')) ? `${apiService.baseURL.replace(/\/api\/v1$/, '')}${String(item.fileUrl).startsWith('public') ? `/${item.fileUrl}` : item.fileUrl}` : item.fileUrl} target="_blank" rel="noopener noreferrer"
                  className="px-3 py-1 rounded-md text-white" style={{ background: "#6366f1" }}>
                 View
               </a>
@@ -151,22 +152,27 @@ export default function StudentStudyMaterialsPage() {
           <div className="mt-4">
             <label className="block text-sm mb-2">{submitted ? 'Submission status: Submitted' : `Submit your ${item.materialType}`}</label>
             {!submitted && (
-              <input
-                type="file"
-                className="border rounded p-2 w-full"
-                onChange={(e) => {
-                  const file = e.target.files?.[0];
-                  const id = item.id || item._id;
-                  setMaterials((prev) => prev.map((m) => ((m.id || m._id) === id) ? { ...m, _selectedFile: file } : m));
-                }}
-              />
+              <div className="flex items-center gap-3">
+                <input
+                  type="file"
+                  accept="*/*"
+                  className="border rounded p-2 w-full"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    setSelectedFile(file);
+                  }}
+                />
+                {selectedFile && (
+                  <span className="text-xs text-gray-600">{selectedFile.name}</span>
+                )}
+              </div>
             )}
             <div className="flex justify-end mt-2">
-              <button onClick={() => !submitted && handleSubmit(item, item._selectedFile)}
+              <button onClick={() => !submitted && selectedFile && handleSubmit(item, selectedFile)}
                       disabled={submitted}
                       className="px-4 py-2 rounded-md text-white"
-                      style={{ background: submitted ? "#94a3b8" : "#22c55e" }}>
-                {submitted ? 'Submitted' : 'Submit'}
+                      style={{ background: submitted ? "#94a3b8" : (selectedFile ? "#22c55e" : "#94a3b8") }}>
+                {submitted ? 'Submitted' : (selectedFile ? 'Submit' : 'Choose file')}
               </button>
             </div>
           </div>

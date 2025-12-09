@@ -257,12 +257,9 @@ const uploadStudyMaterial = async (file, metadata = {}) => {
             message: error.message,
             stack: error.stack
         });
-        
-        // Delete local file even if upload fails
-        if (file.path && fs.existsSync(file.path)) {
-            fs.unlinkSync(file.path);
-            console.log('🗑️ Local file deleted after error');
-        }
+        // IMPORTANT: Do NOT delete local temp file on error.
+        // The controller may perform a local fallback move to /public/submissions.
+        // Leaving the temp file intact ensures fallback succeeds.
         
         return {
             error: true,

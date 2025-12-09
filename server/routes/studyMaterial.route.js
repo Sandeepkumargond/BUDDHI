@@ -11,7 +11,8 @@ import {
     getMaterialStats,
     getStudentMaterialOptions,
     listStudentMaterials,
-    submitStudentMaterial
+    submitStudentMaterial,
+    getMaterialSubmissions
 } from "../controllers/studyMaterial.controller.js";
 import { authenticateFaculty } from "../middlewares/faculty.middleware.js";
 import { authenticateStudent } from "../middlewares/student.middleware.js";
@@ -66,6 +67,12 @@ router.route('/faculty/:materialId').delete(
 router.route('/faculty/:materialId/download').post(
     authenticateFaculty,
     downloadMaterial
+);
+
+// Faculty view submissions for a specific material (reverse chronological)
+router.route('/faculty/:materialId/submissions').get(
+    authenticateFaculty,
+    getMaterialSubmissions
 );
 
 // Student routes (authenticated access)
