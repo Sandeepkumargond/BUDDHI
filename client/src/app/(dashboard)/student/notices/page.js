@@ -18,13 +18,13 @@ export default function StudentNoticesPage() {
 
   const categoryOptions = [
     { value: '', label: 'All Categories' },
-    { value: 'general', label: '📢 General', icon: '📢' },
-    { value: 'academic', label: '📚 Academic', icon: '📚' },
-    { value: 'examination', label: '📝 Examination', icon: '📝' },
-    { value: 'event', label: '🎉 Event', icon: '🎉' },
-    { value: 'holiday', label: '🏖️ Holiday', icon: '🏖️' },
-    { value: 'urgent', label: '🚨 Urgent', icon: '🚨' },
-    { value: 'admission', label: '🎓 Admission', icon: '🎓' }
+    { value: 'general', label: 'General', icon: '' },
+    { value: 'academic', label: 'Academic', icon: '' },
+    { value: 'examination', label: 'Examination', icon: '' },
+    { value: 'event', label: 'Event', icon: '' },
+    { value: 'holiday', label: 'Holiday', icon: '' },
+    { value: 'urgent', label: 'Urgent', icon: '' },
+    { value: 'admission', label: 'Admission', icon: '' }
   ];
 
   const priorityOptions = [
@@ -65,15 +65,15 @@ export default function StudentNoticesPage() {
 
   const getCategoryIcon = (category) => {
     const icons = {
-      general: '📢',
-      academic: '📚',
-      examination: '📝',
-      event: '🎉',
-      holiday: '🏖️',
-      urgent: '🚨',
-      admission: '🎓'
+      general: '',
+      academic: '',
+      examination: '',
+      event: '',
+      holiday: '',
+      urgent: '',
+      admission: ''
     };
-    return icons[category] || '📢';
+    return icons[category] || '';
   };
 
   const getPriorityColor = (priority) => {
@@ -115,7 +115,7 @@ export default function StudentNoticesPage() {
     <div className="p-6 max-w-6xl mx-auto">
       {/* Header */}
       <div className="mb-6">
-        <h1 className="text-3xl font-bold text-gray-900">📢 Notice Board</h1>
+        <h1 className="text-3xl font-bold text-gray-900">Notice Board</h1>
         <p className="text-gray-600 mt-1">Stay updated with the latest announcements and important information</p>
       </div>
 
@@ -208,18 +208,17 @@ export default function StudentNoticesPage() {
                 <div className="flex-1">
                   {/* Header with badges */}
                   <div className="flex items-center gap-2 mb-3">
-                    <span className="text-2xl">{getCategoryIcon(notice.category)}</span>
                     <span className={`px-3 py-1 text-xs font-medium rounded-full border ${getPriorityColor(notice.priority)}`}>
                       {notice.priority.toUpperCase()}
                     </span>
                     {notice.isPinned && (
                       <span className="px-3 py-1 text-xs font-medium rounded-full bg-purple-100 text-purple-800 border border-purple-200">
-                        📌 PINNED
+                        PINNED
                       </span>
                     )}
                     {isExpired(notice.expiryDate) && (
                       <span className="px-3 py-1 text-xs font-medium rounded-full bg-gray-100 text-gray-600 border border-gray-200">
-                        ⏰ EXPIRED
+                        EXPIRED
                       </span>
                     )}
                   </div>
@@ -288,7 +287,7 @@ export default function StudentNoticesPage() {
                       <div className="flex flex-wrap gap-2 text-sm">
                         {notice.targetSemesters?.length > 0 && (
                           <div className="flex items-center gap-1">
-                            <span className="text-gray-600">🎯 Semesters:</span>
+                            <span className="text-gray-600">Semesters:</span>
                             <span className="text-blue-600">
                               {notice.targetSemesters.join(', ')}
                             </span>
@@ -296,7 +295,7 @@ export default function StudentNoticesPage() {
                         )}
                         {notice.targetBranches?.length > 0 && (
                           <div className="flex items-center gap-1">
-                            <span className="text-gray-600">🏢 Branches:</span>
+                            <span className="text-gray-600">Branches:</span>
                             <span className="text-green-600">
                               {notice.targetBranches.join(', ')}
                             </span>

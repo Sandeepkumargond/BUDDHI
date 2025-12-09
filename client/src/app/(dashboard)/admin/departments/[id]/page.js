@@ -10,12 +10,6 @@ import FormModal from "@/components/FormModal";
 import Table from "@/components/Table";
 import Pagination from "@/components/Pagination";
 
-import {
-  departmentsData,
-  facultyData,
-  studentData,
-  coursesData,
-} from "@/lib/roushaniData";
 import { apiService } from "@/lib/api";
 
 const StatCard = ({ title, value, subtitle }) => (
@@ -44,57 +38,62 @@ const TabButton = ({ active, onClick, children }) => (
 export default function DepartmentDetailsPage() {
   const params = useParams();
   const router = useRouter();
-  const idParam = params?.id ?? params?.departmentId ?? null;
-  const deptId = Number(idParam);
-
-  // Safety: if bad id, choose first dept
-  const department =
-    departmentsData.find((d) => d.id === deptId) || departmentsData[0];
+  const deptCode = params?.id ?? null; // This is the department code from URL
 
   // UI state
   const [activeTab, setActiveTab] = useState("overview");
   const [showHodModal, setShowHodModal] = useState(false);
-  const [selectedHod, setSelectedHod] = useState(department.hod);
-  const [localDept, setLocalDept] = useState({ ...department });
+  const [selectedHod, setSelectedHod] = useState(null);
+  const [localDept, setLocalDept] = useState(null);
   const [backendDept, setBackendDept] = useState(null);
   const [deptStats, setDeptStats] = useState({ facultyCount: 0, studentCount: 0 });
-  const [loadingDept, setLoadingDept] = useState(false);
+  const [loadingDept, setLoadingDept] = useState(true);
   const [hodLoading, setHodLoading] = useState(false);
   const [facultyPage, setFacultyPage] = useState(1);
   const [studentPage, setStudentPage] = useState(1);
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
 
 
   // Derived data
   const [faculties, setFaculties] = useState([]);
+  const [feedbackAnalytics, setFeedbackAnalytics] = useState([]);
+  
   // Fetch faculty list from backend for this department
   // Fetch department details from backend
   useEffect(() => {
     let mounted = true;
     (async () => {
-      if (!localDept?.code) return;
+      if (!deptCode) return;
       setLoadingDept(true);
       try {
-        const res = await apiService.adminGetDepartment(localDept.code);
+        const res = await apiService.adminGetDepartmentByCode(deptCode);
         const dept = res?.data?.department || res?.department || null;
-        const stats = res?.data?.stats || res?.stats || { facultyCount: faculties.length, studentCount: 0 };
         if (mounted && dept) {
+          setLocalDept(dept);
           setBackendDept(dept);
-          setDeptStats(stats);
           if (dept?.hod?._id) setSelectedHod(dept.hod._id);
+          // Set stats from counts
+          const stats = {
+            facultyCount: dept.facultyCount || 0,
+            studentCount: dept.studentCount || 0
+          };
+          setDeptStats(stats);
         }
       } catch (e) {
-        // fallback: keep static department
+        toast.error('Failed to load department details');
+        router.push('/admin/departments');
       } finally {
         if (mounted) setLoadingDept(false);
       }
     })();
     return () => { mounted = false; };
-  }, [localDept.code, faculties.length]);
+  }, [deptCode, router, refreshTrigger]);
   useEffect(() => {
     let mounted = true;
     (async () => {
+      if (!localDept?.code) return;
       try {
-        const qs = localDept?.code ? `?department=${encodeURIComponent(localDept.code)}` : '';
+        const qs = `?department=${encodeURIComponent(localDept.code)}`;
         const res = await apiService.request(`/admin/get-all-faculty${qs}`);
         const list = res?.data?.faculty || [];
         if (!mounted) return;
@@ -109,14 +108,50 @@ export default function DepartmentDetailsPage() {
           photo: f.imageUrl || null,
         }));
         setFaculties(mapped);
+        // Update faculty count in stats
+        setDeptStats(prev => ({ ...prev, facultyCount: mapped.length }));
       } catch (e) {
-        // fallback to local seed data if API fails
-        const local = facultyData.filter((f) => f.departmentId === localDept.id);
-        if (mounted) setFaculties(local);
+        // fallback to empty array if API fails
+        if (mounted) setFaculties([]);
       }
     })();
     return () => { mounted = false; };
-  }, [localDept.id, localDept.code]);
+  }, [localDept?.code, refreshTrigger]);
+
+  // Fetch feedback analytics for faculty ratings
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      try {
+        console.log('[DepartmentDetails] Fetching feedback analytics');
+        const res = await apiService.getFacultyFeedbackAnalytics();
+        const analytics = res?.data?.analytics || [];
+        if (mounted) {
+          console.log('[DepartmentDetails] Got analytics:', analytics);
+          setFeedbackAnalytics(analytics);
+        }
+      } catch (e) {
+        console.error('[DepartmentDetails] Failed to fetch analytics:', e.message);
+        if (mounted) setFeedbackAnalytics([]);
+      }
+    })();
+    return () => { mounted = false; };
+  }, []);
+
+  // Merge ratings into faculties when analytics updates
+  useEffect(() => {
+    if (feedbackAnalytics.length === 0 || faculties.length === 0) return;
+    
+    const updatedFaculties = faculties.map((faculty) => {
+      const analytic = feedbackAnalytics.find((a) => a.facultyId === faculty.id);
+      return {
+        ...faculty,
+        rating: analytic?.averageRating || null,
+      };
+    });
+    
+    setFaculties(updatedFaculties);
+  }, [feedbackAnalytics]);
 
   const [students, setStudents] = useState([]);
   useEffect(() => {
@@ -135,13 +170,15 @@ export default function DepartmentDetailsPage() {
           semester: st.semester || '',
         }));
         setStudents(mapped);
+        // Update student count in stats
+        setDeptStats(prev => ({ ...prev, studentCount: mapped.length }));
       } catch (e) {
-        const local = studentData.filter((s) => s.departmentId === localDept.id);
-        if (mounted) setStudents(local);
+        // fallback to empty array if API fails
+        if (mounted) setStudents([]);
       }
     })();
     return () => { mounted = false; };
-  }, [localDept.id, localDept.code]);
+  }, [localDept?.code, refreshTrigger]);
 
   const hod = useMemo(() => {
     if (backendDept?.hod) {
@@ -154,31 +191,27 @@ export default function DepartmentDetailsPage() {
         designation: Array.isArray(backendDept.hod.designation) ? backendDept.hod.designation[0] : backendDept.hod.designation
       };
     }
-    return facultyData.find((f) => f.departmentId === localDept.id && f.id === localDept.hod) || null;
-  }, [backendDept, localDept]);
+    return null;
+  }, [backendDept]);
 
   // ⭐ Courses list for this department
-  const departmentCourses = useMemo(
-    () => coursesData.filter((c) => c.departmentId === localDept.id),
-    [localDept]
-  );
-
-  const [courses, setCourses] = useState(departmentCourses);
+  const [courses, setCourses] = useState([]);
 
   useEffect(() => {
     let mounted = true;
     (async () => {
+      if (!localDept?.code) return;
       try {
-        const res = await apiService.adminListCoursesByDepartment(localDept.id);
+        const res = await apiService.adminListCoursesByDepartment(localDept.code);
         const fetched = res?.data?.courses || res?.courses || [];
         if (mounted && Array.isArray(fetched)) setCourses(fetched);
       } catch (e) {
-        // fallback to local static if API not available
-        if (mounted) setCourses(departmentCourses);
+        // fallback to empty array if API not available
+        if (mounted) setCourses([]);
       }
     })();
-    return () => { mounted = false; };
-  }, [localDept.id, departmentCourses]);
+    return () => { mounted = false; }; 
+  }, [localDept?.code]);
 
   // Pagination (simple)
   const FACULTY_PER_PAGE = 6;
@@ -199,6 +232,7 @@ export default function DepartmentDetailsPage() {
     { header: "Designation", accessor: "designation", className: "hidden md:table-cell" },
     { header: "Email", accessor: "email", className: "hidden lg:table-cell" },
     { header: "Phone", accessor: "phone", className: "hidden lg:table-cell" },
+    { header: "Rating", accessor: "rating", className: "hidden md:table-cell" },
     { header: "Actions", accessor: "action" },
   ];
 
@@ -233,6 +267,12 @@ export default function DepartmentDetailsPage() {
       <td className="hidden md:table-cell p-4">{f.designation}</td>
       <td className="hidden lg:table-cell p-4">{f.email}</td>
       <td className="hidden lg:table-cell p-4">{f.phone}</td>
+      <td className="hidden md:table-cell p-4">
+        <div className="flex items-center gap-1">
+          <span className="text-yellow-500">★</span>
+          <span className="font-medium">{f.rating ? f.rating.toFixed(1) : 'N/A'}</span>
+        </div>
+      </td>
       <td className="p-4">
         <div className="flex items-center gap-2">
           <button className="text-sm px-3 py-1 rounded-md border border-gray-200 hover:bg-gray-50" onClick={() => openFacultyModal(f.id)}>View</button>
@@ -309,21 +349,38 @@ export default function DepartmentDetailsPage() {
     setHodLoading(true);
     try {
       await apiService.adminUpdateDepartmentHod(localDept.code, selectedHod);
-      const res = await apiService.adminGetDepartment(localDept.code);
+      const res = await apiService.adminGetDepartmentByCode(localDept.code);
       const dept = res?.data?.department || res?.department;
-      if (dept) setBackendDept(dept);
+      if (dept) {
+        setBackendDept(dept);
+        setLocalDept(dept);
+        if (dept?.hod?._id) setSelectedHod(dept.hod._id);
+      }
+      toast.success('HOD updated successfully');
     } catch (e) {
-      // silently ignore or add toast (optional)
+      toast.error(e.message || 'Failed to update HOD');
     } finally {
       setHodLoading(false);
       setShowHodModal(false);
     }
   }
 
-  function handleDeleteDepartment() {
-    // Placeholder: in real app call API then router.push back to list
-    // For now simulate by redirecting to departments list
-    router.push("/admin/departments");
+  async function handleDeleteDepartment() {
+    if (!localDept?.code) return;
+    
+    const confirmed = window.confirm(
+      `Are you sure you want to delete ${localDept.name}? This action cannot be undone.`
+    );
+    
+    if (!confirmed) return;
+    
+    try {
+      await apiService.adminDeleteDepartment(localDept.code);
+      toast.success('Department deleted successfully');
+      router.push("/admin/departments");
+    } catch (e) {
+      toast.error(e.message || 'Failed to delete department');
+    }
   }
 
   async function handleDeleteCourse(id) {
@@ -336,6 +393,20 @@ export default function DepartmentDetailsPage() {
     }
   }
 
+  // Loading state
+  if (loadingDept || !localDept) {
+    return (
+      <div className="p-4 m-4 bg-white rounded-xl border border-gray-100 shadow-sm">
+        <div className="flex items-center justify-center h-64">
+          <div className="text-center">
+            <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+            <p className="mt-2 text-gray-600">Loading department details...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   // UI
   return (
     <div className="p-4 m-4 bg-white rounded-xl border border-gray-100 shadow-sm">
@@ -345,7 +416,7 @@ export default function DepartmentDetailsPage() {
           <div className="text-sm text-gray-400">Departments / {localDept.name}</div>
           <h1 className="text-2xl font-semibold text-gray-800 mt-1">{localDept.name}</h1>
           <div className="text-sm text-gray-500 mt-1">
-            Code: <span className="font-medium text-gray-700">{localDept.code}</span> • Established {localDept.established} • <span className="px-2 py-0.5 rounded-md bg-green-50 text-green-700 text-xs">{localDept.status}</span>
+            Code: <span className="font-medium text-gray-700">{localDept.code}</span> • Established {localDept.established || localDept.establishedYear || 'N/A'} • <span className="px-2 py-0.5 rounded-md bg-green-50 text-green-700 text-xs">{localDept.status || 'Active'}</span>
           </div>
         </div>
 
@@ -475,6 +546,23 @@ export default function DepartmentDetailsPage() {
                   <h3 className="text-lg font-semibold text-gray-700">Faculty</h3>
                   <p className="text-sm text-gray-500">Manage faculty members in this department.</p>
                 </div>
+                <button
+                  onClick={async () => {
+                    try {
+                      console.log('[DepartmentDetails] Refreshing ratings...');
+                      const res = await apiService.getFacultyFeedbackAnalytics();
+                      const analytics = res?.data?.analytics || [];
+                      console.log('[DepartmentDetails] Refreshed analytics:', analytics);
+                      setFeedbackAnalytics(analytics);
+                    } catch (e) {
+                      console.error('[DepartmentDetails] Failed to refresh ratings:', e.message);
+                      toast.error('Failed to refresh ratings');
+                    }
+                  }}
+                  className="px-4 py-2 rounded-lg bg-blue-100 text-blue-600 text-sm hover:bg-blue-200 transition font-medium"
+                >
+                  🔄 Refresh Ratings
+                </button>
               </div>
 
               <div className="bg-white rounded-xl border border-gray-100 overflow-hidden">
@@ -674,6 +762,11 @@ export default function DepartmentDetailsPage() {
                   <div className="text-gray-700">{Array.isArray(facultyDetails.designation) ? facultyDetails.designation.join(', ') : facultyDetails.designation}</div>
                   <div className="text-gray-500">Account Status</div>
                   <div className="text-gray-700">{facultyDetails.accountStatus}</div>
+                  <div className="text-gray-500">Rating</div>
+                  <div className="text-gray-700 flex items-center gap-2">
+                    <span className="text-yellow-500">★</span>
+                    <span>{facultyDetails.rating ? facultyDetails.rating.toFixed(1) : 'N/A'}</span>
+                  </div>
                 </div>
               </div>
             )}

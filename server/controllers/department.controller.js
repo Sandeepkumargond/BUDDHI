@@ -43,3 +43,76 @@ export const adminListDepartments = asyncHandler(async (_req, res) => {
   const departments = await Department.find({}).populate("hod", "firstName lastName email mobile imageUrl department designation");
   return res.status(200).json(new ApiResponse(200, { departments }, "Departments fetched"));
 });
+
+export const adminCreateDepartment = asyncHandler(async (req, res) => {
+  const { code, name, description, established, status } = req.body;
+  
+  if (!code || !name) {
+    throw new ApiError(400, "Department code and name are required");
+  }
+
+  // Check if department with this code already exists
+  const existingDept = await Department.findOne({ code });
+  if (existingDept) {
+    throw new ApiError(400, "Department with this code already exists");
+  }
+
+  const department = await Department.create({
+    code: code.toUpperCase().trim(),
+    name: name.trim(),
+    description: description || "",
+    established: established || new Date().getFullYear(),
+    status: status || "Active"
+  });
+
+  return res.status(201).json(
+    new ApiResponse(201, { department }, "Department created successfully")
+  );
+});
+
+export const adminUpdateDepartment = asyncHandler(async (req, res) => {
+  const { code } = req.params;
+  const { name, description, established, status } = req.body;
+  
+  if (!code) throw new ApiError(400, "Department code is required");
+
+  const department = await Department.findOne({ code });
+  if (!department) throw new ApiError(404, "Department not found");
+
+  // Update fields
+  if (name) department.name = name.trim();
+  if (description !== undefined) department.description = description;
+  if (established) department.established = established;
+  if (status) department.status = status;
+
+  await department.save();
+
+  const updated = await Department.findById(department._id).populate("hod", "firstName lastName email mobile imageUrl department designation");
+
+  return res.status(200).json(
+    new ApiResponse(200, { department: updated }, "Department updated successfully")
+  );
+});
+
+export const adminDeleteDepartment = asyncHandler(async (req, res) => {
+  const { code } = req.params;
+  
+  if (!code) throw new ApiError(400, "Department code is required");
+
+  const department = await Department.findOne({ code });
+  if (!department) throw new ApiError(404, "Department not found");
+
+  // Check if there are any faculty or students in this department
+  const facultyCount = await Faculty.countDocuments({ department: code });
+  const studentCount = await Student.countDocuments({ branch: code });
+
+  if (facultyCount > 0 || studentCount > 0) {
+    throw new ApiError(400, `Cannot delete department. It has ${facultyCount} faculty and ${studentCount} students.`);
+  }
+
+  await Department.deleteOne({ code });
+
+  return res.status(200).json(
+    new ApiResponse(200, {}, "Department deleted successfully")
+  );
+});

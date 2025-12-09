@@ -456,6 +456,44 @@ export default function AttendancePage() {
     }
   };
 
+  // Download example Excel template matching current active days
+  const handleDownloadTemplate = async () => {
+    try {
+      const XLSX = await import('xlsx');
+      const days = Math.max(1, monthlyAttendance?.totalActiveDays || 30);
+      const headers = ['Roll no', 'Student Name', ...Array.from({ length: days }, (_, i) => `Day ${i + 1}`)];
+
+      const makeDays = (marks) => {
+        const arr = new Array(days).fill('');
+        marks.forEach((m, idx) => { if (idx < arr.length) arr[idx] = m; });
+        return arr;
+      };
+
+      const aoa = [
+        headers,
+        ['20230001', 'Sandeep K P', ...makeDays(['P', 'P', 'A'])],
+        ['20230002', 'Aryan Bansal', ...makeDays(['P', 'P', 'P'])],
+      ];
+
+      const ws = XLSX.utils.aoa_to_sheet(aoa);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, 'Attendance');
+      const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+      const blob = new Blob([wbout], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `attendance_template_${days}_days.xlsx`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    } catch (e) {
+      console.error('Failed to generate template:', e);
+      showToast.error('Failed to download template');
+    }
+  };
+
   return (
     <div className="p-6">
       {!attendanceLoaded ? (
@@ -976,6 +1014,14 @@ export default function AttendancePage() {
                     <p className="text-sm text-yellow-700 mt-2">
                       💡 <strong>Tip:</strong> The system will count all P's for each student and update their attendance accordingly.
                     </p>
+                    <div className="mt-4">
+                      <button
+                        onClick={handleDownloadTemplate}
+                        className="px-4 py-2 bg-[#C3EBFA] hover:bg-[#A8DBF2] text-gray-700 rounded-lg font-medium"
+                      >
+                        ⬇ Download example Excel sheet
+                      </button>
+                    </div>
                   </div>
 
                   {/* File Upload */}

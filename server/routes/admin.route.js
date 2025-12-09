@@ -1,16 +1,17 @@
 import { Router } from "express";
 import { loginAdmin, logoutAdmin, refreshAdminAccessToken, changeAdminPassword, updateAdminAccountDetails, updateAdminImage, createStudent, updateStudent, createFaculty, createSubAdmin, deleteStudent, deleteFaculty, deleteSubAdmin, getAllFaculty, getAllSubAdmins, getAdminById, getAllStudents, getMyProfile, getDashboardStats } from "../controllers/admin.controller.js";
 import { getSubAdminById } from "../controllers/subAdmin.controller.js";
-import { adminGetFeePaymentById, adminGetReceiptRedirect, adminListFeePayments, adminCreateFeeStructure, adminGetFeeStructureById, adminListFeeStructures, adminPublishFeeStructure } from "../controllers/feePayment.controller.js";
+import { adminGetFeePaymentById, adminGetReceiptRedirect, adminListFeePayments, adminCreateFeeStructure, adminGetFeeStructureById, adminListFeeStructures, adminPublishFeeStructure, adminUpdateFeeStructure, adminDeleteFeeStructure, getStudentFeeRecords } from "../controllers/feePayment.controller.js";
 import { validateAdminFeePaymentQuery, validateCreateFeeStructure } from "../middlewares/feePayment.middleware.js";
 import { authenticateAdmin } from "../middlewares/admin.middleware.js";
 import { upload } from "../middlewares/multer.middleware.js";
 import { adminCreateCourse, adminListDepartmentCourses, adminDeleteCourse, adminListDepartmentCoursesByCode, adminListAllCourses, getCoursesForGradeCard } from "../controllers/course.controller.js";
 import { adminCreateRegistrationForm, adminListRegistrationForms, adminPublishRegistrationForm, adminListFormSubmissions, adminListAllRegistrations, adminDeleteRegistrationForm } from "../controllers/registration.controller.js";
 import { adminGetAdmitCardByDeptSem, adminPublishAdmitCard, adminListAdmitCards, adminDeleteAdmitCard } from "../controllers/admitCard.controller.js";
-import { adminGetDepartmentByCode, adminUpdateDepartmentHod, adminListDepartments } from "../controllers/department.controller.js";
+import { adminGetDepartmentByCode, adminUpdateDepartmentHod, adminListDepartments, adminCreateDepartment, adminUpdateDepartment, adminDeleteDepartment } from "../controllers/department.controller.js";
 import { adminListStudents } from "../controllers/admin.controller.js";
 import { assignCourseToFaculty, removeCourseFromFaculty } from "../controllers/attendance.controller.js";
+import { getStudentRiskAnalytics } from "../controllers/analytics.controller.js";
 
 const router = Router();
 
@@ -117,6 +118,22 @@ router.route('/fee-structure/:id/publish').patch(
     authenticateAdmin,
     adminPublishFeeStructure
 )
+
+router.route('/fee-structure/:id').patch(
+    authenticateAdmin,
+    adminUpdateFeeStructure
+)
+
+router.route('/fee-structure/:id').delete(
+    authenticateAdmin,
+    adminDeleteFeeStructure
+)
+
+router.route('/student-fee-records').get(
+    authenticateAdmin,
+    getStudentFeeRecords
+)
+
 router.route('/get-all-faculty').get(getAllFaculty);
 router.route('/sub-admins').get(
     authenticateAdmin,
@@ -162,15 +179,14 @@ router.route('/courses/grade-card/options').get(
 );
 
 // Departments (admin)
-router.route('/departments').get(
-    authenticateAdmin,
-    adminListDepartments
-);
+router.route('/departments')
+    .get(authenticateAdmin, adminListDepartments)
+    .post(authenticateAdmin, adminCreateDepartment);
 
-router.route('/departments/:code').get(
-    authenticateAdmin,
-    adminGetDepartmentByCode
-);
+router.route('/departments/:code')
+    .get(authenticateAdmin, adminGetDepartmentByCode)
+    .patch(authenticateAdmin, adminUpdateDepartment)
+    .delete(authenticateAdmin, adminDeleteDepartment);
 
 router.route('/departments/:code/hod').patch(
     authenticateAdmin,
@@ -255,6 +271,12 @@ router.route('/students').get(
 router.route('/dashboard-stats').get(
     authenticateAdmin,
     getDashboardStats
+);
+
+// Analytics
+router.route('/analytics/risk-trends').get(
+    authenticateAdmin,
+    getStudentRiskAnalytics
 );
 
 // Keep generic id route last

@@ -198,56 +198,56 @@ export default function NoticesListPage() {
       {/* Statistics */}
       {stats && (
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+          <div className="p-4 rounded-lg border" style={{ backgroundColor: '#AEE7F7', borderColor: '#AEE7F7' }}>
             <div className="flex items-center">
-              <div className="p-2 bg-blue-600 rounded-lg">
+              <div className="p-2 rounded-lg" style={{ backgroundColor: '#8DD4E8' }}>
                 <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                 </svg>
               </div>
               <div className="ml-4">
-                <p className="text-sm font-medium text-blue-600">Total Notices</p>
-                <p className="text-2xl font-bold text-blue-900">{stats.totalNotices}</p>
+                <p className="text-sm font-medium text-gray-700">Total Notices</p>
+                <p className="text-2xl font-bold text-gray-900">{stats.totalNotices}</p>
               </div>
             </div>
           </div>
-          <div className="bg-green-50 p-4 rounded-lg border border-green-200">
+          <div className="p-4 rounded-lg border" style={{ backgroundColor: '#C9CCFF', borderColor: '#C9CCFF' }}>
             <div className="flex items-center">
-              <div className="p-2 bg-green-600 rounded-lg">
+              <div className="p-2 rounded-lg" style={{ backgroundColor: '#A8ACFF' }}>
                 <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                 </svg>
               </div>
               <div className="ml-4">
-                <p className="text-sm font-medium text-green-600">Active Notices</p>
-                <p className="text-2xl font-bold text-green-900">{stats.activeNotices}</p>
+                <p className="text-sm font-medium text-gray-700">Active Notices</p>
+                <p className="text-2xl font-bold text-gray-900">{stats.activeNotices}</p>
               </div>
             </div>
           </div>
-          <div className="bg-purple-50 p-4 rounded-lg border border-purple-200">
+          <div className="p-4 rounded-lg border" style={{ backgroundColor: '#F9DB66', borderColor: '#F9DB66' }}>
             <div className="flex items-center">
-              <div className="p-2 bg-purple-600 rounded-lg">
+              <div className="p-2 rounded-lg" style={{ backgroundColor: '#F7CD3E' }}>
                 <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
                 </svg>
               </div>
               <div className="ml-4">
-                <p className="text-sm font-medium text-purple-600">Pinned Notices</p>
-                <p className="text-2xl font-bold text-purple-900">{stats.pinnedNotices}</p>
+                <p className="text-sm font-medium text-gray-700">Pinned Notices</p>
+                <p className="text-2xl font-bold text-gray-900">{stats.pinnedNotices}</p>
               </div>
             </div>
           </div>
-          <div className="bg-orange-50 p-4 rounded-lg border border-orange-200">
+          <div className="p-4 rounded-lg border" style={{ backgroundColor: '#AEE7F7', borderColor: '#AEE7F7' }}>
             <div className="flex items-center">
-              <div className="p-2 bg-orange-600 rounded-lg">
+              <div className="p-2 rounded-lg" style={{ backgroundColor: '#8DD4E8' }}>
                 <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                 </svg>
               </div>
               <div className="ml-4">
-                <p className="text-sm font-medium text-orange-600">Total Views</p>
-                <p className="text-2xl font-bold text-orange-900">{stats.totalViews}</p>
+                <p className="text-sm font-medium text-gray-700">Total Views</p>
+                <p className="text-2xl font-bold text-gray-900">{stats.totalViews}</p>
               </div>
             </div>
           </div>
@@ -376,7 +376,7 @@ export default function NoticesListPage() {
           {notices.map((notice) => (
             <div
               key={notice._id}
-              className={`bg-white rounded-lg border p-6 hover:shadow-lg transition-shadow ${notice.isPinned ? 'ring-2 ring-purple-200 bg-purple-50' : ''
+              className={`bg-white rounded-lg border p-6 hover:shadow-lg transition-shadow ${notice.isPinned ? 'ring-2 ring-purple-200' : ''
                 }`}
             >
               {/* Header */}
@@ -430,39 +430,37 @@ export default function NoticesListPage() {
               <div className="flex gap-2">
                 <Link
                   href={`/admin/notices/${notice._id}`}
-                  className="flex-1 bg-blue-600 text-white text-center py-2 px-3 rounded text-sm hover:bg-blue-700"
+                  className="flex-1 text-gray-700 text-center py-2 px-3 rounded text-sm hover:opacity-80"
+                  style={{ backgroundColor: '#AEE7F7' }}
                 >
                   View
                 </Link>
                 <Link
                   href={`/admin/notices/${notice._id}/edit`}
-                  className="flex-1 bg-gray-600 text-white text-center py-2 px-3 rounded text-sm hover:bg-gray-700"
+                  className="flex-1 text-gray-700 text-center py-2 px-3 rounded text-sm hover:opacity-80"
+                  style={{ backgroundColor: '#C9CCFF' }}
                 >
                   Edit
                 </Link>
                 <button
                   onClick={() => toggleNoticePin(notice._id, notice.isPinned)}
-                  className={`px-3 py-2 rounded text-sm ${notice.isPinned
-                      ? 'bg-purple-600 text-white hover:bg-purple-700'
-                      : 'bg-purple-100 text-purple-700 hover:bg-purple-200'
-                    }`}
+                  className="px-3 py-2 rounded text-sm text-gray-700 hover:opacity-80"
+                  style={{ backgroundColor: notice.isPinned ? '#F9DB66' : '#F9DB6680' }}
                   title={notice.isPinned ? 'Unpin' : 'Pin'}
                 >
                   {notice.isPinned ? 'Unpin' : 'Pin'}
                 </button>
                 <button
                   onClick={() => toggleNoticeStatus(notice._id, notice.isActive)}
-                  className={`px-3 py-2 rounded text-sm ${notice.isActive
-                      ? 'bg-red-100 text-red-700 hover:bg-red-200'
-                      : 'bg-green-100 text-green-700 hover:bg-green-200'
-                    }`}
+                  className="px-3 py-2 rounded text-sm hover:opacity-80"
+                  style={{ backgroundColor: notice.isActive ? '#AEE7F7' : '#C9CCFF', color: '#374151' }}
                   title={notice.isActive ? 'Deactivate' : 'Activate'}
                 >
                   {notice.isActive ? 'Deactivate' : 'Activate'}
                 </button>
                 <button
                   onClick={() => deleteNotice(notice._id)}
-                  className="px-3 py-2 bg-red-100 text-red-700 rounded text-sm hover:bg-red-200"
+                  className="px-3 py-2 rounded text-sm bg-red-100 text-red-700 hover:bg-red-200"
                   title="Delete"
                 >
                   Delete
