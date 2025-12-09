@@ -180,6 +180,28 @@ class ApiService {
     return res;
   }
 
+  // Change password for any authenticated role
+  async changePassword(role, { currentPassword, newPassword }) {
+    const roleEndpoints = {
+      'superadmin': '/super-admin/change-password',
+      'admin': '/admin/change-password',
+      'subadmin': '/sub-admin/change-password',
+      'student': '/student/change-password',
+      'faculty': '/faculty/change-password',
+      'alumni': '/alumni/change-password'
+    };
+
+    const endpoint = roleEndpoints[role];
+    if (!endpoint) {
+      throw new Error('Invalid role');
+    }
+
+    return this.request(endpoint, {
+      method: 'POST',
+      body: { currentPassword, newPassword },
+    });
+  }
+
   // Create superadmin for testing
   async createSuperAdmin(userData) {
     return this.request('/super-admin/register', {

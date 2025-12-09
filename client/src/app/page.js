@@ -35,7 +35,7 @@ const Homepage = () => {
   return (
     <>
      <nav className='fixed top-2 z-50 w-screen px-4' role="navigation" aria-label="Main navigation">
-      <div className='container mx-auto flex items-center justify-between rounded-lg backdrop-blur-3xl min-h-[40px] bg-black/30 px-4 py-3 shadow-md'>
+      <div className='container mx-auto flex items-center justify-between rounded-lg backdrop-blur-3xl min-h-10 bg-black/30 px-4 py-3 shadow-md'>
         <div className='flex items-center gap-3'>
           <Link href="#" className='flex items-center gap-2'>
             <Image 
@@ -176,7 +176,7 @@ const Homepage = () => {
 
     {/* How it Works */}
 
-    <section id="how-it-works" className="bg-gradient-to-b from-gray-50 to-white py-20">
+    <section id="how-it-works" className="bg-linear-to-b from-gray-50 to-white py-20">
       <div className="container mx-auto px-6 md:px-12 lg:px-20">
         {/* Header */}
         <div className="text-center mb-16">
@@ -239,7 +239,7 @@ const Homepage = () => {
                 <div key={index} className="flex items-start gap-6">
                   {/* Circle Step */}
                   <div 
-                    className="w-20 h-20 rounded-full flex items-center justify-center font-bold text-2xl flex-shrink-0"
+                    className="w-20 h-20 rounded-full flex items-center justify-center font-bold text-2xl shrink-0"
                     style={{ 
                       backgroundColor: bgColor,
                       color: '#ffffff',
@@ -340,7 +340,7 @@ const Homepage = () => {
           return (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
               {FEATURES.map(feature => (
-                <div key={feature.id} className="bg-white rounded-xl border-2 p-8 shadow-lg hover:shadow-2xl transition-all duration-300 flex flex-col justify-between min-h-[320px] hover:scale-105 hover:border-opacity-80" style={{ borderColor: 'var(--primary)' }}>
+                <div key={feature.id} className="bg-white rounded-xl border-2 p-8 shadow-lg hover:shadow-2xl transition-all duration-300 flex flex-col justify-between min-h-80 hover:scale-105 hover:border-opacity-80" style={{ borderColor: 'var(--primary)' }}>
                   <div>
                     <div className="mb-4 flex items-center justify-between">
                       <span className="inline-block bg-slate-800 text-white text-sm font-medium px-4 py-2 rounded-full shadow-md">{feature.title.split(' ')[0]}</span>
@@ -375,7 +375,7 @@ const Homepage = () => {
     </section>
 
     {/* services Section */}
-    <section id="services" className='py-20 bg-gradient-to-b from-gray-50 to-white'>
+    <section id="services" className='py-20 bg-linear-to-b from-gray-50 to-white'>
       <div className='container mx-auto px-6 md:px-12 lg:px-20'>
         <div className="text-center mb-16">
           <h2 className="text-4xl md:text-5xl font-bold text-gray-900 tracking-tight">
@@ -397,7 +397,7 @@ const Homepage = () => {
                 height={800}
                 alt="services"
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent"></div>
+              <div className="absolute inset-0 bg-linear-to-t from-black/30 to-transparent"></div>
             </div>
           </div>
 
@@ -409,6 +409,120 @@ const Homepage = () => {
               </p>
             </div>
           </div>
+        </div>
+      </div>
+    </section>
+
+    {/* FAQ & Policies Section */}
+    <section id="faq" className="py-20 bg-white">
+      <div className="container mx-auto px-6 md:px-12 lg:px-20 grid lg:grid-cols-2 gap-12 items-start">
+        {/* FAQ */}
+        <div>
+          <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">FAQs</h2>
+          <p className="text-gray-600 mb-6">Quick answers to common questions about Buddhi ERP.</p>
+          <div className="space-y-4">
+            {FAQ.slice(0,6).map((item) => (
+              <details key={item.value} className="group border border-gray-200 rounded-lg bg-gray-50 px-4 py-3" open={false}>
+                <summary className="flex justify-between items-center cursor-pointer text-sm font-semibold text-gray-800">
+                  {item.question}
+                  <span className="text-gray-500 group-open:rotate-180 transition-transform">⌄</span>
+                </summary>
+                <p className="mt-2 text-sm text-gray-600 leading-relaxed">{item.answer}</p>
+              </details>
+            ))}
+          </div>
+        </div>
+
+        {/* Policies */}
+        <div className="bg-gray-50 border border-gray-200 rounded-2xl p-6 shadow-sm">
+          <h3 className="text-2xl font-bold text-gray-900 mb-3">Policies & Compliance</h3>
+          <p className="text-gray-600 mb-5">Transparent guidelines that protect students, faculty, and administrators.</p>
+          <ul className="space-y-3 text-sm text-gray-700">
+            <li className="flex items-start gap-3"><CircleCheckBig className="w-4 h-4 text-green-500 mt-1" /> Privacy & Data Protection</li>
+            <li className="flex items-start gap-3"><CircleCheckBig className="w-4 h-4 text-green-500 mt-1" /> Secure Access & Role-based Controls</li>
+            <li className="flex items-start gap-3"><CircleCheckBig className="w-4 h-4 text-green-500 mt-1" /> Attendance & Academic Integrity</li>
+            <li className="flex items-start gap-3"><CircleCheckBig className="w-4 h-4 text-green-500 mt-1" /> Refunds, Fees, and Escalation Handling</li>
+            <li className="flex items-start gap-3"><CircleCheckBig className="w-4 h-4 text-green-500 mt-1" /> Incident Response & Support SLAs</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    {/* Circulars Section */}
+    <section id="circulars" className="py-20 bg-linear-to-b from-gray-50 to-white">
+      <div className="container mx-auto px-6 md:px-12 lg:px-20">
+        <div className="flex items-center justify-between mb-8">
+          <div>
+            <h2 className="text-3xl md:text-4xl font-bold text-gray-900">Circulars & Notices</h2>
+            <p className="text-gray-600 mt-2">Latest updates for students and staff.</p>
+          </div>
+          <Link href="/login" className="text-sm font-semibold text-blue-600 hover:text-blue-800">View Dashboard →</Link>
+        </div>
+
+        <div className="grid gap-4 md:grid-cols-2">
+          {[{
+            title: "Exam Schedule Update",
+            date: "Feb 02, 2025",
+            body: "Mid-sem exams will follow the revised timetable published in the dashboard."
+          }, {
+            title: "Hostel Allotment",
+            date: "Jan 28, 2025",
+            body: "Room allocations are live; check your hostel portal for details."
+          }, {
+            title: "Fee Payment Reminder",
+            date: "Jan 20, 2025",
+            body: "Second installment due this month. Pay online via the payments tab."
+          }, {
+            title: "Placement Drive",
+            date: "Jan 15, 2025",
+            body: "Register for the upcoming placement drive; slots are limited."
+          }].map((item, idx) => (
+            <div key={idx} className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm hover:shadow-md transition">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs font-semibold text-blue-600">{item.date}</span>
+                <span className="text-[10px] uppercase tracking-wide text-gray-500">Circular</span>
+              </div>
+              <h3 className="text-lg font-bold text-gray-900 mb-1">{item.title}</h3>
+              <p className="text-sm text-gray-600 leading-relaxed">{item.body}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+
+    {/* Student Services Section */}
+    <section id="student-services" className="py-20 bg-white">
+      <div className="container mx-auto px-6 md:px-12 lg:px-20">
+        <div className="text-center mb-12">
+          <h2 className="text-3xl md:text-4xl font-bold text-gray-900">Student Services</h2>
+          <p className="mt-3 text-gray-600">Everything students need in one place—fast, simple, and transparent.</p>
+        </div>
+
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+          {[{
+            title: "Admit Cards",
+            desc: "Instantly download hall tickets with live status updates.",
+          }, {
+            title: "Grade Cards",
+            desc: "View results, SGPA/CGPA, and download official PDFs.",
+          }, {
+            title: "Bonafide & ID Cards",
+            desc: "Request bonafide certificates and digital ID cards in minutes.",
+          }, {
+            title: "Hostel & Leave",
+            desc: "Apply for hostel rooms, raise complaints, and submit leave requests online.",
+          }, {
+            title: "Fees & Payments",
+            desc: "Pay fees securely, track receipts, and monitor dues in real time.",
+          }, {
+            title: "Support & Queries",
+            desc: "Raise tickets, get notifications, and stay updated on actions."
+          }].map((item, idx) => (
+            <div key={idx} className="border border-gray-200 rounded-xl p-6 shadow-sm bg-gray-50 hover:shadow-md transition">
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">{item.title}</h3>
+              <p className="text-sm text-gray-600 leading-relaxed">{item.desc}</p>
+            </div>
+          ))}
         </div>
       </div>
     </section>
