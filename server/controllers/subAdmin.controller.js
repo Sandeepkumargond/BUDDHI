@@ -203,7 +203,9 @@ export const refreshSubAdminAccessToken = asyncHandler(async (req, res) => {
         }
 
         if (incomingRefreshToken !== subAdmin.refreshToken) {
-            throw new ApiError(401, "Refresh Token is expired or used");
+            // Clear the invalid refresh token
+            await SubAdmin.findByIdAndUpdate(subAdmin._id, { $unset: { refreshToken: 1 } });
+            throw new ApiError(401, "Refresh Token is expired or used. Please log in again.");
         }
 
         const options = {
@@ -226,7 +228,11 @@ export const refreshSubAdminAccessToken = asyncHandler(async (req, res) => {
                 )
             )
     } catch (error) {
-        throw new ApiError(401, error?.message || "Invalid Refresh Token")
+        // Clear cookies on token refresh failure
+        const options = { httpOnly: true, secure: true, sameSite: 'None' };
+        res.clearCookie("accessToken", options);
+        res.clearCookie("refreshToken", options);
+        throw new ApiError(401, error?.message || "Invalid Refresh Token. Please log in again.")
     }
 });
 
@@ -534,3 +540,104 @@ export const getAllStudents = asyncHandler(async (req, res) => {
     );
 });
 
+// Bulk create students from Excel/CSV
+export const bulkCreateStudents = asyncHandler(async (req, res, next) => {
+    const { students } = req.body;
+
+    if (!students || !Array.isArray(students) || students.length === 0) {
+        throw new ApiError(400, "Students array is required and must not be empty");
+    }
+
+    const results = {
+        success: [],
+        failed: []
+    };
+
+    for (let i = 0; i < students.length; i++) {
+        const studentData = students[i];
+        const rowNumber = i + 2; // Excel row (header is row 1)
+
+        try {
+            const { firstName, lastName, email, personalMail, gender, program, branch, semester, section, batch, mobile, registrationNumber, dateOfAdmission, password, dateOfBirth } = studentData;
+
+            // Validate required fields
+            const required = { firstName, lastName, email, gender, personalMail, program, branch, semester, mobile, registrationNumber, dateOfAdmission, password };
+            for (const [k, v] of Object.entries(required)) {
+                if (v === undefined || v === null || v === '') {
+                    throw new Error(`${k} is required`);
+                }
+            }
+
+            // Check for existing student
+            const existingStudent = await Student.findOne(
+                { $or: [{ email }, { personalMail }, { registrationNumber }] }
+            );
+
+            if (existingStudent) {
+                throw new Error("Student with provided email, personal mail or registration number already exists");
+            }
+
+            // Validate program/branch mapping
+            if (!rollPrefixMap[program] || !rollPrefixMap[program][branch]) {
+                throw new Error(`Invalid program/branch mapping for ${program} - ${branch}`);
+            }
+
+            const prefix = rollPrefixMap[program][branch];
+            const admissionYear = new Date(dateOfAdmission).getFullYear();
+            const enrollmentNo = await generateEnrollmentNo();
+            const { raw: rollSeq, formatted: rollNo } = await generateRollNo(prefix, admissionYear);
+
+            const student = new Student({
+                firstName,
+                lastName,
+                email,
+                enrollmentNo,
+                rollNo,
+                dateOfBirth,
+                dateOfAdmission,
+                personalMail,
+                program,
+                gender,
+                branch,
+                semester,
+                section,
+                batch,
+                mobile,
+                registrationNumber,
+                password
+            });
+
+            await student.save();
+
+            results.success.push({
+                row: rowNumber,
+                name: `${firstName} ${lastName}`,
+                email,
+                rollNo,
+                registrationNumber
+            });
+
+        } catch (error) {
+            results.failed.push({
+                row: rowNumber,
+                name: `${studentData.firstName || ''} ${studentData.lastName || ''}`.trim() || 'Unknown',
+                email: studentData.email || 'N/A',
+                error: error.message
+            });
+        }
+    }
+
+    return res.status(200).json(
+        new ApiResponse(
+            200,
+            {
+                total: students.length,
+                successCount: results.success.length,
+                failedCount: results.failed.length,
+                success: results.success,
+                failed: results.failed
+            },
+            `Bulk upload completed: ${results.success.length} succeeded, ${results.failed.length} failed`
+        )
+    );
+});

@@ -49,7 +49,6 @@ const menusByRole = {
     { Icon: FaUserGraduate, label: "Students", href: "/faculty/students" },
     { Icon: FaClipboardCheck, label: "Attendance", href: "/faculty/attendance" },
     { Icon: FaGraduationCap, label: "Grade Management", href: "/faculty/grades" },
-    { Icon: MdAssessment, label: "Marks", href: "/faculty/marks" },
     { Icon: FaBookOpen, label: "Study Materials", href: "/faculty/study-material" },
     { Icon: MdAnnouncement, label: "Class Notices", href: "/faculty/class-notices" },
     { Icon: FaCalendarAlt, label: "Leave", href: "/faculty/leaves" },
