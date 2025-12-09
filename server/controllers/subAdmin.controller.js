@@ -509,18 +509,37 @@ export const updateStudent = asyncHandler(async (req, res, next) => {
 export const createFaculty = asyncHandler(async (req, res, next) => {
     const { firstName, lastName, email, personalMail, gender, department, mobile, joiningDate, password, dateOfBirth } = req.body;
 
-    const values = { firstName, lastName, email, personalMail, gender, department, mobile, joiningDate, password, dateOfBirth };
+    // Check required fields (email and password are now optional - will be auto-generated)
+    const values = { firstName, lastName, personalMail, gender, department, mobile, joiningDate, dateOfBirth };
     for (const [k, v] of Object.entries(values)) {
         if (v === undefined) throw new ApiError(400, `${k} is required`);
     }
 
+    // Generate unique university email if not provided
+    let universityEmail = email;
+    if (!universityEmail) {
+        universityEmail = await generateUniqueEmail(firstName);
+    } else {
+        // Check if provided email already exists
+        const existingEmail = await Faculty.findOne({ email: universityEmail.toLowerCase() });
+        if (existingEmail) {
+            throw new ApiError(400, "Faculty with provided email already exists");
+        }
+    }
 
+    // Check if personal email already exists
     const existingFaculty = await Faculty.findOne(
-        { $or: [{ email }, { personalMail }] }
+        { personalMail }
     );
 
     if (existingFaculty) {
-        throw new ApiError(400, "Faculty with provided email, personal mail or registration number already exists");
+        throw new ApiError(400, "Faculty with provided personal mail already exists");
+    }
+
+    // Generate secure password if not provided
+    let facultyPassword = password;
+    if (!facultyPassword) {
+        facultyPassword = generateSecurePassword(14);
     }
 
     if (!deptartmentMap[department]) {
@@ -533,7 +552,7 @@ export const createFaculty = asyncHandler(async (req, res, next) => {
     const faculty = new Faculty({
         firstName,
         lastName,
-        email,
+        email: universityEmail,
         personalMail,
         facultyId,
         dateOfBirth,
@@ -541,10 +560,25 @@ export const createFaculty = asyncHandler(async (req, res, next) => {
         gender,
         joiningDate,
         mobile,
-        password
+        password: facultyPassword
     });
 
     await faculty.save();
+
+    // Send credentials email to personal mail
+    try {
+        await sendCredentialsEmail({
+            recipientEmail: personalMail,
+            firstName,
+            lastName,
+            universityEmail,
+            password: facultyPassword,
+            userType: 'Faculty'
+        });
+    } catch (emailError) {
+        console.error('Warning: Failed to send credentials email:', emailError.message);
+        // Continue even if email fails - faculty account is already created
+    }
 
     const createdFaculty = await getFacultyDetailsById(faculty?._id);
 
@@ -558,7 +592,7 @@ export const createFaculty = asyncHandler(async (req, res, next) => {
             {
                 faculty: createdFaculty,
             },
-            "Faculty created successfully"
+            "Faculty created successfully. Credentials have been sent to personal email."
         )
     );
 });
