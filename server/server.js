@@ -11,8 +11,13 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 
 // Allow multiple origins via comma-separated env; default to localhost:3000 for dev
+const allowedOrigins = (process.env.CORS_ORIGIN || 'http://localhost:3000')
+    .split(',')
+    .map(o => o.trim())
+    .filter(Boolean);
+
 app.use(cors({
-    origin: '*',
+    origin: allowedOrigins,
     credentials: true,
 }));
 
