@@ -545,7 +545,7 @@ const FeePaymentPage = () => {
               <h2 className="text-lg font-semibold mb-4">Student Information</h2>
               <div className="flex items-center mb-4">
                 <Image 
-                  src={studentData?.photo || "/noAvatar.png"} 
+                  src={studentData?.imageUrl || "/noAvatar.png"} 
                   alt="" 
                   width={60} 
                   height={60} 

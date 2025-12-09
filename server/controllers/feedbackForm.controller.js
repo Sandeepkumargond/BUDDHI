@@ -211,15 +211,20 @@ export const getFeedbackFormsForStudent = asyncHandler(async (req, res) => {
   const completedFormMap = new Set();
   
   submissions.forEach(sub => {
-    // Check if submission matches based on form and course-faculty combo
-    completedFormMap.add(`${sub.formId}---${sub.courseId}---${sub.facultyId}`);
-    completedFormMap.add(`${sub.formId}`); // Also keep base form ID for backward compatibility
+    // Only use composite key for course-faculty specific submissions
+    if (sub.courseId && sub.facultyId) {
+      completedFormMap.add(`${sub.formId}---${sub.courseId}---${sub.facultyId}`);
+    } else {
+      // For old submissions without course/faculty, only mark the base form
+      completedFormMap.add(`${sub.formId}`);
+    }
   });
 
   // Step 5: Add completion status and group by subject
   const formsWithStatus = replicatedForms.map((form) => {
     const compositeKey = `${form.baseFormId}---${form.courseId}---${form.facultyId}`;
-    const isCompleted = completedFormMap.has(compositeKey) || completedFormMap.has(form.baseFormId?.toString());
+    // Only check composite key, not the base form ID alone (unless it's a legacy submission)
+    const isCompleted = completedFormMap.has(compositeKey);
     
     return {
       ...form,

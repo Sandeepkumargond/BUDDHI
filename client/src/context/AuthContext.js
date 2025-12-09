@@ -142,30 +142,45 @@ export const AuthProvider = ({ children }) => {
   const checkAuthStatus = async () => {
     try {
       const savedRole = localStorage.getItem('userRole');
-      if (savedRole) {
-        console.log('Checking auth status for role:', savedRole);
-        const profileData = await apiService.getProfile(savedRole);
-        console.log('Profile data received:', profileData);
-        
-        const userData = profileData.data?.user || profileData.data?.superAdmin || profileData.data?.admin || profileData.data?.subAdmin || profileData.data?.student || profileData.data?.faculty || profileData.data?.alumni;
-        
-        if (userData) {
-          setUser(userData);
-          setRole(savedRole);
-          setIsAuthenticated(true);
-        } else {
-          throw new Error('No user data found in response');
-        }
+      if (!savedRole) {
+        setIsAuthenticated(false);
+        return;
+      }
+      
+      console.log('Checking auth status for role:', savedRole);
+      const profileData = await apiService.getProfile(savedRole);
+      console.log('Profile data received:', profileData);
+      
+      const userData = profileData.data?.user || profileData.data?.superAdmin || profileData.data?.admin || profileData.data?.subAdmin || profileData.data?.student || profileData.data?.faculty || profileData.data?.alumni;
+      
+      if (userData) {
+        setUser(userData);
+        setRole(savedRole);
+        setIsAuthenticated(true);
+      } else {
+        throw new Error('No user data found in response');
       }
     } catch (error) {
       console.error('Auth status check failed:', error);
-      // User not authenticated or token expired
-      localStorage.removeItem('userRole');
-      setUser(null);
-      setRole(null);
-      setIsAuthenticated(false);
-    } finally {
-      setLoading(false);
+      
+      // Only clear auth if it's actually an authentication error (401, 403, or session expired)
+      const isAuthError = error?.status === 401 || 
+                         error?.status === 403 || 
+                         error?.message?.includes('Session expired') ||
+                         error?.message?.includes('Session invalid') ||
+                         error?.message?.includes('Unauthorized') ||
+                         error?.message?.includes('Token');
+      
+      if (isAuthError) {
+        console.log('Authentication error detected - clearing session');
+        localStorage.removeItem('userRole');
+        setUser(null);
+        setRole(null);
+        setIsAuthenticated(false);
+      } else {
+        // For other errors, keep the user logged in
+        console.warn('Non-auth error in checkAuthStatus - keeping user logged in');
+      }
     }
   };
 
