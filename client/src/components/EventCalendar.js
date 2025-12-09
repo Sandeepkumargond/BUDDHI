@@ -78,27 +78,27 @@ const EventCalendar = () => {
   }, []);
 
   return (
-    <div className="bg-white p-4 rounded-md">
-      <div className="flex items-center justify-between mb-3">
+    <div className="bg-white p-4 sm:p-6 rounded-md">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4 mb-4">
         <h1 className="text-xl font-semibold">Google Calendar</h1>
-        <div className="flex gap-2 items-center">
+        <div className="flex flex-wrap gap-3 items-center w-full sm:w-auto">
           <button
             type="button"
             onClick={openEventEditor}
-            className="px-3 py-2 rounded-md text-white flex items-center gap-2"
+            className="px-4 py-2 rounded-lg text-white flex items-center justify-center gap-2 hover:opacity-90 transition-opacity min-w-[140px] sm:min-w-40"
             style={{ background: "#2563eb" }}
             title="Open Google Calendar to create an event"
           >
-            <FaCalendarPlus /> Schedule Event
+            <FaCalendarPlus className="text-base" /> <span className="text-sm font-medium">Schedule Event</span>
           </button>
           <button
             type="button"
             onClick={openMeetEditor}
-            className="px-3 py-2 rounded-md text-white flex items-center gap-2"
+            className="px-4 py-2 rounded-lg text-white flex items-center justify-center gap-2 hover:opacity-90 transition-opacity min-w-[140px] sm:min-w-40"
             style={{ background: "#10b981" }}
             title="Open Google Calendar to schedule a meeting"
           >
-            <FaVideo /> Schedule Meet
+            <FaVideo className="text-base" /> <span className="text-sm font-medium">Schedule Meet</span>
           </button>
         </div>
       </div>

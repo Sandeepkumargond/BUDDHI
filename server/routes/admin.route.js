@@ -11,7 +11,7 @@ import { adminGetAdmitCardByDeptSem, adminPublishAdmitCard, adminListAdmitCards,
 import { adminGetDepartmentByCode, adminUpdateDepartmentHod, adminListDepartments, adminCreateDepartment, adminUpdateDepartment, adminDeleteDepartment } from "../controllers/department.controller.js";
 import { adminListStudents } from "../controllers/admin.controller.js";
 import { assignCourseToFaculty, removeCourseFromFaculty } from "../controllers/attendance.controller.js";
-import { getStudentRiskAnalytics } from "../controllers/analytics.controller.js";
+import { getStudentRiskAnalytics, getMonthlyFinanceAnalytics } from "../controllers/analytics.controller.js";
 
 const router = Router();
 
@@ -287,6 +287,11 @@ router.route('/dashboard-stats').get(
 router.route('/analytics/risk-trends').get(
     authenticateAdmin,
     getStudentRiskAnalytics
+);
+
+router.route('/analytics/finance').get(
+    authenticateAdmin,
+    getMonthlyFinanceAnalytics
 );
 
 // Keep generic id route last

@@ -19,7 +19,6 @@ export default function IdCardManagement() {
   const [formData, setFormData] = useState({
     title: "ID Card Application Form",
     academicYear: "",
-    fee: 100,
     instructions: "Please fill all the details carefully and upload required documents.",
     requiredDocuments: [],
     deadline: ""
@@ -121,7 +120,6 @@ export default function IdCardManagement() {
     setFormData({
       title: "ID Card Application Form",
       academicYear: "",
-      fee: 100,
       instructions: "Please fill all the details carefully and upload required documents.",
       requiredDocuments: [],
       deadline: ""
@@ -366,17 +364,6 @@ export default function IdCardManagement() {
                   value={formData.academicYear}
                   onChange={(e) => setFormData({ ...formData, academicYear: e.target.value })}
                   placeholder="e.g., 2024-2025"
-                  className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2"
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Fee (₹)</label>
-                <input
-                  type="number"
-                  value={formData.fee}
-                  onChange={(e) => setFormData({ ...formData, fee: Number(e.target.value) })}
                   className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2"
                   required
                 />
