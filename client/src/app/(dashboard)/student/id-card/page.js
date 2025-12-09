@@ -59,19 +59,7 @@ export default function StudentIdCard() {
     );
   };
 
-  const getPaymentBadge = (status) => {
-    const config = {
-      completed: { bg: "bg-green-100", text: "text-green-800", label: "Completed" },
-      pending: { bg: "bg-yellow-100", text: "text-yellow-800", label: "Pending" },
-      failed: { bg: "bg-red-100", text: "text-red-800", label: "Failed" }
-    };
-    const paymentConfig = config[status] || config.pending;
-    return (
-      <span className={`px-2 py-1 text-xs rounded-full ${paymentConfig.bg} ${paymentConfig.text}`}>
-        {paymentConfig.label}
-      </span>
-    );
-  };
+
 
   if (isLoading) {
     return (
@@ -99,14 +87,10 @@ export default function StudentIdCard() {
               </div>
               <p className="text-gray-600 mb-4">{activeForm.instructions}</p>
               
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                 <div>
                   <p className="text-sm text-gray-600">Academic Year</p>
                   <p className="font-semibold">{activeForm.academicYear}</p>
-                </div>
-                <div>
-                  <p className="text-sm text-gray-600">Application Fee</p>
-                  <p className="font-semibold text-lg">₹{activeForm.fee}</p>
                 </div>
                 <div>
                   <p className="text-sm text-gray-600">Deadline</p>
@@ -187,22 +171,12 @@ export default function StudentIdCard() {
                   {getStatusBadge(app.status)}
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-3">
-                  <div>
-                    <p className="text-sm text-gray-600">Payment Status</p>
-                    {getPaymentBadge(app.paymentStatus)}
+                {app.idCardNumber && (
+                  <div className="mb-3">
+                    <p className="text-sm text-gray-600">ID Card Number</p>
+                    <p className="font-semibold">{app.idCardNumber}</p>
                   </div>
-                  <div>
-                    <p className="text-sm text-gray-600">Payment Amount</p>
-                    <p className="font-semibold">₹{app.paymentAmount}</p>
-                  </div>
-                  {app.idCardNumber && (
-                    <div>
-                      <p className="text-sm text-gray-600">ID Card Number</p>
-                      <p className="font-semibold">{app.idCardNumber}</p>
-                    </div>
-                  )}
-                </div>
+                )}
 
                 {app.remarks && (
                   <div className="mt-3 p-3 bg-gray-50 rounded">
@@ -227,19 +201,6 @@ export default function StudentIdCard() {
                   </div>
                 )}
 
-                {app.paymentStatus === 'pending' && (
-                  <div className="mt-3">
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        router.push(`/student/id-card/payment/${app._id}`);
-                      }}
-                      className="px-4 py-2 bg-black text-white rounded-md hover:bg-gray-800 text-sm"
-                    >
-                      Complete Payment
-                    </button>
-                  </div>
-                )}
               </div>
             ))}
           </div>

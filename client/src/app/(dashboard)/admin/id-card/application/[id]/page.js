@@ -272,7 +272,7 @@ export default function ApplicationDetails() {
             </div>
           </div>
 
-          {/* Payment Information */}
+          {/* Payment Information
           <div className="bg-white rounded-lg shadow p-6">
             <h2 className="text-lg font-semibold mb-4">Payment Information</h2>
             <div className="space-y-3">
@@ -303,7 +303,7 @@ export default function ApplicationDetails() {
                 </div>
               )}
             </div>
-          </div>
+          </div> */}
 
           {/* Timeline */}
           <div className="bg-white rounded-lg shadow p-6">
