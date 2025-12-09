@@ -5,6 +5,7 @@ import { Faculty } from "../models/faculty.model.js";
 import jwt from "jsonwebtoken";
 import { deleteFromImageKit, getFileIdFromUrl, uploadImageOnImageKit } from "../utils/ImageKit.js";
 import mongoose from "mongoose";
+import { createForgotPasswordHandler, createVerifyOTPHandler, createResetPasswordHandler } from "../utils/passwordReset.js";
 
 export const getFacultyById = asyncHandler(async (req, res) => {
     const facultyId = req.params.id;
@@ -478,3 +479,7 @@ export const listPublicFaculties = asyncHandler(async (req, res) => {
     );
 });
 
+// Password reset handlers
+export const forgotPassword = createForgotPasswordHandler(Faculty, "Faculty");
+export const verifyPasswordResetOTP = createVerifyOTPHandler();
+export const resetPassword = createResetPasswordHandler(Faculty, "Faculty");

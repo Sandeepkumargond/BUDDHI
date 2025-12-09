@@ -40,9 +40,11 @@ const menusByRole = {
     { Icon: FaBriefcase, label: "Opportunities", href: "/student/opportunities" },
     { Icon: FaMoneyBillWave, label: "Scholarships", href: "/student/scholarships" },
     { Icon: FaIdCard, label: "Bonafide", href: "/student/bonafide" },
+    { Icon: FaIdCard, label: "ID Card", href: "/student/id-card" },
     { Icon: FaCalendarAlt, label: "Leave", href: "/student/leaves" },
     { Icon: FaClipboardCheck, label: "PYQs", href: "/student/pyqs" },
     { Icon: FaBook, label: "Library", href: "/student/library" },
+    { Icon: FaCommentDots, label: "Messages", href: "/student/messages" },
   ],
 
   faculty: [
@@ -121,6 +123,7 @@ const menusByRole = {
     },
     { Icon: FaMoneyBillWave, label: "Scholarships", href: "/admin/scholarships" },
     { Icon: FaIdCard, label: "Bonafide", href: "/admin/bonafide" },
+    { Icon: FaIdCard, label: "ID Card Management", href: "/admin/id-card" },
     { Icon: FaCalendarAlt, label: "Leave Management", href: "/admin/leaves" },
     { Icon: FaBook, label: "Library Management", href: "/admin/library" },
 
@@ -131,6 +134,7 @@ const menusByRole = {
     { Icon: FaBriefcase, label: "Internships", href: "/alumni/internships" },
     { Icon: FaUserTie, label: "Referrals", href: "/alumni/referrals" },
     { Icon: FaMoneyBillWave, label: "Donations", href: "/alumni/donations" },
+    { Icon: FaCommentDots, label: "Messages", href: "/alumni/messages" },
     { Icon: FaUserGraduate, label: "Profile", href: "/alumni/profile" },
   ],
 

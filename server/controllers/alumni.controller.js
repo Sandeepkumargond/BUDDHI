@@ -4,6 +4,7 @@ import ApiError from "../utils/ApiError.js";
 import { Alumni } from "../models/alumni.model.js";
 import jwt from "jsonwebtoken";
 import mongoose from "mongoose";
+import { createForgotPasswordHandler, createVerifyOTPHandler, createResetPasswordHandler } from "../utils/passwordReset.js";
 
 // Helper function to get alumni details by ID
 export const getAlumniDetailsById = async (alumniId) => {
@@ -781,6 +782,11 @@ export const updateReferralApproval = asyncHandler(async (req, res) => {
         new ApiResponse(200, { referral }, "Referral approval updated successfully")
     );
 });
+
+// Password reset handlers
+export const forgotPassword = createForgotPasswordHandler(Alumni, "Alumni");
+export const verifyPasswordResetOTP = createVerifyOTPHandler();
+export const resetPassword = createResetPasswordHandler(Alumni, "Alumni");
 
 export {
     Alumni

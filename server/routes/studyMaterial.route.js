@@ -39,7 +39,8 @@ router.route('/faculty/courses').get(
 
 router.route('/faculty/upload').post(
     authenticateFaculty,
-    upload.single('material'),
+    // accept multiple files under the same field name 'material'
+    upload.array('material'),
     uploadMaterial
 );
 
@@ -88,7 +89,7 @@ router.route('/student/options').get(
 
 router.route('/student/submit').post(
     authenticateStudent,
-    upload.single('file'),
+    upload.array('files'),
     submitStudentMaterial
 );
 

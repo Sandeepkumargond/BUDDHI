@@ -95,9 +95,7 @@ export default function FacultyManagement() {
       const payload = {
         firstName: formData.firstName,
         lastName: formData.lastName,
-        email: formData.email,
         personalMail: formData.personalMail,
-        password: formData.password,
         dateOfBirth: formData.dateOfBirth,
         gender: formData.gender,
         mobile: formData.mobile || '',
@@ -396,9 +394,7 @@ function AddFacultyModal({ onClose, onSubmit, departments }) {
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
-    email: "",
     personalMail: "",
-    password: "",
     dateOfBirth: "",
     gender: "Male",
     mobile: "",
@@ -452,17 +448,6 @@ function AddFacultyModal({ onClose, onSubmit, departments }) {
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium mb-1">Official Email *</label>
-              <input
-                type="email"
-                name="email"
-                required
-                value={formData.email}
-                onChange={handleChange}
-                className="w-full border rounded px-3 py-2"
-              />
-            </div>
-            <div>
               <label className="block text-sm font-medium mb-1">Personal Email *</label>
               <input
                 type="email"
@@ -471,20 +456,7 @@ function AddFacultyModal({ onClose, onSubmit, departments }) {
                 value={formData.personalMail}
                 onChange={handleChange}
                 className="w-full border rounded px-3 py-2"
-              />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium mb-1">Password *</label>
-              <input
-                type="password"
-                name="password"
-                required
-                value={formData.password}
-                onChange={handleChange}
-                className="w-full border rounded px-3 py-2"
+                placeholder="faculty.personal@gmail.com"
               />
             </div>
             <div>
@@ -571,6 +543,10 @@ function AddFacultyModal({ onClose, onSubmit, departments }) {
               onChange={handleChange}
               className="w-full border rounded px-3 py-2"
             />
+          </div>
+
+          <div className="p-3 bg-blue-50 border border-blue-200 rounded-md text-sm text-blue-700">
+            <p><strong>Note:</strong> Official email (firstname{'{'}number{'}'}@nitp.ac.in) and password will be auto-generated and sent to the personal email.</p>
           </div>
 
           <div className="flex justify-end gap-3 mt-6">

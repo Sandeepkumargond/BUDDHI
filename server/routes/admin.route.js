@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { loginAdmin, logoutAdmin, refreshAdminAccessToken, changeAdminPassword, updateAdminAccountDetails, updateAdminImage, createStudent, updateStudent, createFaculty, createSubAdmin, deleteStudent, deleteFaculty, deleteSubAdmin, getAllFaculty, getAllSubAdmins, getAdminById, getAllStudents, getMyProfile, getDashboardStats, bulkCreateStudents } from "../controllers/admin.controller.js";
+import { loginAdmin, logoutAdmin, refreshAdminAccessToken, changeAdminPassword, updateAdminAccountDetails, updateAdminImage, createStudent, updateStudent, createFaculty, createSubAdmin, deleteStudent, deleteFaculty, deleteSubAdmin, getAllFaculty, getAllSubAdmins, getAdminById, getAllStudents, getMyProfile, getDashboardStats, bulkCreateStudents, forgotPassword, verifyPasswordResetOTP, resetPassword } from "../controllers/admin.controller.js";
 import { getSubAdminById } from "../controllers/subAdmin.controller.js";
 import { adminGetFeePaymentById, adminGetReceiptRedirect, adminListFeePayments, adminCreateFeeStructure, adminGetFeeStructureById, adminListFeeStructures, adminPublishFeeStructure, adminUpdateFeeStructure, adminDeleteFeeStructure, getStudentFeeRecords } from "../controllers/feePayment.controller.js";
 import { validateAdminFeePaymentQuery, validateCreateFeeStructure } from "../middlewares/feePayment.middleware.js";
@@ -16,6 +16,11 @@ import { getStudentRiskAnalytics } from "../controllers/analytics.controller.js"
 const router = Router();
 
 router.route('/login').post(loginAdmin);
+
+// Forgot Password Routes
+router.route('/forgot-password').post(forgotPassword);
+router.route('/verify-otp').post(verifyPasswordResetOTP);
+router.route('/reset-password').post(resetPassword);
 
 router.route('/profile').get(
     authenticateAdmin,
