@@ -23,7 +23,10 @@ app.use(cors({
 
 app.use(express.json({ limit: "16kb" }));
 app.use(express.urlencoded({ extended: true, limit: "16kb" }));
+// Serve static files both at root and under /public so '/public/...'
+// paths (saved in DB) resolve correctly in all environments
 app.use(express.static("public"));
+app.use('/public', express.static('public'));
 app.use(cookieParser());
 
 import healthCheckRoutes from "./routes/healthCheck.route.js";
@@ -35,6 +38,7 @@ import subAdminRoutes from "./routes/subAdmin.route.js";
 import gradeCardRoutes from "./routes/gradeCard.route.js";
 import noticeRoutes from "./routes/notice.route.js";
 import studyMaterialRoutes from "./routes/studyMaterial.route.js";
+import scheduleRoutes from "./routes/schedule.route.js";
 import hostelRoutes from "./routes/hostel.route.js";
 import razorpayRoutes from "./routes/razorpay.route.js";
 import feedbackFormRoutes from "./routes/feedbackForm.route.js";
@@ -55,6 +59,7 @@ app.use("/api/v1/sub-admin", subAdminRoutes);
 app.use("/api/v1/grades", gradeCardRoutes);
 app.use("/api/v1/notices", noticeRoutes);
 app.use("/api/v1/study-materials", studyMaterialRoutes);
+app.use("/api/v1/schedule", scheduleRoutes);
 app.use("/api/v1/hostel", hostelRoutes);
 app.use("/api/v1/razorpay", razorpayRoutes);
 app.use("/api/v1/feedback", feedbackFormRoutes);
