@@ -13,6 +13,7 @@ import { deptartmentMap } from "../configs/maps.js";
 import { getFacultyById, getFacultyDetailsById } from "./faculty.controller.js";
 import { SubAdmin } from "../models/subAdmin.model.js";
 import { getSubAdminDetailsById } from "./subAdmin.controller.js";
+import { generateOTP, storeOTP, verifyOTP, clearOTP, sendOTPEmail } from "../utils/otp.js";
 
 export const getAdminById = asyncHandler(async (req, res) => {
     const adminId = req.params.id;
@@ -930,5 +931,81 @@ export const bulkCreateStudents = asyncHandler(async (req, res, next) => {
             },
             `Bulk upload completed: ${results.success.length} succeeded, ${results.failed.length} failed`
         )
+    );
+});
+
+// Forgot Password - Send OTP
+export const forgotPassword = asyncHandler(async (req, res) => {
+    const { email } = req.body;
+
+    if (!email) {
+        throw new ApiError(400, "Email is required");
+    }
+
+    // Check if admin exists
+    const admin = await Admin.findOne({ email: email.toLowerCase() });
+    if (!admin) {
+        throw new ApiError(404, "Admin not found with this email");
+    }
+
+    // Generate and store OTP
+    const otp = generateOTP();
+    storeOTP(email, otp);
+
+    // Send OTP via email
+    await sendOTPEmail(email, otp);
+
+    res.status(200).json(
+        new ApiResponse(200, {}, "OTP sent successfully to your email")
+    );
+});
+
+// Verify OTP
+export const verifyPasswordResetOTP = asyncHandler(async (req, res) => {
+    const { email, otp } = req.body;
+
+    if (!email || !otp) {
+        throw new ApiError(400, "Email and OTP are required");
+    }
+
+    // Verify OTP
+    const verification = verifyOTP(email, otp);
+    if (!verification.valid) {
+        throw new ApiError(400, verification.message);
+    }
+
+    res.status(200).json(
+        new ApiResponse(200, {}, "OTP verified successfully")
+    );
+});
+
+// Reset Password
+export const resetPassword = asyncHandler(async (req, res) => {
+    const { email, otp, newPassword } = req.body;
+
+    if (!email || !otp || !newPassword) {
+        throw new ApiError(400, "Email, OTP, and new password are required");
+    }
+
+    // Verify OTP again
+    const verification = verifyOTP(email, otp);
+    if (!verification.valid) {
+        throw new ApiError(400, verification.message);
+    }
+
+    // Find admin and update password
+    const admin = await Admin.findOne({ email: email.toLowerCase() });
+    if (!admin) {
+        throw new ApiError(404, "Admin not found");
+    }
+
+    admin.password = newPassword;
+    await admin.save();
+
+    // Clear OTP
+    clearOTP(email);
+
+    res.status(200).json(
+        new ApiResponse(200, {}, "Password reset successfully")
     );
 });

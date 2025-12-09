@@ -5,6 +5,7 @@ import { Student } from "../models/student.model.js";
 import { MonthlyAttendance } from "../models/monthlyAttendance.model.js";
 import jwt from "jsonwebtoken";
 import { deleteFromImageKit, getFileIdFromUrl, uploadImageOnImageKit } from "../utils/ImageKit.js";
+import { createForgotPasswordHandler, createVerifyOTPHandler, createResetPasswordHandler } from "../utils/passwordReset.js";
 
 export const getStudentById = asyncHandler(async (req, res) => {
     const studentId = req.params.id;
@@ -44,7 +45,7 @@ export const getMyProfile = asyncHandler(async (req, res) => {
         new ApiResponse(
             200,
             {
-                user: student,
+                student: student,
             },
             "Student profile fetched successfully"
         )
@@ -384,7 +385,6 @@ export const updateStudentImage = asyncHandler(async (req, res, next) => {
     const student = await getStudentDetailsById(studentId);
 
     const oldImageUrl = student.imageUrl || "";
-
     const oldImageFileId = await getFileIdFromUrl(oldImageUrl);
 
     const imageLocalPath = req.file?.path;
@@ -396,7 +396,7 @@ export const updateStudentImage = asyncHandler(async (req, res, next) => {
     const image = await uploadImageOnImageKit(imageLocalPath, student.firstName);
 
     if (!image || image.error) {
-        throw new ApiError(500, "Failed to upload image image");
+        throw new ApiError(500, "Failed to upload image");
     }
 
     const updatedStudent = await Student.findByIdAndUpdate(
@@ -419,6 +419,35 @@ export const updateStudentImage = asyncHandler(async (req, res, next) => {
                 updatedStudent,
             },
             "Student image updated successfully"
+        )
+    );
+});
+
+// Upload document (for ID card, certificates, etc.)
+export const uploadDocument = asyncHandler(async (req, res) => {
+    const fileLocalPath = req.file?.path;
+
+    if (!fileLocalPath) {
+        throw new ApiError(400, "Please provide a valid file");
+    }
+
+    const studentId = req.user?._id;
+    const student = await getStudentDetailsById(studentId);
+    
+    const fileName = `${student.firstName}-${Date.now()}`;
+    const uploadedFile = await uploadImageOnImageKit(fileLocalPath, fileName);
+
+    if (!uploadedFile || uploadedFile.error) {
+        throw new ApiError(500, "Failed to upload file");
+    }
+
+    return res.status(200).json(
+        new ApiResponse(
+            200,
+            {
+                url: uploadedFile.url
+            },
+            "File uploaded successfully"
         )
     );
 });
@@ -500,4 +529,9 @@ export const getMyMonthlyAttendance = asyncHandler(async (req, res) => {
         new ApiResponse(200, { attendance: studentAttendance }, "Monthly attendance fetched successfully")
     );
 });
+
+// Forgot Password Handlers
+export const forgotPassword = createForgotPasswordHandler(Student, "Student");
+export const verifyPasswordResetOTP = createVerifyOTPHandler();
+export const resetPassword = createResetPasswordHandler(Student, "Student");
 

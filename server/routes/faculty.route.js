@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { availableMail, changeFacultyPassword, getFacultyById, getMyProfile, listPublicFaculties, loginFaculty, logoutFaculty, refreshFacultyAccessToken, updateFacultyAccountDetails, updateFacultyImage, updateFacultySign } from "../controllers/faculty.controller.js";
+import { availableMail, changeFacultyPassword, getFacultyById, getMyProfile, listPublicFaculties, loginFaculty, logoutFaculty, refreshFacultyAccessToken, updateFacultyAccountDetails, updateFacultyImage, updateFacultySign, forgotPassword, verifyPasswordResetOTP, resetPassword } from "../controllers/faculty.controller.js";
 import { authenticateFaculty } from "../middlewares/faculty.middleware.js";
 import { upload } from "../middlewares/multer.middleware.js";
 import { saveAttendance, listMyAttendance, getAttendanceById, getStudentsForAttendance, getMyAssignedCourses, deleteAttendance, getCourseStudents } from "../controllers/attendance.controller.js";
@@ -9,6 +9,11 @@ import { getStudentRiskAnalytics } from "../controllers/analytics.controller.js"
 const router = Router();
 
 // Specific routes MUST come before parametric routes like /:id
+// Password reset routes (public)
+router.route('/forgot-password').post(forgotPassword);
+router.route('/verify-otp').post(verifyPasswordResetOTP);
+router.route('/reset-password').post(resetPassword);
+
 router.route('/login').post(loginFaculty);
 
 router.route('/profile').get(

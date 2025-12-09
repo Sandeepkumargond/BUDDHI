@@ -11,6 +11,7 @@ import { generateEnrollmentNo, generateFacultyId, generateRollNo } from "../util
 import { Faculty } from "../models/faculty.model.js";
 import { deptartmentMap } from "../configs/maps.js";
 import { getFacultyById, getFacultyDetailsById } from "./faculty.controller.js";
+import { createForgotPasswordHandler, createVerifyOTPHandler, createResetPasswordHandler } from "../utils/passwordReset.js";
 
 export const getSubAdminById = asyncHandler(async (req, res) => {
     const subAdminId = req.params.id;
@@ -641,3 +642,8 @@ export const bulkCreateStudents = asyncHandler(async (req, res, next) => {
         )
     );
 });
+
+// Password reset handlers
+export const forgotPassword = createForgotPasswordHandler(SubAdmin, "SubAdmin");
+export const verifyPasswordResetOTP = createVerifyOTPHandler();
+export const resetPassword = createResetPasswordHandler(SubAdmin, "SubAdmin");

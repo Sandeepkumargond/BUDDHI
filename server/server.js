@@ -47,6 +47,8 @@ import leaveRoutes from "./routes/leave.route.js";
 import scholarshipRoutes from "./routes/scholarship.route.js";
 import bonafideRoutes from "./routes/bonafide.route.js";
 import pyqRoutes from "./routes/pyq.route.js";
+import idCardRoutes from "./routes/idCard.route.js";
+import idCardStudentRoutes from "./routes/idCardStudent.route.js";
 import ApiError from "./utils/ApiError.js";
 
 // route declarations
@@ -68,6 +70,8 @@ app.use("/api/v1/leaves", leaveRoutes);
 app.use("/api/v1/scholarships", scholarshipRoutes);
 app.use("/api/v1/bonafide", bonafideRoutes);
 app.use("/api/v1/pyq", pyqRoutes);
+app.use("/api/v1/id-card", idCardRoutes);
+app.use("/api/v1/id-card-student", idCardStudentRoutes);
 
 // Centralized error handler to ensure JSON responses instead of default HTML
 app.use((err, req, res, next) => {

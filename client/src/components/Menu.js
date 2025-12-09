@@ -40,6 +40,7 @@ const menusByRole = {
     { Icon: FaBriefcase, label: "Opportunities", href: "/student/opportunities" },
     { Icon: FaMoneyBillWave, label: "Scholarships", href: "/student/scholarships" },
     { Icon: FaIdCard, label: "Bonafide", href: "/student/bonafide" },
+    { Icon: FaIdCard, label: "ID Card", href: "/student/id-card" },
     { Icon: FaCalendarAlt, label: "Leave", href: "/student/leaves" },
     { Icon: FaClipboardCheck, label: "PYQs", href: "/student/pyqs" },
   ],
@@ -120,6 +121,7 @@ const menusByRole = {
     },
     { Icon: FaMoneyBillWave, label: "Scholarships", href: "/admin/scholarships" },
     { Icon: FaIdCard, label: "Bonafide", href: "/admin/bonafide" },
+    { Icon: FaIdCard, label: "ID Card Management", href: "/admin/id-card" },
     { Icon: FaCalendarAlt, label: "Leave Management", href: "/admin/leaves" },
 
   ],
