@@ -105,10 +105,10 @@ export default function AlumniMessagesPage() {
             <div className="max-w-7xl mx-auto">
                 <h1 className="text-3xl font-bold text-gray-900 mb-6">Messages</h1>
 
-                <div className="bg-white rounded-lg shadow-lg overflow-hidden" style={{ height: 'calc(100vh - 200px)' }}>
-                    <div className="flex h-full">
+                <div className="bg-white rounded-lg shadow-lg overflow-hidden">
+                    <div className="flex h-full flex-col lg:flex-row" style={{ minHeight: '60vh' }}>
                         {/* Conversations Sidebar */}
-                        <div className="w-1/3 border-r border-gray-200 flex flex-col">
+                        <div className="w-full lg:w-1/3 border-b lg:border-b-0 lg:border-r border-gray-200 flex flex-col">
                             {/* Search Header */}
                             <div className="p-4 border-b border-gray-200">
                                 <button
@@ -212,7 +212,7 @@ export default function AlumniMessagesPage() {
                         </div>
 
                         {/* Chat Area */}
-                        <div className="flex-1 flex flex-col">
+                        <div className="w-full lg:flex-1 flex flex-col">
                             {selectedConversation ? (
                                 <>
                                     {/* Chat Header */}

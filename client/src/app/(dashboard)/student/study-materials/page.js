@@ -153,17 +153,20 @@ export default function StudentStudyMaterialsPage() {
 
         {Array.isArray(item.attachments) && item.attachments.length > 1 && (
           <div className="mt-3">
-            <div className="text-sm font-medium" style={{ color: "#0f172a" }}>Additional attachments</div>
-            <div className="mt-2 flex flex-wrap gap-2">
+            <div className="text-sm font-medium" style={{ color: "#0f172a" }}>Additional files</div>
+            <ul className="mt-2 space-y-1 list-disc list-inside">
               {item.attachments.slice(1).map((att, i) => (
-                <a key={i}
-                   href={(String(att.fileUrl).startsWith('/public') || String(att.fileUrl).startsWith('public')) ? `${apiService.baseURL.replace(/\/api\/v1$/, '')}${String(att.fileUrl).startsWith('public') ? `/${att.fileUrl}` : att.fileUrl}` : att.fileUrl}
-                   target="_blank" rel="noopener noreferrer"
-                   className="px-3 py-1 rounded-md text-white" style={{ background: "#6b7280" }}>
-                  View {att.fileName || `Attachment ${i+1}`}
-                </a>
+                <li key={i} className="text-sm" style={{ color: "#334155" }}>
+                  <a
+                    href={(String(att.fileUrl).startsWith('/public') || String(att.fileUrl).startsWith('public')) ? `${apiService.baseURL.replace(/\/api\/v1$/, '')}${String(att.fileUrl).startsWith('public') ? `/${att.fileUrl}` : att.fileUrl}` : att.fileUrl}
+                    target="_blank" rel="noopener noreferrer"
+                    className="hover:underline"
+                  >
+                    {att.fileName || `Attachment ${i+1}`}
+                  </a>
+                </li>
               ))}
-            </div>
+            </ul>
           </div>
         )}
 
@@ -223,10 +226,11 @@ export default function StudentStudyMaterialsPage() {
               </div>
             )}
             <div className="flex justify-end mt-2">
-              <button onClick={() => !submitted && selectedFiles.length > 0 && handleSubmit(item, selectedFiles)}
-                      disabled={submitted}
-                      className="px-4 py-2 rounded-md text-white"
-                      style={{ background: submitted ? "#94a3b8" : (selectedFiles.length > 0 ? "#22c55e" : "#94a3b8") }}>
+              <button
+                onClick={() => !submitted && selectedFiles.length > 0 && handleSubmit(item, selectedFiles)}
+                disabled={submitted}
+                className={`px-4 py-2 rounded-md text-white ${submitted ? 'bg-green-600/70 cursor-default' : (selectedFiles.length > 0 ? 'bg-green-600 hover:bg-green-700' : 'bg-slate-400 cursor-not-allowed')}`}
+              >
                 {submitted ? 'Submitted' : (selectedFiles.length > 0 ? 'Submit' : 'Choose files')}
               </button>
             </div>
