@@ -11,6 +11,7 @@ import Table from "@/components/Table";
 import Pagination from "@/components/Pagination";
 
 import { apiService } from "@/lib/api";
+import { deptCodeToId } from "@/lib/maps";
 
 const StatCard = ({ title, value, subtitle }) => (
   <div className="flex-1 min-w-40 rounded-xl p-5 bg-[#F5F9FF] border border-[#DCE7FF] shadow-[0_2px_8px_rgba(0,0,0,0.04)]">
@@ -200,18 +201,28 @@ export default function DepartmentDetailsPage() {
   useEffect(() => {
     let mounted = true;
     (async () => {
-      if (!localDept?.code) return;
+      if (!localDept?.code) {
+        console.log('[Courses] No department code available yet');
+        return;
+      }
+      console.log('[Courses] Fetching courses for department:', localDept.code);
       try {
-        const res = await apiService.adminListCoursesByDepartment(localDept.code);
+        const res = await apiService.adminListCoursesByDepartmentCode(localDept.code);
+        console.log('[Courses] API response:', res);
         const fetched = res?.data?.courses || res?.courses || [];
-        if (mounted && Array.isArray(fetched)) setCourses(fetched);
+        console.log('[Courses] Fetched courses:', fetched);
+        if (mounted && Array.isArray(fetched)) {
+          setCourses(fetched);
+          console.log('[Courses] Set courses state:', fetched.length, 'courses');
+        }
       } catch (e) {
+        console.error('[Courses] Failed to fetch courses:', e);
         // fallback to empty array if API not available
         if (mounted) setCourses([]);
       }
     })();
     return () => { mounted = false; }; 
-  }, [localDept?.code]);
+  }, [localDept?.code, refreshTrigger]);
 
   // Pagination (simple)
   const FACULTY_PER_PAGE = 6;
@@ -650,12 +661,17 @@ export default function DepartmentDetailsPage() {
                 </div>
 
                 {/* ⭐ Add Course Button */}
-                <FormModal
-                  table="course"
-                  type="create"
-                  departmentId={localDept.id}
-                  onCreate={(newCourse) => setCourses((prev) => [newCourse, ...prev])}
-                />
+                {localDept?.code && deptCodeToId[localDept.code] && (
+                  <FormModal
+                    table="course"
+                    type="create"
+                    departmentId={deptCodeToId[localDept.code]}
+                    onCreate={(newCourse) => {
+                      setCourses((prev) => [newCourse, ...prev]);
+                      setRefreshTrigger((prev) => prev + 1);
+                    }}
+                  />
+                )}
               </div>
 
               <div className="bg-white rounded-xl border border-gray-100 overflow-hidden">
