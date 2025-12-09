@@ -16,23 +16,11 @@ import {
  * Shows 3 lines: At-risk (red), On the Verge (orange), Normal (green)
  */
 const BuddhiTrendChart = ({ data = [] }) => {
-  // Default data if none provided
-  const defaultData = [
-    { month: "Jul", atRisk: 1200, onTheVerge: 1400, normal: 2800 },
-    { month: "Aug", atRisk: 1100, onTheVerge: 1500, normal: 3000 },
-    { month: "Sep", atRisk: 1000, onTheVerge: 1600, normal: 3200 },
-    { month: "Oct", atRisk: 950, onTheVerge: 1650, normal: 3300 },
-    { month: "Nov", atRisk: 900, onTheVerge: 1700, normal: 3400 },
-    { month: "Dec", atRisk: 850, onTheVerge: 1750, normal: 3500 },
-    { month: "Jan", atRisk: 800, onTheVerge: 1800, normal: 3600 },
-    { month: "Feb", atRisk: 750, onTheVerge: 1850, normal: 3650 },
-    { month: "Mar", atRisk: 700, onTheVerge: 1900, normal: 3700 },
-    { month: "Apr", atRisk: 650, onTheVerge: 1950, normal: 3750 },
-    { month: "May", atRisk: 600, onTheVerge: 2000, normal: 3800 },
-    { month: "Jun", atRisk: 550, onTheVerge: 2050, normal: 3850 },
-  ];
-
-  const chartData = data.length > 0 ? data : defaultData;
+  /* 
+   * Note: Modified to rely on passed 'data' prop to avoid hardcoded values.
+   * If history is unavailable, it will render empty or the single data point passed.
+   */
+  const chartData = data;
 
   return (
     <div className="w-full h-full">

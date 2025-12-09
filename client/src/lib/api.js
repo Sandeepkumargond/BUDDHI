@@ -15,7 +15,7 @@ class ApiService {
   constructor() {
     this.baseURL = resolveBaseUrl();
     this.accessToken = null; // in-memory token fallback if cookies blocked cross-site
-    try { console.info('[apiService] Base URL:', this.baseURL); } catch {}
+    try { console.info('[apiService] Base URL:', this.baseURL); } catch { }
   }
 
   setAccessToken(token) {
@@ -57,7 +57,7 @@ class ApiService {
     }
 
     try {
-      try { console.debug('[apiService] Request', { url, method, headers }); } catch {}
+      try { console.debug('[apiService] Request', { url, method, headers }); } catch { }
       const response = await fetch(url, config);
 
       // Check if response is JSON
@@ -96,7 +96,7 @@ class ApiService {
           message = 'Unknown error occurred';
         }
       }
-      
+
       const errorInfo = {
         message,
         status: error?.status,
@@ -404,7 +404,7 @@ class ApiService {
     const roleEndpoints = {
       'superadmin': '/super-admin/profile',
       'admin': '/admin/profile',
-      'subadmin': '/sub-admin/profile', 
+      'subadmin': '/sub-admin/profile',
       'student': '/student/profile',
       'faculty': '/faculty/profile',
       'alumni': '/alumni/profile'
@@ -601,6 +601,17 @@ class ApiService {
   // Study Material endpoints
   async getFacultyCourses() {
     return this.request('/study-materials/faculty/courses', {
+      method: 'GET'
+    });
+  }
+
+  // Analytics (Faculty & Admin)
+  async getStudentRiskAnalytics(role = 'faculty') {
+    const endpoint = role === 'admin'
+      ? '/admin/analytics/risk-trends'
+      : '/faculty/analytics/risk-trends';
+
+    return this.request(endpoint, {
       method: 'GET'
     });
   }

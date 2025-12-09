@@ -1,0 +1,16 @@
+### Login as Faculty (to get token)
+# Replace credentials with valid ones if this fails
+POST http://localhost:5001/api/v1/faculty/login
+Content-Type: application/json
+
+{
+    "email": "faculty@buddhi.com",
+    "password": "password123"
+}
+
+###
+
+### Get Risk Analytics (Batch Prediction)
+# Copy accessToken from login response to Authorization header
+GET http://localhost:5001/api/v1/faculty/analytics/risk-trends
+Authorization: Bearer <your_access_token>
