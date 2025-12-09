@@ -307,12 +307,20 @@ export default function StudentListPage() {
       {/* HEADER */}
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold text-gray-900">Students</h1>
-        <Link href="/admin_subadmin/students/create">
-          <button className="flex items-center gap-2 px-4 py-2 bg-[#C3EBFA] hover:bg-[#A8DBF2] rounded-lg transition text-gray-600">
-            <Image src="/create.png" width={16} height={16} alt="add" />
-            <span className="font-medium">Add Student</span>
-          </button>
-        </Link>
+        <div className="flex gap-2">
+          <Link href="/admin_subadmin/students/bulk-create">
+            <button className="flex items-center gap-2 px-4 py-2 bg-green-500 hover:bg-green-600 rounded-lg transition text-white">
+              <Image src="/create.png" width={16} height={16} alt="bulk" />
+              <span className="font-medium">Bulk Upload</span>
+            </button>
+          </Link>
+          <Link href="/admin_subadmin/students/create">
+            <button className="flex items-center gap-2 px-4 py-2 bg-[#C3EBFA] hover:bg-[#A8DBF2] rounded-lg transition text-gray-600">
+              <Image src="/create.png" width={16} height={16} alt="add" />
+              <span className="font-medium">Add Student</span>
+            </button>
+          </Link>
+        </div>
       </div>
 
       {loading ? (

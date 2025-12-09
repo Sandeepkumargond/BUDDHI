@@ -9,23 +9,41 @@ const StudentNotices = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    const fetchRecentNotices = async () => {
+      try {
+        setLoading(true);
+        // 1) Get current student profile for filtering
+        const profileRes = await apiService.getProfile('student');
+        const student = profileRes?.data?.user || {};
+
+        // 2) Get active student-targeted notices
+        const response = await apiService.request('/notices/public?audience=students&limit=50&sort=latest', { method: 'GET', silent: true });
+        const allNotices = response?.data?.notices || [];
+
+        // 3) Keep only faculty-created notices relevant to this student
+        const filtered = allNotices.filter(n => {
+          if (n.createdByModel !== 'Faculty') return false; // only faculty notices here
+
+          // Match by branch/semester/section if present on notice
+          if (n.branch && student.branch && n.branch !== student.branch) return false;
+          if (typeof n.semester === 'number' && typeof student.semester === 'number' && n.semester !== student.semester) return false;
+          if (n.section && student.section && n.section !== student.section) return false;
+
+          // If no targeting fields set, assume it's broadly relevant to students
+          return true;
+        })
+        .slice(0, 5);
+
+        setNotices(filtered);
+      } catch (err) {
+        console.error('Error fetching notices:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
     fetchRecentNotices();
   }, []);
-
-  const fetchRecentNotices = async () => {
-    try {
-      setLoading(true);
-      const response = await apiService.request('/notices/public?limit=5&sort=latest');
-      
-      if (response.success && response.data) {
-        setNotices(response.data.notices || []);
-      }
-    } catch (err) {
-      console.error('Error fetching notices:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const getCategoryIcon = (category) => {
     const icons = {
