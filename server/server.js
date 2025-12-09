@@ -51,6 +51,7 @@ import idCardRoutes from "./routes/idCard.route.js";
 import idCardStudentRoutes from "./routes/idCardStudent.route.js";
 import libraryRoutes from "./routes/library.route.js";
 import messageRoutes from "./routes/message.route.js";
+import collegeRequestRoutes from "./routes/collegeRequest.routes.js";
 import ApiError from "./utils/ApiError.js";
 import { createServer } from 'http';
 import { initializeSocket } from './socket.js';
@@ -81,6 +82,7 @@ app.use("/api/v1/id-card", idCardRoutes);
 app.use("/api/v1/id-card-student", idCardStudentRoutes);
 app.use("/api/v1/library", libraryRoutes);
 app.use("/api/v1/messages", messageRoutes);
+app.use("/api/v1/college-requests", collegeRequestRoutes);
 
 // Centralized error handler to ensure JSON responses instead of default HTML
 app.use((err, req, res, next) => {

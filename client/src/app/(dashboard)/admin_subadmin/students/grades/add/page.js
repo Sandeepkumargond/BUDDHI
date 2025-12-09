@@ -51,12 +51,13 @@ export default function AddGradeCardPage() {
 
     // Apply search filter
     if (searchTerm) {
-      const search = searchTerm.toLowerCase();
+      const lc = (v) => String(v ?? '').toLowerCase();
+      const search = lc(searchTerm);
       filtered = filtered.filter(student =>
-        student.firstName.toLowerCase().includes(search) ||
-        student.lastName.toLowerCase().includes(search) ||
-        student.rollNo.toString().includes(search) ||
-        student.enrollmentNo.toLowerCase().includes(search)
+        lc(student.firstName).includes(search) ||
+        lc(student.lastName).includes(search) ||
+        lc(student.rollNo).includes(search) ||
+        lc(student.enrollmentNo).includes(search)
       );
     }
 

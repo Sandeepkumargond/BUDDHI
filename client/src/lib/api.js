@@ -1166,6 +1166,46 @@ class ApiService {
       method: 'GET'
     });
   }
+
+  // ============ College Request Methods ============
+
+  // Submit college registration request (public)
+  async submitCollegeRequest(formData) {
+    return this.request('/college-requests/submit', {
+      method: 'POST',
+      body: formData
+    });
+  }
+
+  // SuperAdmin - Get all college requests
+  async superAdminListCollegeRequests(status = null) {
+    const params = status ? `?status=${status}` : '';
+    return this.request(`/college-requests${params}`, {
+      method: 'GET'
+    });
+  }
+
+  // SuperAdmin - Get college request by ID
+  async superAdminGetCollegeRequest(id) {
+    return this.request(`/college-requests/${id}`, {
+      method: 'GET'
+    });
+  }
+
+  // SuperAdmin - Approve college request
+  async superAdminApproveRequest(id) {
+    return this.request(`/college-requests/${id}/approve`, {
+      method: 'PATCH'
+    });
+  }
+
+  // SuperAdmin - Reject college request
+  async superAdminRejectRequest(id, reason) {
+    return this.request(`/college-requests/${id}/reject`, {
+      method: 'PATCH',
+      body: { reason }
+    });
+  }
 }
 
 
