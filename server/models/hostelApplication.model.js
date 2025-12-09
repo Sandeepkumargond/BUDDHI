@@ -21,6 +21,7 @@ const hostelApplicationSchema = new mongoose.Schema(
     semester: { type: String },
     cgpa: { type: Number },
     roomType: { type: String, enum: ["Single", "Shared", "Triple", "Double"], default: "Shared" },
+    isDisabled: { type: Boolean, required: true, default: false },
     reason: { type: String },
     emergencyContact: { type: String },
     parentName: { type: String },

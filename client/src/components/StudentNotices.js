@@ -45,27 +45,17 @@ const StudentNotices = () => {
     fetchRecentNotices();
   }, []);
 
-  const getCategoryIcon = (category) => {
-    const icons = {
-      general: '📢',
-      academic: '📚',
-      examination: '📝',
-      event: '🎉',
-      holiday: '🏖️',
-      urgent: '🚨',
-      admission: '🎓'
-    };
-    return icons[category] || '📢';
-  };
-
-  const getPriorityColor = (priority) => {
+  const getCategoryColor = (category) => {
     const colors = {
-      low: 'text-green-600',
-      normal: 'text-yellow-600',
-      high: 'text-orange-600',
-      urgent: 'text-red-600'
+      general: 'bg-blue-100 text-blue-700',
+      academic: 'bg-purple-100 text-purple-700',
+      examination: 'bg-orange-100 text-orange-700',
+      event: 'bg-pink-100 text-pink-700',
+      holiday: 'bg-green-100 text-green-700',
+      urgent: 'bg-red-100 text-red-700',
+      admission: 'bg-indigo-100 text-indigo-700'
     };
-    return colors[priority] || colors.normal;
+    return colors[category] || colors.general;
   };
 
   const formatDate = (dateString) => {
@@ -103,7 +93,7 @@ const StudentNotices = () => {
   return (
     <div className="bg-white p-4 rounded-md">
       <div className="flex items-center justify-between mb-4">
-        <h1 className="text-xl font-semibold">📢 Recent Notices</h1>
+        <h1 className="text-xl font-semibold">Recent Notices</h1>
         <Link 
           href="/student/notices"
           className="text-blue-600 hover:text-blue-700 text-sm font-medium"
@@ -114,9 +104,6 @@ const StudentNotices = () => {
 
       {notices.length === 0 ? (
         <div className="text-center py-6 text-gray-500">
-          <svg className="mx-auto h-8 w-8 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-          </svg>
           <p>No notices available</p>
         </div>
       ) : (
@@ -129,13 +116,9 @@ const StudentNotices = () => {
             >
               <div className="flex items-start justify-between">
                 <div className="flex-1">
-                  <div className="flex items-center gap-2 mb-1">
-                    <span className="text-lg">{getCategoryIcon(notice.category)}</span>
-                    {notice.isPinned && (
-                      <span className="text-purple-600 text-xs">📌</span>
-                    )}
-                    <span className={`text-xs font-medium ${getPriorityColor(notice.priority)}`}>
-                      {notice.priority.toUpperCase()}
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className={`px-2 py-1 rounded text-xs font-medium ${getCategoryColor(notice.category)}`}>
+                      {notice.category.charAt(0).toUpperCase() + notice.category.slice(1)}
                     </span>
                   </div>
                   <h3 className="font-medium text-gray-900 text-sm leading-tight mb-1">
@@ -151,19 +134,9 @@ const StudentNotices = () => {
                   <div className="flex items-center gap-3 text-xs text-gray-500">
                     <span>{formatDate(notice.publishDate || notice.createdAt)}</span>
                     {notice.attachmentUrl && (
-                      <span className="flex items-center gap-1">
-                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
-                        </svg>
-                        Attachment
-                      </span>
+                      <span>Attachment</span>
                     )}
                   </div>
-                </div>
-                <div className="ml-2">
-                  <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                  </svg>
                 </div>
               </div>
             </Link>

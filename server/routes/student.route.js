@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { authenticateStudent } from "../middlewares/student.middleware.js";
-import { availableMail, changeStudentPassword, getStudentById, getMyProfile, loginStudent, logoutStudent, refreshStudentAccessToken, updateStudentAccountDetails, updateStudentImage, updateStudentSign, getMyMonthlyAttendance } from "../controllers/student.controller.js";
+import { availableMail, changeStudentPassword, getStudentById, getMyProfile, loginStudent, logoutStudent, refreshStudentAccessToken, updateStudentAccountDetails, updateStudentImage, updateStudentSign, getMyMonthlyAttendance, uploadDocument, forgotPassword, verifyPasswordResetOTP, resetPassword } from "../controllers/student.controller.js";
 import { createFeePayment, listMyFeePayments, getMyFeePaymentReceipt, getMyApplicableFeeStructure, getMyApplicableFeeStructures } from "../controllers/feePayment.controller.js";
 import { validateCreateFeePayment } from "../middlewares/feePayment.middleware.js";
 import { upload } from "../middlewares/multer.middleware.js";
@@ -10,6 +10,11 @@ import { studentGetMyAdmitCard } from "../controllers/admitCard.controller.js";
 const router = Router();
 
 router.route('/login').post(loginStudent);
+
+// Forgot Password Routes
+router.route('/forgot-password').post(forgotPassword);
+router.route('/verify-otp').post(verifyPasswordResetOTP);
+router.route('/reset-password').post(resetPassword);
 
 router.route('/profile').get(
     authenticateStudent,
@@ -43,6 +48,12 @@ router.route('/update-sign').patch(
     authenticateStudent,
     upload.single("sign"),
     updateStudentSign
+);
+
+router.route('/upload-document').post(
+    authenticateStudent,
+    upload.single("file"),
+    uploadDocument
 );
 
 router.route('/available-mail').post(

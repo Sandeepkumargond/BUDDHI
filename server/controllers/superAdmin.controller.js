@@ -6,6 +6,7 @@ import { SuperAdmin } from "../models/superAdmin.model.js";
 import { uploadImageOnImageKit, deleteFromImageKit, getFileIdFromUrl } from "../utils/ImageKit.js";
 import { Admin } from "../models/admin.model.js";
 import { getAdminDetailsById } from "./admin.controller.js";
+import { createForgotPasswordHandler, createVerifyOTPHandler, createResetPasswordHandler } from "../utils/passwordReset.js";
 
 export const getSuperAdminById = asyncHandler(async (req, res, next) => {
     // console.log(req.params);
@@ -469,3 +470,8 @@ export const getAllAdmins = asyncHandler(async (req, res, next) => {
         )
     );
 });
+
+// Password reset handlers
+export const forgotPassword = createForgotPasswordHandler(SuperAdmin, "SuperAdmin");
+export const verifyPasswordResetOTP = createVerifyOTPHandler();
+export const resetPassword = createResetPasswordHandler(SuperAdmin, "SuperAdmin");

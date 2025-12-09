@@ -34,7 +34,6 @@ export default function CreateStudentPage() {
   const [form, setForm] = useState({
     firstName: "",
     lastName: "",
-    email: "",
     personalMail: "",
     gender: "",
     program: "",
@@ -46,7 +45,6 @@ export default function CreateStudentPage() {
     registrationNumber: "",
     dateOfAdmission: "",
     dateOfBirth: "",
-    password: "",
   });
 
   const [loading, setLoading] = useState(false);
@@ -60,9 +58,9 @@ export default function CreateStudentPage() {
 
   const validateForm = () => {
     const required = [
-      "firstName","lastName","email","personalMail","gender",
+      "firstName","lastName","personalMail","gender",
       "program","branch","semester","mobile","registrationNumber",
-      "dateOfAdmission","dateOfBirth","password",
+      "dateOfAdmission","dateOfBirth",
     ];
 
     const newErr = {};
@@ -111,7 +109,6 @@ export default function CreateStudentPage() {
       setForm({
         firstName: "",
         lastName: "",
-        email: "",
         personalMail: "",
         gender: "",
         program: "",
@@ -123,7 +120,6 @@ export default function CreateStudentPage() {
         registrationNumber: "",
         dateOfAdmission: "",
         dateOfBirth: "",
-        password: "",
       });
 
     } catch (err) {
@@ -152,9 +148,8 @@ export default function CreateStudentPage() {
           <Input label="Last Name" name="lastName" value={form.lastName} onChange={handleChange} error={errors.lastName} />
         </div>
 
-        {/* EMAILS */}
-        <Input label="Email" name="email" value={form.email} onChange={handleChange} error={errors.email} />
-        <Input label="Personal Email" name="personalMail" value={form.personalMail} onChange={handleChange} error={errors.personalMail} />
+        {/* PERSONAL EMAIL */}
+        <Input label="Personal Email" name="personalMail" type="email" value={form.personalMail} onChange={handleChange} error={errors.personalMail} placeholder="student.personal@gmail.com" />
 
         {/* GENDER */}
         <Select label="Gender" name="gender" value={form.gender} onChange={handleChange} options={["Male","Female","Other"]} error={errors.gender} />
@@ -184,8 +179,10 @@ export default function CreateStudentPage() {
           <Input label="Date of Admission" name="dateOfAdmission" type="date" value={form.dateOfAdmission} onChange={handleChange} error={errors.dateOfAdmission} />
         </div>
 
-        {/* PASSWORD */}
-        <Input label="Password" name="password" type="password" value={form.password} onChange={handleChange} error={errors.password} />
+        {/* INFO */}
+        <div className="p-3 bg-blue-50 border border-blue-200 rounded-md text-sm text-blue-700">
+          <p><strong>Note:</strong> University email (firstname{'{'}number{'}'}@nitp.ac.in) and password will be auto-generated and sent to the personal email.</p>
+        </div>
 
         {/* SUBMIT */}
         <div className="flex justify-end">

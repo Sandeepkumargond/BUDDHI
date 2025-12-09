@@ -483,29 +483,107 @@ export const verifyAndRecordPayment = asyncHandler(async (req, res) => {
 	// Generate a unique fee payment ID
 	const feePaymentId = `FP_${Date.now()}_${paymentId}`;
 
-	// Create fee payment record
-	const feePayment = await FeePayment.create({
-		docType: "payment",
-		student: student._id,
-		id: feePaymentId,
-		enrollmentNo: student.enrollmentNo,
-		rollNo: student.rollNo,
-		program: student.branch,
-		semester: student.semester,
-		session,
-		studentName: `${student.firstName} ${student.lastName}`.trim(),
-		feeHead: feeStructureHeadId,
+	// Check if payment already exists for this transaction
+	const existingPayment = await FeePayment.findOne({
 		transactionId: paymentId,
-		transactionDate: new Date(paymentData.created_at * 1000),
-		amount: paymentData.amount / 100, // Convert from paise to rupees
-		paymentMode: "Razorpay",
-		transactionStatus: "success",
-		razorpayData: {
-			orderId,
-			paymentId,
-			signature,
-		},
-	});
+		docType: "payment"
+	}).lean();
+
+	if (existingPayment) {
+		console.log("Payment already recorded for transaction:", paymentId);
+		return res.status(200).json({
+			success: true,
+			data: {
+				feePayment: {
+					id: existingPayment.id,
+					session: existingPayment.session,
+					feeHead: existingPayment.feeHead,
+					amount: existingPayment.amount,
+					transactionId: existingPayment.transactionId,
+					transactionStatus: existingPayment.transactionStatus,
+					transactionDate: existingPayment.transactionDate,
+					createdAt: existingPayment.createdAt,
+				},
+				receipt: {
+					orderId,
+					paymentId,
+					amount: existingPayment.amount,
+					currency: paymentData.currency,
+					status: "captured",
+				},
+			},
+			message: "Payment already recorded (idempotent)",
+		});
+	}
+
+	// Create fee payment record
+	let feePayment;
+	try {
+		feePayment = await FeePayment.create({
+			docType: "payment",
+			student: student._id,
+			id: feePaymentId,
+			enrollmentNo: student.enrollmentNo,
+			rollNo: student.rollNo,
+			program: student.program,
+			branch: student.branch,
+			semester: student.semester,
+			session,
+			studentName: `${student.firstName} ${student.lastName}`.trim(),
+			feeHead: feeStructureHeadId,
+			transactionId: paymentId,
+			transactionDate: new Date(paymentData.created_at * 1000),
+			amount: paymentData.amount / 100, // Convert from paise to rupees
+			paymentMode: "Razorpay",
+			transactionStatus: "success",
+			razorpayData: {
+				orderId,
+				paymentId,
+				signature,
+			},
+		});
+	} catch (createError) {
+		console.error("Error creating fee payment:", createError);
+		
+		// Check if it's a duplicate key error
+		if (createError.code === 11000) {
+			// Find the existing payment
+			const duplicate = await FeePayment.findOne({
+				student: student._id,
+				session,
+				feeHead: feeStructureHeadId,
+				docType: "payment"
+			}).lean();
+			
+			if (duplicate) {
+				console.log("Duplicate payment found, returning existing:", duplicate.id);
+				return res.status(200).json({
+					success: true,
+					data: {
+						feePayment: {
+							id: duplicate.id,
+							session: duplicate.session,
+							feeHead: duplicate.feeHead,
+							amount: duplicate.amount,
+							transactionId: duplicate.transactionId,
+							transactionStatus: duplicate.transactionStatus,
+							transactionDate: duplicate.transactionDate,
+							createdAt: duplicate.createdAt,
+						},
+						receipt: {
+							orderId,
+							paymentId,
+							amount: duplicate.amount,
+							currency: paymentData.currency,
+							status: "captured",
+						},
+					},
+					message: "Payment already exists for this fee head and session",
+				});
+			}
+		}
+		throw createError;
+	}
 
 	// Update transaction record
 	await RazorpayTransaction.findByIdAndUpdate(tx._id, {
@@ -578,10 +656,46 @@ export const getStudentFeePayments = asyncHandler(async (req, res) => {
 	const student = req.user;
 	if (!student) throw new ApiError(401, "Unauthorized");
 
+	console.log("Fetching payments for student:", student._id);
+
 	const payments = await FeePayment.find({
 		student: student._id,
 		docType: "payment",
 	})
+		.sort({ createdAt: -1 })
+		.lean();
+
+	console.log("Found payments:", payments.length);
+	if (payments.length > 0) {
+		console.log("First payment:", JSON.stringify(payments[0], null, 2));
+	}
+
+	return res.json({
+		success: true,
+		data: payments.map((p) => ({
+			id: p.id,
+			session: p.session,
+			semester: p.semester,
+			studentName: p.studentName,
+			enrollmentNo: p.enrollmentNo,
+			rollNo: p.rollNo,
+			feeHead: p.feeHead,
+			amount: p.amount,
+			transactionId: p.transactionId,
+			transactionDate: p.transactionDate,
+			transactionStatus: p.transactionStatus,
+			paymentMode: p.paymentMode,
+			createdAt: p.createdAt,
+		})),
+	});
+});
+
+// Admin: Get all fee payments
+export const getAllFeePayments = asyncHandler(async (req, res) => {
+	const payments = await FeePayment.find({
+		docType: "payment",
+	})
+		.populate('student', 'firstName lastName enrollmentNo rollNo branch semester')
 		.sort({ createdAt: -1 })
 		.lean();
 
@@ -590,12 +704,19 @@ export const getStudentFeePayments = asyncHandler(async (req, res) => {
 		data: payments.map((p) => ({
 			id: p.id,
 			session: p.session,
+			semester: p.semester,
+			studentName: p.studentName,
+			enrollmentNo: p.enrollmentNo,
+			rollNo: p.rollNo,
+			branch: p.student?.branch || 'N/A',
 			feeHead: p.feeHead,
 			amount: p.amount,
 			transactionId: p.transactionId,
 			transactionDate: p.transactionDate,
 			transactionStatus: p.transactionStatus,
+			paymentMode: p.paymentMode,
 			createdAt: p.createdAt,
+			student: p.student,
 		})),
 	});
 });

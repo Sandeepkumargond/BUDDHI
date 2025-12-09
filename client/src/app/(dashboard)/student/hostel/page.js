@@ -45,6 +45,19 @@ export default function HostelPage() {
     let mounted = true;
     (async () => {
       try {
+        // Load student profile
+        if (role === 'student') {
+          try {
+            const profileRes = await apiService.getProfile('student');
+            const studentData = profileRes?.data?.student || profileRes?.data?.user;
+            if (mounted && studentData) {
+              setProfile(studentData);
+            }
+          } catch (err) {
+            console.error('Failed to load student profile:', err);
+          }
+        }
+
         // Load hostels
         const hostelsList = await fetchHostels();
         if (mounted) setHostels(hostelsList);
@@ -63,7 +76,7 @@ export default function HostelPage() {
       }
     })();
     return () => { mounted = false; };
-  }, []);
+  }, [role]);
   const [complaint, setComplaint] = useState("");
   const [complaintDescription, setComplaintDescription] = useState("");
   const [complaintCategory, setComplaintCategory] = useState("Other");
@@ -80,6 +93,7 @@ export default function HostelPage() {
   const [choice2Hostel, setChoice2Hostel] = useState("");
   const [choice2Floor, setChoice2Floor] = useState("");
   const [choice2Room, setChoice2Room] = useState("");
+  const [isDisabled, setIsDisabled] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [hostelAllocationData, setHostelAllocationData] = useState(null);
   const [hostelLoading, setHostelLoading] = useState(false);
@@ -357,10 +371,6 @@ const downloadAllotmentDetails = () => {
             <div class="detail-label">Enrollment No:</div>
             <div class="detail-value">${student.enrolmentNo || 'N/A'}</div>
           </div>
-          <div class="detail-row">
-            <div class="detail-label">Course:</div>
-            <div class="detail-value">${student.course || 'N/A'}</div>
-          </div>
         </div>
 
         <div class="section">
@@ -410,10 +420,6 @@ const downloadAllotmentDetails = () => {
           <div class="detail-row">
             <div class="detail-label">Allocation Date:</div>
             <div class="detail-value">${allocationDate}</div>
-          </div>
-          <div class="detail-row">
-            <div class="detail-label">Monthly Fee:</div>
-            <div class="detail-value">₹${hostelAllocationData.hostelDetails?.feePerMonth || '0'}</div>
           </div>
         </div>
 
@@ -797,6 +803,37 @@ const downloadReceipt = () => {
             </div>
             <p className="text-sm text-gray-600 mb-4">Select your hostel preferences with optional floor and room preferences</p>
             
+            {/* Disability Status - Always visible */}
+            <div className="border rounded-lg p-4 bg-yellow-50 border-yellow-300 mb-4">
+              <h4 className="font-semibold mb-3 text-yellow-800">Disability Status *</h4>
+              <p className="text-sm text-gray-600 mb-3">This information is required for room allocation. Students with disabilities will be prioritized for ground floor rooms.</p>
+              
+              <div className="space-y-2">
+                <label className="flex items-center space-x-3 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="disabilityStatus"
+                    value="no"
+                    checked={isDisabled === "no"}
+                    onChange={(e) => setIsDisabled(e.target.value)}
+                    className="w-4 h-4 text-blue-600"
+                  />
+                  <span className="text-sm">No, I do not have any physical disability</span>
+                </label>
+                <label className="flex items-center space-x-3 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="disabilityStatus"
+                    value="yes"
+                    checked={isDisabled === "yes"}
+                    onChange={(e) => setIsDisabled(e.target.value)}
+                    className="w-4 h-4 text-blue-600"
+                  />
+                  <span className="text-sm">Yes, I have a physical disability (Ground floor preference)</span>
+                </label>
+              </div>
+            </div>
+
             {hostelLoading ? (
               <div className="text-center py-8">
                 <p className="text-gray-600">Loading available hostels...</p>
@@ -809,7 +846,17 @@ const downloadReceipt = () => {
               <div className="space-y-6">
               {/* Choice 1 */}
               <div className="border rounded-lg p-4 bg-gray-50">
-                <h4 className="font-semibold mb-3 text-blue-600">Choice 1 (Priority)</h4>
+                <h4 className="font-semibold mb-3 text-blue-600">
+                  {isDisabled === "yes" ? "Select Hostel" : "Choice 1 (Priority)"}
+                </h4>
+                
+                {isDisabled === "yes" && (
+                  <div className="mb-4 p-3 bg-green-50 rounded border border-green-200">
+                    <p className="text-sm text-green-800">
+                      ✓ You will be automatically allocated to a ground floor room based on availability. If ground floor is full, you will be assigned to the lowest available floor.
+                    </p>
+                  </div>
+                )}
                 
                 <div className="mb-4">
                   <label className="block text-sm font-medium mb-2">Select Hostel</label>
@@ -865,63 +912,67 @@ const downloadReceipt = () => {
                       )}
                     </div>
 
-                    <div className="mb-4">
-                      <label className="block text-sm font-medium mb-2">Select Floor (optional)</label>
-                      <select 
-                        className="border w-full p-2 rounded" 
-                        value={choice1Floor} 
-                        onChange={(e)=>{
-                          setChoice1Floor(e.target.value);
-                          setChoice1Room("");
-                        }}
-                      >
-                        <option value="">All Floors</option>
-                        {getAllFloorsForHostel(choice1Hostel).map(floor => {
-                          const availableOnFloor = getAvailableRoomsCountPerFloor(choice1Hostel)[floor] || 0;
-                          const roomsPerFloor = hostels.find(h => h.name === choice1Hostel)?.roomsPerFloor || 1;
-                          return (
-                            <option key={floor} value={floor.toString()}>
-                              {floor === 0 ? 'Ground Floor' : `Floor ${floor}`} - {availableOnFloor}/{roomsPerFloor} rooms available
-                            </option>
-                          );
-                        })}
-                      </select>
-                    </div>
+                    {isDisabled !== "yes" && (
+                      <>
+                        <div className="mb-4">
+                          <label className="block text-sm font-medium mb-2">Select Floor (optional)</label>
+                          <select 
+                            className="border w-full p-2 rounded" 
+                            value={choice1Floor} 
+                            onChange={(e)=>{
+                              setChoice1Floor(e.target.value);
+                              setChoice1Room("");
+                            }}
+                          >
+                            <option value="">All Floors</option>
+                            {getAllFloorsForHostel(choice1Hostel).map(floor => {
+                              const availableOnFloor = getAvailableRoomsCountPerFloor(choice1Hostel)[floor] || 0;
+                              const roomsPerFloor = hostels.find(h => h.name === choice1Hostel)?.roomsPerFloor || 1;
+                              return (
+                                <option key={floor} value={floor.toString()}>
+                                  {floor === 0 ? 'Ground Floor' : `Floor ${floor}`} - {availableOnFloor}/{roomsPerFloor} rooms available
+                                </option>
+                              );
+                            })}
+                          </select>
+                        </div>
 
-                    {choice1Floor && (
-                      <div className="mb-4">
-                        <label className="block text-sm font-medium mb-2">Select Room Number (optional)</label>
-                        <select 
-                          className="border w-full p-2 rounded" 
-                          value={choice1Room} 
-                          onChange={(e)=>setChoice1Room(e.target.value)}
-                        >
-                          <option value="">Any Room on Floor {choice1Floor === '0' ? 'Ground' : choice1Floor}</option>
-                          {getRoomsOnFloor(choice1Hostel, parseInt(choice1Floor)).map(room => (
-                            <option key={room.number} value={room.number}>
-                              Room {room.number}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-                    )}
+                        {choice1Floor && (
+                          <div className="mb-4">
+                            <label className="block text-sm font-medium mb-2">Select Room Number (optional)</label>
+                            <select 
+                              className="border w-full p-2 rounded" 
+                              value={choice1Room} 
+                              onChange={(e)=>setChoice1Room(e.target.value)}
+                            >
+                              <option value="">Any Room on Floor {choice1Floor === '0' ? 'Ground' : choice1Floor}</option>
+                              {getRoomsOnFloor(choice1Hostel, parseInt(choice1Floor)).map(room => (
+                                <option key={room.number} value={room.number}>
+                                  Room {room.number}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+                        )}
 
-                    {!choice1Floor && (
-                      <div className="mb-4">
-                        <label className="block text-sm font-medium mb-2">Select Room Number (optional)</label>
-                        <select 
-                          className="border w-full p-2 rounded" 
-                          value={choice1Room} 
-                          onChange={(e)=>setChoice1Room(e.target.value)}
-                        >
-                          <option value="">Any Room in {choice1Hostel}</option>
-                          {getAvailableRoomsForHostel(choice1Hostel).map(room => (
-                            <option key={room.number} value={room.number}>
-                              Room {room.number} (Floor {room.floor === 0 ? 'Ground' : room.floor})
-                            </option>
-                          ))}
-                        </select>
-                      </div>
+                        {!choice1Floor && (
+                          <div className="mb-4">
+                            <label className="block text-sm font-medium mb-2">Select Room Number (optional)</label>
+                            <select 
+                              className="border w-full p-2 rounded" 
+                              value={choice1Room} 
+                              onChange={(e)=>setChoice1Room(e.target.value)}
+                            >
+                              <option value="">Any Room in {choice1Hostel}</option>
+                              {getAvailableRoomsForHostel(choice1Hostel).map(room => (
+                                <option key={room.number} value={room.number}>
+                                  Room {room.number} (Floor {room.floor === 0 ? 'Ground' : room.floor})
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+                        )}
+                      </>
                     )}
                   </>
                 )}
@@ -931,7 +982,11 @@ const downloadReceipt = () => {
               <div className="border-t pt-4 mt-4">
                 <h4 className="font-semibold mb-3">Application Summary</h4>
                 <div className="bg-gray-50 p-3 rounded text-sm">
-                  <p><strong>Selected Hostel:</strong> {choice1Hostel ? `${choice1Hostel}${choice1Floor ? ` - Floor ${choice1Floor === '0' ? 'Ground' : choice1Floor}` : ''}${choice1Room ? ` - Room ${choice1Room}` : ''}` : 'Not selected'}</p>
+                  <p><strong>Disability Status:</strong> {isDisabled === "yes" ? "Yes (Ground floor priority)" : isDisabled === "no" ? "No" : "Not specified"}</p>
+                  <p><strong>Selected Hostel:</strong> {choice1Hostel ? `${choice1Hostel}${isDisabled !== "yes" && choice1Floor ? ` - Floor ${choice1Floor === '0' ? 'Ground' : choice1Floor}` : ''}${isDisabled !== "yes" && choice1Room ? ` - Room ${choice1Room}` : ''}` : 'Not selected'}</p>
+                  {isDisabled === "yes" && choice1Hostel && (
+                    <p className="text-green-700 mt-2">✓ You will be assigned to the lowest available floor</p>
+                  )}
                 </div>
               </div>
 
@@ -946,8 +1001,13 @@ const downloadReceipt = () => {
                     return;
                   }
                   
+                  if (!isDisabled) {
+                    showToast.error('Please specify your disability status');
+                    return;
+                  }
+                  
                   if (!choice1Hostel) {
-                    alert('Please select at least one hostel');
+                    showToast.error('Please select at least one hostel');
                     return;
                   }
                   
@@ -969,6 +1029,7 @@ const downloadReceipt = () => {
                       semester: student.semester || "",
                       cgpa: student.cgpa || 0,
                       roomType: (student.hostel?.roomType || "Shared").replace(/^(single)$/i,'Single').replace(/^(shared)$/i,'Shared').replace(/^(triple)$/i,'Triple'),
+                      isDisabled: isDisabled === "yes",
                       reason: "Student self-application",
                       emergencyContact: student.alternatePhone || "",
                       parentName: student.fatherName || "",
@@ -986,8 +1047,8 @@ const downloadReceipt = () => {
                     setSubmitting(false);
                   }
                 }}
-                disabled={submitting || (hostelAllocationData && hostelAllocationData.hostelName) || !choice1Hostel}
-                className={`px-4 py-2 rounded text-white ${(submitting || (hostelAllocationData && hostelAllocationData.hostelName) || !choice1Hostel) ? 'bg-gray-400' : 'bg-blue-600'}`}
+                disabled={submitting || (hostelAllocationData && hostelAllocationData.hostelName) || !choice1Hostel || !isDisabled}
+                className={`px-4 py-2 rounded text-white ${(submitting || (hostelAllocationData && hostelAllocationData.hostelName) || !choice1Hostel || !isDisabled) ? 'bg-gray-400' : 'bg-blue-600'}`}
               >
                 {submitting ? 'Submitting...' : 'Submit Application'}
               </button>

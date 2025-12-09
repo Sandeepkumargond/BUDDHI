@@ -18,6 +18,9 @@ import {
     updateAlumniStatus,
     deleteAlumni,
     getAllInternshipOpportunities,
+    forgotPassword,
+    verifyPasswordResetOTP,
+    resetPassword,
     getAllReferrals,
     getDonationStats,
     updateDonationStatus,
@@ -41,6 +44,11 @@ router.route("/admin/:alumniId").get(authenticateAdmin, getAlumniById);
 router.route("/admin/:alumniId").delete(authenticateAdmin, deleteAlumni);
 
 // Alumni authentication routes
+// Password reset routes (public)
+router.route('/forgot-password').post(forgotPassword);
+router.route('/verify-otp').post(verifyPasswordResetOTP);
+router.route('/reset-password').post(resetPassword);
+
 router.route("/login").post(loginAlumni);
 router.route("/refresh-access-token").post(refreshAlumniAccessToken);
 
