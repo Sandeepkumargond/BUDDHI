@@ -1,6 +1,7 @@
 import UserCard from "@/components/UserCard";
 import Image from "next/image";
 import Link from "next/link";
+import Announcements from "@/components/Announcements";
 
 const SuperAdminPage = () => {
   // Mock data for dashboard stats
@@ -134,6 +135,9 @@ const SuperAdminPage = () => {
           </div>
         </Link>
       </div>
+
+      {/* Announcements */}
+      <Announcements />
 
       {/* Recent Requests */}
       <div className="bg-white rounded-lg shadow-sm border">

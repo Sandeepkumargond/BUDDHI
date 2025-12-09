@@ -1,3 +1,6 @@
+.rbc-time-header {
+  display: none !important; /* hide header row so no extra columns appear */
+}
 @import "tailwindcss";
 @import "tw-animate-css";
 
@@ -64,6 +67,7 @@
 
 .rbc-timeslot-group {
   background-color: #f7fdff !important;
+  min-height: 70px !important; /* make cells taller */
 }
 
 .rbc-day-slot {
@@ -73,9 +77,11 @@
 .rbc-event {
   border: none !important;
   color: black !important;
-  padding: 10px !important;
-  margin: 10px !important;
-  width: 99% !important;
+  padding: 12px 14px !important; /* bigger course box */
+  margin: 0 !important; /* sit flush inside cell */
+  width: 100% !important;
+  box-sizing: border-box !important;
+  font-size: 13px !important; /* slightly smaller text */
 }
 
 .rbc-event:nth-child(1) {
@@ -105,7 +111,8 @@
 
 .rbc-event-label{
   color: gray !important;
-  margin-bottom: 5px;
+  margin: 0 !important;
+  font-size: 12px !important; /* slightly smaller time label */
 }
 
 @theme inline {

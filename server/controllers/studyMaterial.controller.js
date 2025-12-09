@@ -692,8 +692,35 @@ const submitStudentMaterial = asyncHandler(async (req, res) => {
         branch: material.branch,
         materialType: `student-${type}`
     });
-    if (uploadResult.error) {
-        throw new ApiError(500, `File upload failed: ${uploadResult.message}`);
+    let finalUrl = uploadResult?.url;
+    let finalFileName = uploadResult?.fileName;
+    let finalFileSize = uploadResult?.fileSize;
+
+    // Fallback: if remote upload fails, persist file locally under public/submissions
+    if (uploadResult?.error) {
+        try {
+            const fs = await import('fs');
+            const path = await import('path');
+            const submissionsDir = path.resolve('./public/submissions');
+            if (!fs.existsSync(submissionsDir)) {
+                fs.mkdirSync(submissionsDir, { recursive: true });
+            }
+            const ext = req.file.originalname.split('.').pop();
+            const safeTitle = `${material.title}-submission`.replace(/[^a-zA-Z0-9]/g, '_');
+            const localName = `${safeTitle}_${Date.now()}.${ext}`;
+            const destPath = path.join(submissionsDir, localName);
+            // Move from temp path to submissions
+            fs.renameSync(req.file.path, destPath);
+            // Construct public URL (served by Express static on /public)
+            finalUrl = `/public/submissions/${localName}`;
+            finalFileName = localName;
+            try {
+                const stat = fs.statSync(destPath);
+                finalFileSize = stat.size;
+            } catch {}
+        } catch (err) {
+            throw new ApiError(500, `File upload failed: ${uploadResult.message || 'unknown'}; local save error: ${err?.message || err}`);
+        }
     }
 
     // Append a submission entry (if submissions field exists, push; else ignore persistence)
@@ -702,9 +729,9 @@ const submitStudentMaterial = asyncHandler(async (req, res) => {
         material.submissions.push({
             studentId: req.user?._id,
             type,
-            fileUrl: uploadResult.url,
-            fileName: uploadResult.fileName,
-            fileSize: uploadResult.fileSize,
+            fileUrl: finalUrl,
+            fileName: finalFileName,
+            fileSize: finalFileSize,
             at: new Date()
         });
         await material.save();
@@ -712,7 +739,7 @@ const submitStudentMaterial = asyncHandler(async (req, res) => {
         console.warn('Could not persist submission, continuing:', e?.message || e);
     }
 
-    return res.status(200).json(new ApiResponse(200, { url: uploadResult.url }, 'Submission uploaded'));
+    return res.status(200).json(new ApiResponse(200, { url: finalUrl }, 'Submission uploaded'));
 });
 
 export {
@@ -720,3 +747,17 @@ export {
     listStudentMaterials,
     submitStudentMaterial
 };
+
+// Faculty: list submissions for a material in reverse chronological order
+export const getMaterialSubmissions = asyncHandler(async (req, res) => {
+    const { materialId } = req.params;
+    if (!materialId) throw new ApiError(400, 'materialId is required');
+    const material = await StudyMaterial.findById(materialId)
+        .setOptions({ strictPopulate: false })
+        .populate('submissions.studentId', 'firstName lastName rollNumber email')
+        .lean();
+    if (!material) throw new ApiError(404, 'Material not found');
+    const subs = Array.isArray(material.submissions) ? material.submissions : [];
+    subs.sort((a, b) => new Date(b.at) - new Date(a.at));
+    return res.status(200).json(new ApiResponse(200, { submissions: subs }, 'Submissions list'));
+});

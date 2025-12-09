@@ -115,6 +115,52 @@ const connectDB = async () => {
         } catch (e) {
             console.warn('Department seeding warning:', e.message);
         }
+
+        // Optional: Seed schedules from existing faculty assignments (DB-driven)
+        try {
+            const seedFlag = (process.env.SEED_SCHEDULE || 'true').toLowerCase() === 'true';
+            if (seedFlag) {
+                const { Schedule } = await import('../models/schedule.model.js');
+                const { Student } = await import('../models/student.model.js');
+                const { Faculty } = await import('../models/faculty.model.js');
+                const { Course } = await import('../models/course.model.js');
+                // For each faculty with active assigned courses, create a simple weekly slot if none exist
+                const faculties = await Faculty.find({ 'assignedCourses.isActive': true }).lean();
+                const dayTemplate = [1, 2, 3, 4, 5]; // Mon-Fri
+                const startTimes = [9 * 60, 10 * 60 + 30, 12 * 60, 14 * 60];
+                for (const fac of faculties) {
+                    const active = (fac.assignedCourses || []).filter(a => a.isActive && a.courseId);
+                    if (active.length === 0) continue;
+                    // Skip if this faculty already has any schedule slots
+                    const hasSlots = await Schedule.exists({ faculty: fac._id });
+                    if (hasSlots) continue;
+                    let i = 0;
+                    for (const a of active) {
+                        const course = await Course.findById(a.courseId).lean();
+                        if (!course) continue;
+                        const dayOfWeek = dayTemplate[i % dayTemplate.length];
+                        const startMins = startTimes[i % startTimes.length];
+                        const endMins = startMins + 60;
+                        await Schedule.create({
+                            course: course._id,
+                            faculty: fac._id,
+                            branch: fac.department || 'CSE',
+                            semester: Number(a.semester) || (course.semester || 5),
+                            section: a.section || 'A',
+                            room: `R-${200 + i}`,
+                            dayOfWeek,
+                            startMins,
+                            endMins,
+                            createdBy: fac._id,
+                        });
+                        i++;
+                    }
+                    console.log(`Seeded schedule from assignments for faculty ${fac._id}`);
+                }
+            }
+        } catch (e) {
+            console.warn('Schedule seeding warning:', e.message);
+        }
     } catch (error) {
         console.error("MongoDB connection failed:", error.message);
         console.error("Hint: If you're behind a DNS/firewall that blocks SRV lookups, set MONGODB_URI_DIRECT to a non-SRV connection string (mongodb://host:27017/db). Also ensure network access to the cluster.");
