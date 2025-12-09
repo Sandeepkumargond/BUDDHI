@@ -115,11 +115,15 @@ const BigCalendar = () => {
       endAccessor="end"
       views={["day","work_week"]}
       view={view}
-      style={{ height: "98%" }}
+      style={{ height: 650 }}
       onView={handleOnChangeView}
       min={min}
       max={max}
       eventPropGetter={eventPropGetter}
+      components={{
+        header: () => (<span />),
+        timeGutterHeader: () => (<span />)
+      }}
     />
   );
 };
