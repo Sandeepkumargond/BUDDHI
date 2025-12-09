@@ -307,32 +307,6 @@ const SubAdminDashboard = () => {
 
         {/* Announcements */}
         <Announcements />
-        
-        {/* Help & Support */}
-        <div className="bg-white p-6 rounded-lg shadow-sm border">
-          <h2 className="text-lg font-semibold mb-4">Help & Support</h2>
-          <div className="space-y-3">
-            <button className="w-full text-left p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
-              <div className="flex items-center">
-                <Image src="/help.png" alt="" width={20} height={20} className="mr-3" />
-                <div>
-                  <p className="text-sm font-medium">Admission Guidelines</p>
-                  <p className="text-xs text-gray-600">Step-by-step process</p>
-                </div>
-              </div>
-            </button>
-            
-            <button className="w-full text-left p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
-              <div className="flex items-center">
-                <Image src="/message.png" alt="" width={20} height={20} className="mr-3" />
-                <div>
-                  <p className="text-sm font-medium">Contact IT Support</p>
-                  <p className="text-xs text-gray-600">Technical assistance</p>
-                </div>
-              </div>
-            </button>
-          </div>
-        </div>
       </div>
     </div>
   );
