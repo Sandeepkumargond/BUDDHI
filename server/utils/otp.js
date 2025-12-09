@@ -1,3 +1,5 @@
+import nodemailer from 'nodemailer';
+
 // Simple in-memory OTP storage (for production, use Redis or database)
 const otpStore = new Map();
 
@@ -42,20 +44,74 @@ export const clearOTP = (email) => {
   otpStore.delete(email.toLowerCase());
 };
 
-// Simple email sender (console log for now - replace with actual email service)
+// Email sender using Gmail SMTP
 export const sendOTPEmail = async (email, otp) => {
-  // In production, integrate with SendGrid, NodeMailer, AWS SES, etc.
-  console.log(`
-===========================================
-SENDING OTP EMAIL
-===========================================
-To: ${email}
-Subject: Password Reset OTP
-Message: Your OTP for password reset is: ${otp}
-This OTP will expire in 5 minutes.
-===========================================
-  `);
-  
-  // For development, just return success
-  return { success: true };
+  try {
+    // Create transporter with Gmail credentials
+    const transporter = nodemailer.createTransport({
+      service: 'gmail',
+      auth: {
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASS,
+      },
+    });
+
+    // Email content
+    const mailOptions = {
+      from: process.env.EMAIL_USER,
+      to: email,
+      subject: 'Buddhi Archives - Password Reset OTP',
+      html: `
+        <!DOCTYPE html>
+        <html>
+          <head>
+            <style>
+              body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+              .container { max-width: 500px; margin: 0 auto; padding: 20px; border: 1px solid #ddd; border-radius: 5px; }
+              .header { background-color: #4CAF50; color: white; padding: 20px; text-align: center; border-radius: 5px 5px 0 0; }
+              .content { padding: 20px; background-color: #f9f9f9; }
+              .otp-box { background-color: #fff; border: 2px solid #4CAF50; padding: 20px; text-align: center; margin: 20px 0; border-radius: 5px; }
+              .otp-code { font-size: 32px; font-weight: bold; letter-spacing: 5px; color: #4CAF50; }
+              .footer { text-align: center; font-size: 12px; color: #777; padding: 20px; }
+              .warning { color: #d32f2f; font-weight: bold; }
+            </style>
+          </head>
+          <body>
+            <div class="container">
+              <div class="header">
+                <h1>Buddhi Archives</h1>
+              </div>
+              <div class="content">
+                <p>Hello,</p>
+                <p>You have requested to reset your password. Please use the OTP below to complete the process:</p>
+                <div class="otp-box">
+                  <p>Your OTP:</p>
+                  <div class="otp-code">${otp}</div>
+                </div>
+                <p><strong>OTP Details:</strong></p>
+                <ul>
+                  <li>This OTP is valid for <strong>5 minutes</strong> only.</li>
+                  <li>Do not share this OTP with anyone.</li>
+                  <li class="warning">If you did not request this, please ignore this email.</li>
+                </ul>
+                <p>If you have any questions, please contact our support team.</p>
+                <p>Best regards,<br/>Buddhi Archives Team</p>
+              </div>
+              <div class="footer">
+                <p>&copy; 2024 Buddhi Archives. All rights reserved.</p>
+              </div>
+            </div>
+          </body>
+        </html>
+      `,
+    };
+
+    // Send email
+    const info = await transporter.sendMail(mailOptions);
+    console.log(`✓ OTP email sent to ${email}. Message ID: ${info.messageId}`);
+    return { success: true, messageId: info.messageId };
+  } catch (error) {
+    console.error(`✗ Error sending OTP email to ${email}:`, error.message);
+    throw new Error(`Failed to send OTP email: ${error.message}`);
+  }
 };
