@@ -44,6 +44,7 @@ const menusByRole = {
     { Icon: FaCalendarAlt, label: "Leave", href: "/student/leaves" },
     { Icon: FaClipboardCheck, label: "PYQs", href: "/student/pyqs" },
     { Icon: FaBook, label: "Library", href: "/student/library" },
+    { Icon: FaCommentDots, label: "Messages", href: "/student/messages" },
   ],
 
   faculty: [
@@ -133,6 +134,7 @@ const menusByRole = {
     { Icon: FaBriefcase, label: "Internships", href: "/alumni/internships" },
     { Icon: FaUserTie, label: "Referrals", href: "/alumni/referrals" },
     { Icon: FaMoneyBillWave, label: "Donations", href: "/alumni/donations" },
+    { Icon: FaCommentDots, label: "Messages", href: "/alumni/messages" },
     { Icon: FaUserGraduate, label: "Profile", href: "/alumni/profile" },
   ],
 

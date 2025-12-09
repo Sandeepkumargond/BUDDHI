@@ -690,6 +690,37 @@ export const getStudentFeePayments = asyncHandler(async (req, res) => {
 	});
 });
 
+// Admin: Get all fee payments
+export const getAllFeePayments = asyncHandler(async (req, res) => {
+	const payments = await FeePayment.find({
+		docType: "payment",
+	})
+		.populate('student', 'firstName lastName enrollmentNo rollNo branch semester')
+		.sort({ createdAt: -1 })
+		.lean();
+
+	return res.json({
+		success: true,
+		data: payments.map((p) => ({
+			id: p.id,
+			session: p.session,
+			semester: p.semester,
+			studentName: p.studentName,
+			enrollmentNo: p.enrollmentNo,
+			rollNo: p.rollNo,
+			branch: p.student?.branch || 'N/A',
+			feeHead: p.feeHead,
+			amount: p.amount,
+			transactionId: p.transactionId,
+			transactionDate: p.transactionDate,
+			transactionStatus: p.transactionStatus,
+			paymentMode: p.paymentMode,
+			createdAt: p.createdAt,
+			student: p.student,
+		})),
+	});
+});
+
 
 
 

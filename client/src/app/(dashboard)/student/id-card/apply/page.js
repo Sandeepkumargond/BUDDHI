@@ -3,17 +3,13 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { showToast } from "@/lib/toast";
 import { apiService } from "@/lib/api";
-import { FiUpload, FiX, FiCheckCircle } from "react-icons/fi";
-import RazorpayPaymentButton from "@/components/RazorpayPaymentButton";
+import { FiUpload, FiX } from "react-icons/fi";
 
 export default function ApplyIdCard() {
   const router = useRouter();
   const [form, setForm] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [studentProfile, setStudentProfile] = useState(null);
-  const [applicationSubmitted, setApplicationSubmitted] = useState(false);
-  const [submittedApplication, setSubmittedApplication] = useState(null);
-  const [razorpayConfigured, setRazorpayConfigured] = useState(false);
   
   const [formData, setFormData] = useState({
     fullName: "",
@@ -36,19 +32,8 @@ export default function ApplyIdCard() {
   const [signatureFile, setSignatureFile] = useState(null);
 
   useEffect(() => {
-    checkRazorpayConfig();
     fetchFormAndProfile();
   }, []);
-
-  const checkRazorpayConfig = async () => {
-    try {
-      const response = await apiService.request("/razorpay/credentials", { method: "GET" });
-      setRazorpayConfigured(response.success && response.data);
-    } catch (error) {
-      console.error("Razorpay not configured");
-      setRazorpayConfigured(false);
-    }
-  };
 
   const fetchFormAndProfile = async () => {
     try {
@@ -152,9 +137,10 @@ export default function ApplyIdCard() {
         }
       });
 
-      setSubmittedApplication(response.data);
-      setApplicationSubmitted(true);
-      showToast.success("Application submitted successfully! Please complete the payment.");
+      showToast.success("Application submitted successfully! Your ID card will be processed.");
+      setTimeout(() => {
+        router.push("/student/id-card");
+      }, 1500);
     } catch (error) {
       showToast.error(error.message || "Failed to submit application");
     } finally {
@@ -162,162 +148,10 @@ export default function ApplyIdCard() {
     }
   };
 
-  const handlePaymentSuccess = async (paymentData) => {
-    try {
-      // PaymentData comes from RazorpayPaymentButton after successful verification
-      // It contains the fee payment record, but we need to update ID card application
-      await apiService.request(`/id-card-student/applications/${submittedApplication._id}/payment`, {
-        method: "PATCH",
-        body: {
-          paymentId: paymentData.razorpayPaymentId || paymentData.id,
-          orderId: paymentData.razorpayOrderId,
-          paymentStatus: 'completed'
-        }
-      });
-
-      showToast.success("Payment completed successfully! Your application is now under review.");
-      setTimeout(() => {
-        router.push("/student/id-card");
-      }, 2000);
-    } catch (error) {
-      showToast.error("Payment completed but failed to update application. Please contact support.");
-      console.error("Failed to update payment status:", error);
-    }
-  };
-
-  const handlePaymentError = async (error) => {
-    console.error("Payment error:", error);
-    showToast.error("Payment failed. You can complete payment from your applications page.");
-    
-    try {
-      await apiService.request(`/id-card-student/applications/${submittedApplication._id}/payment`, {
-        method: "PATCH",
-        body: {
-          paymentStatus: 'failed'
-        }
-      });
-    } catch (err) {
-      console.error("Failed to update payment status");
-    }
-  };
-
   if (!form) {
     return (
       <div className="flex items-center justify-center h-screen">
         <div className="text-gray-600">Loading...</div>
-      </div>
-    );
-  }
-
-  // Show payment screen after application submission
-  if (applicationSubmitted && submittedApplication) {
-    return (
-      <div className="p-6 max-w-3xl mx-auto">
-        <div className="mb-6">
-          <div className="flex items-center gap-3 mb-2">
-            <FiCheckCircle className="text-green-600" size={32} />
-            <h1 className="text-2xl font-bold text-gray-900">Application Submitted Successfully!</h1>
-          </div>
-          <p className="text-gray-600 ml-11">Complete your payment to proceed with ID card processing</p>
-        </div>
-
-        {/* Application Summary */}
-        <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-          <h2 className="text-lg font-semibold mb-4 pb-2 border-b">Application Summary</h2>
-          
-          <div className="grid grid-cols-2 gap-4 mb-6">
-            <div>
-              <p className="text-sm text-gray-600">Application ID</p>
-              <p className="font-medium text-sm">{submittedApplication._id}</p>
-            </div>
-            <div>
-              <p className="text-sm text-gray-600">Student Name</p>
-              <p className="font-medium">{submittedApplication.fullName}</p>
-            </div>
-            <div>
-              <p className="text-sm text-gray-600">Course</p>
-              <p className="font-medium">{submittedApplication.course} - {submittedApplication.branch}</p>
-            </div>
-            <div>
-              <p className="text-sm text-gray-600">Semester</p>
-              <p className="font-medium">{submittedApplication.semester}</p>
-            </div>
-            <div>
-              <p className="text-sm text-gray-600">Academic Year</p>
-              <p className="font-medium">{submittedApplication.academicYear}</p>
-            </div>
-            <div>
-              <p className="text-sm text-gray-600">Status</p>
-              <p className="inline-block px-3 py-1 bg-yellow-100 text-yellow-800 text-sm rounded-full">
-                Payment Pending
-              </p>
-            </div>
-          </div>
-
-          {/* Payment Section */}
-          <div className="border-t pt-6">
-            <h3 className="text-lg font-semibold mb-4">Complete Payment</h3>
-            
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
-              <div className="flex justify-between items-center">
-                <div>
-                  <p className="text-sm text-blue-900 font-medium">ID Card Fee</p>
-                  <p className="text-xs text-blue-700 mt-1">Academic Year: {submittedApplication.academicYear}</p>
-                </div>
-                <p className="text-3xl font-bold text-blue-900">₹{submittedApplication.paymentAmount || form.fee}</p>
-              </div>
-            </div>
-
-            {!razorpayConfigured ? (
-              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-                <p className="text-yellow-800 font-medium mb-2">⚠️ Payment Gateway Not Configured</p>
-                <p className="text-sm text-yellow-700">
-                  The payment gateway is not configured by the administrator. Please contact the admin office to complete your payment.
-                </p>
-                <button
-                  onClick={() => router.push("/student/id-card")}
-                  className="mt-4 px-6 py-2 bg-yellow-600 text-white rounded-md hover:bg-yellow-700"
-                >
-                  Go to My Applications
-                </button>
-              </div>
-            ) : (
-              <>
-                <div className="flex items-start gap-4 mb-6">
-                  <RazorpayPaymentButton
-                    feeStructureHeadId="ID Card Fee"
-                    amount={submittedApplication.paymentAmount || form.fee}
-                    session={submittedApplication.academicYear}
-                    onPaymentSuccess={handlePaymentSuccess}
-                    onPaymentError={handlePaymentError}
-                    buttonText="Pay Now with Razorpay"
-                    className="flex-1 px-8 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-semibold text-lg"
-                  />
-                </div>
-
-                <div className="bg-gray-50 rounded-lg p-4">
-                  <p className="text-sm font-medium text-gray-700 mb-2">Payment Information:</p>
-                  <ul className="text-sm text-gray-600 space-y-1 list-disc list-inside">
-                    <li>Secure payment powered by Razorpay</li>
-                    <li>Multiple payment options: UPI, Cards, Net Banking, Wallets</li>
-                    <li>Instant payment confirmation via email & SMS</li>
-                    <li>Your application will be reviewed after successful payment</li>
-                    <li>You can also complete payment later from the Applications page</li>
-                  </ul>
-                </div>
-
-                <div className="mt-6 flex gap-3">
-                  <button
-                    onClick={() => router.push("/student/id-card")}
-                    className="px-6 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50"
-                  >
-                    Pay Later
-                  </button>
-                </div>
-              </>
-            )}
-          </div>
-        </div>
       </div>
     );
   }
@@ -604,22 +438,6 @@ export default function ApplyIdCard() {
           </div>
         </div>
 
-        {/* Fee Information */}
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
-          <div className="flex justify-between items-center">
-            <div>
-              <h3 className="font-semibold text-lg text-blue-900 mb-1">ID Card Fee</h3>
-              <p className="text-sm text-blue-700">
-                Payment will be processed immediately after form submission via Razorpay
-              </p>
-            </div>
-            <div className="text-right">
-              <p className="text-3xl font-bold text-blue-900">₹{form.fee}</p>
-              <p className="text-xs text-blue-700 mt-1">One-time payment</p>
-            </div>
-          </div>
-        </div>
-
         {/* Submit Button */}
         <div className="flex gap-3 pt-4">
           <button
@@ -634,7 +452,7 @@ export default function ApplyIdCard() {
             disabled={isLoading || !formData.photoUrl || !formData.signatureUrl}
             className="flex-1 px-6 py-3 bg-black text-white rounded-md hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed font-semibold"
           >
-            {isLoading ? "Submitting..." : "Submit Application & Proceed to Payment"}
+            {isLoading ? "Submitting..." : "Submit Application"}
           </button>
         </div>
       </form>

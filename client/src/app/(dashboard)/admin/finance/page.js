@@ -17,6 +17,7 @@ import { apiService } from "@/lib/api"
 const FinancePage = () => {
   const [feeRecords, setFeeRecords] = useState([])
   const [feeStructures, setFeeStructures] = useState([])
+  const [paymentTransactions, setPaymentTransactions] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [filters, setFilters] = useState({ department: "", status: "" })
@@ -39,6 +40,7 @@ const FinancePage = () => {
   useEffect(() => {
     fetchFeeRecords()
     fetchFeeStructures()
+    fetchPaymentTransactions()
   }, [])
 
   const fetchFeeRecords = async () => {
@@ -116,6 +118,34 @@ const FinancePage = () => {
     }
   }
 
+  const fetchPaymentTransactions = async () => {
+    try {
+      const response = await fetch(
+        (process.env.NEXT_PUBLIC_API_BASE || "http://localhost:5000") + "/api/v1/razorpay/admin/all-payments",
+        {
+          credentials: "include",
+          headers: { "Content-Type": "application/json" }
+        }
+      )
+      
+      if (!response.ok) throw new Error("Failed to fetch payment transactions")
+      
+      const data = await response.json()
+      console.log("Payment transactions response:", data)
+      
+      if (data.success && Array.isArray(data.data)) {
+        console.log("Payment transactions found:", data.data.length)
+        setPaymentTransactions(data.data)
+      } else {
+        console.log("No payment transactions found")
+        setPaymentTransactions([])
+      }
+    } catch (err) {
+      console.error("Error fetching payment transactions:", err)
+      setPaymentTransactions([])
+    }
+  }
+
   // Filter records - only show payments for published fee structures
   const filteredRecords = feeRecords.filter(record => {
     if (filters.department && record.branch !== filters.department) return false
@@ -123,8 +153,21 @@ const FinancePage = () => {
     return true
   })
 
-  // Calculate summary stats
-  const totalCollected = filteredRecords.reduce((sum, r) => sum + (r.paidAmount || 0), 0)
+  // Filter payment transactions
+  const filteredPayments = paymentTransactions.filter(payment => {
+    if (filters.department && payment.branch !== filters.department) return false
+    if (filters.status && payment.transactionStatus !== filters.status) return false
+    return true
+  })
+
+  // Calculate summary stats from actual payment transactions
+  const totalCollectedFromPayments = filteredPayments.reduce((sum, p) => sum + (p.amount || 0), 0)
+  const successfulPayments = filteredPayments.filter(p => p.transactionStatus === 'success').length
+  const pendingPayments = filteredPayments.filter(p => p.transactionStatus === 'pending').length
+  const failedPayments = filteredPayments.filter(p => p.transactionStatus === 'failed').length
+  
+  // Fallback to fee records if no payment transactions
+  const totalCollected = paymentTransactions.length > 0 ? totalCollectedFromPayments : filteredRecords.reduce((sum, r) => sum + (r.paidAmount || 0), 0)
   const totalPending = filteredRecords.reduce((sum, r) => sum + (r.pendingAmount || 0), 0)
   const totalExpected = filteredRecords.reduce((sum, r) => sum + (r.totalAmount || 0), 0)
   
@@ -236,32 +279,67 @@ const FinancePage = () => {
   }
 
   const exportToCSV = () => {
-    if (filteredRecords.length === 0) {
-      alert("No records to export")
+    // Use payment transactions for CSV export (actual payment data)
+    const dataToExport = paymentTransactions.length > 0 ? paymentTransactions : filteredRecords
+    
+    if (dataToExport.length === 0) {
+      alert("No payment records to export")
       return
     }
 
-    const headers = ["Student Name", "Roll No", "Amount", "Session", "Fee Head", "Status", "Date"]
-    const csvContent = [
-      headers.join(","),
-      ...filteredRecords.map(r => [
-        r.studentName || "N/A",
-        r.rollNo || "N/A",
-        r.amount || 0,
-        r.session || "N/A",
-        r.feeHead || "N/A",
-        r.transactionStatus || "N/A",
-        new Date(r.createdAt).toLocaleDateString()
-      ].join(","))
-    ].join("\n")
+    // If exporting payment transactions (real payment data)
+    if (paymentTransactions.length > 0) {
+      const headers = ["Payment ID", "Student Name", "Roll No", "Enrollment No", "Branch", "Session", "Fee Head", "Amount (₹)", "Transaction ID", "Payment Mode", "Status", "Transaction Date"]
+      const csvContent = [
+        headers.join(","),
+        ...paymentTransactions.map(p => [
+          p.id || "N/A",
+          `"${p.studentName || "N/A"}"`,
+          p.rollNo || "N/A",
+          p.enrollmentNo || "N/A",
+          `"${p.branch || "N/A"}"`,
+          `"${p.session || "N/A"}"`,
+          `"${p.feeHead || "N/A"}"`,
+          p.amount || 0,
+          p.transactionId || "N/A",
+          p.paymentMode || "N/A",
+          p.transactionStatus || "N/A",
+          p.transactionDate ? new Date(p.transactionDate).toLocaleDateString() : (p.createdAt ? new Date(p.createdAt).toLocaleDateString() : "N/A")
+        ].join(","))
+      ].join("\n")
 
-    const blob = new Blob([csvContent], { type: "text/csv" })
-    const url = window.URL.createObjectURL(blob)
-    const link = document.createElement("a")
-    link.href = url
-    link.download = `fee-records-${new Date().getTime()}.csv`
-    link.click()
-    window.URL.revokeObjectURL(url)
+      const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" })
+      const url = window.URL.createObjectURL(blob)
+      const link = document.createElement("a")
+      link.href = url
+      link.download = `payment-transactions-${new Date().toISOString().split('T')[0]}.csv`
+      link.click()
+      window.URL.revokeObjectURL(url)
+    } else {
+      // Fallback: Export fee records (student fee structure data)
+      const headers = ["Student Name", "Enrollment No", "Branch", "Total Amount (₹)", "Paid Amount (₹)", "Pending Amount (₹)", "Status", "Due Date"]
+      const csvContent = [
+        headers.join(","),
+        ...filteredRecords.map(r => [
+          `"${r.firstName || ""} ${r.lastName || ""}"`,
+          r.enrollmentNo || "N/A",
+          `"${r.branch || "N/A"}"`,
+          r.totalAmount || 0,
+          r.paidAmount || 0,
+          r.pendingAmount || 0,
+          r.status || "N/A",
+          r.dueDate ? new Date(r.dueDate).toLocaleDateString() : "N/A"
+        ].join(","))
+      ].join("\n")
+
+      const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" })
+      const url = window.URL.createObjectURL(blob)
+      const link = document.createElement("a")
+      link.href = url
+      link.download = `fee-records-${new Date().toISOString().split('T')[0]}.csv`
+      link.click()
+      window.URL.revokeObjectURL(url)
+    }
   }
 
   if (loading) {
@@ -390,11 +468,11 @@ const FinancePage = () => {
           </div>
 
           {/* Summary Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
               <h3 className="text-gray-600 text-sm font-medium mb-2">Total Collected</h3>
               <p className="text-3xl font-bold text-green-600">₹{Number(totalCollected).toLocaleString()}</p>
-              <p className="text-sm text-gray-500 mt-2">{filteredRecords.filter(r => (r.paidAmount || 0) >= (r.totalAmount || 0)).length} fully paid</p>
+              <p className="text-sm text-gray-500 mt-2">{successfulPayments} successful payments</p>
             </div>
             <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
               <h3 className="text-gray-600 text-sm font-medium mb-2">Pending Collection</h3>
@@ -402,9 +480,14 @@ const FinancePage = () => {
               <p className="text-sm text-gray-500 mt-2">From {filteredRecords.filter(r => (r.pendingAmount || 0) > 0).length} students</p>
             </div>
             <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+              <h3 className="text-gray-600 text-sm font-medium mb-2">Total Transactions</h3>
+              <p className="text-3xl font-bold text-blue-600">{paymentTransactions.length}</p>
+              <p className="text-sm text-gray-500 mt-2">{pendingPayments} pending, {failedPayments} failed</p>
+            </div>
+            <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
               <h3 className="text-gray-600 text-sm font-medium mb-2">Collection Rate</h3>
-              <p className="text-3xl font-bold text-blue-600">{(totalExpected > 0 ? ((totalCollected / totalExpected) * 100).toFixed(1) : '0.0')}%</p>
-              <p className="text-sm text-gray-500 mt-2">Overall collection efficiency</p>
+              <p className="text-3xl font-bold text-purple-600">{(totalExpected > 0 ? ((totalCollected / totalExpected) * 100).toFixed(1) : '0.0')}%</p>
+              <p className="text-sm text-gray-500 mt-2">Overall efficiency</p>
             </div>
           </div>
 
@@ -522,6 +605,83 @@ const FinancePage = () => {
             ) : (
               <div className="p-8 text-center">
                 <p className="text-gray-500">No fee records found for published fee structures</p>
+              </div>
+            )}
+          </div>
+
+          {/* Payment Transactions Table */}
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+            <div className="p-4 border-b border-gray-200 flex items-center justify-between">
+              <div>
+                <h3 className="font-semibold text-gray-800">Payment Transactions</h3>
+                <p className="text-sm text-gray-500 mt-1">All successful payment records from students</p>
+              </div>
+              <span className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-medium">
+                {paymentTransactions.length} Transactions
+              </span>
+            </div>
+            {paymentTransactions.length > 0 ? (
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead className="bg-gray-50 border-b border-gray-200">
+                    <tr>
+                      <th className="text-left p-4 font-semibold text-gray-700">Payment ID</th>
+                      <th className="text-left p-4 font-semibold text-gray-700">Student Name</th>
+                      <th className="text-left p-4 font-semibold text-gray-700">Roll No</th>
+                      <th className="text-left p-4 font-semibold text-gray-700">Fee Head</th>
+                      <th className="text-left p-4 font-semibold text-gray-700">Session</th>
+                      <th className="text-left p-4 font-semibold text-gray-700">Amount</th>
+                      <th className="text-left p-4 font-semibold text-gray-700">Mode</th>
+                      <th className="text-left p-4 font-semibold text-gray-700">Status</th>
+                      <th className="text-left p-4 font-semibold text-gray-700">Date</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {paymentTransactions.map((payment) => (
+                      <tr key={payment.id} className="border-b border-gray-200 hover:bg-gray-50 transition">
+                        <td className="p-4">
+                          <div className="text-xs font-mono text-gray-600">{payment.id}</div>
+                        </td>
+                        <td className="p-4">
+                          <div className="font-medium text-gray-800">{payment.studentName || "N/A"}</div>
+                          <div className="text-xs text-gray-500">{payment.enrollmentNo || "N/A"}</div>
+                        </td>
+                        <td className="p-4 text-gray-600">{payment.rollNo || "N/A"}</td>
+                        <td className="p-4 text-gray-800">{payment.feeHead || "N/A"}</td>
+                        <td className="p-4 text-gray-600">{payment.session || "N/A"}</td>
+                        <td className="p-4 font-semibold text-gray-800">₹{(payment.amount || 0).toLocaleString()}</td>
+                        <td className="p-4">
+                          <span className="px-2 py-1 bg-purple-100 text-purple-800 rounded text-xs font-medium">
+                            {payment.paymentMode || "N/A"}
+                          </span>
+                        </td>
+                        <td className="p-4">
+                          <span
+                            className={`px-3 py-1 rounded-full text-xs font-medium ${
+                              payment.transactionStatus === 'success'
+                                ? "bg-green-100 text-green-800"
+                                : payment.transactionStatus === 'pending'
+                                ? "bg-yellow-100 text-yellow-800"
+                                : payment.transactionStatus === 'failed'
+                                ? "bg-red-100 text-red-800"
+                                : "bg-gray-100 text-gray-800"
+                            }`}
+                          >
+                            {payment.transactionStatus || "N/A"}
+                          </span>
+                        </td>
+                        <td className="p-4 text-gray-600 text-xs">
+                          {payment.transactionDate ? new Date(payment.transactionDate).toLocaleDateString() : (payment.createdAt ? new Date(payment.createdAt).toLocaleDateString() : "N/A")}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <div className="p-8 text-center">
+                <p className="text-gray-500">No payment transactions recorded yet</p>
+                <p className="text-sm text-gray-400 mt-1">Transactions will appear here when students make payments</p>
               </div>
             )}
           </div>

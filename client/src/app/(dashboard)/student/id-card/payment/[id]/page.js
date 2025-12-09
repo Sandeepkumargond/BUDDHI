@@ -42,11 +42,15 @@ export default function IdCardPayment() {
 
   const handlePaymentSuccess = async (paymentData) => {
     try {
+      // PaymentData comes from RazorpayPaymentButton after Razorpay verification
+      // It contains the feePayment record with razorpayPaymentId, razorpayOrderId
+      console.log("Payment success data:", paymentData);
+      
       await apiService.request(`/id-card-student/applications/${params.id}/payment`, {
         method: "PATCH",
         body: {
-          paymentId: paymentData.razorpay_payment_id,
-          orderId: paymentData.razorpay_order_id,
+          paymentId: paymentData.razorpayPaymentId || paymentData.transactionId,
+          orderId: paymentData.razorpayOrderId,
           paymentStatus: 'completed'
         }
       });
@@ -56,11 +60,13 @@ export default function IdCardPayment() {
         router.push("/student/id-card");
       }, 2000);
     } catch (error) {
-      showToast.error("Payment verification failed");
+      console.error("Payment update error:", error);
+      showToast.error("Payment completed but failed to update application. Please contact support.");
     }
   };
 
-  const handlePaymentFailure = async (error) => {
+  const handlePaymentError = async (error) => {
+    console.error("Payment error:", error);
     showToast.error("Payment failed. Please try again.");
     
     try {
@@ -71,7 +77,7 @@ export default function IdCardPayment() {
         }
       });
     } catch (err) {
-      console.error("Failed to update payment status");
+      console.error("Failed to update payment status:", err);
     }
   };
 
@@ -159,19 +165,13 @@ export default function IdCardPayment() {
           ) : (
             <>
               <RazorpayPaymentButton
+                feeStructureHeadId="ID Card Fee"
                 amount={application.paymentAmount}
-                currency="INR"
-                description={`ID Card Fee - ${application.academicYear}`}
-                studentName={application.fullName}
-                studentEmail={application.email}
-                studentPhone={application.phone}
-                onSuccess={handlePaymentSuccess}
-                onFailure={handlePaymentFailure}
-                notes={{
-                  application_id: application._id,
-                  enrollment_no: application.enrollmentNo,
-                  type: 'id_card_fee'
-                }}
+                session={application.academicYear}
+                onPaymentSuccess={handlePaymentSuccess}
+                onPaymentError={handlePaymentError}
+                buttonText="Pay Now with Razorpay"
+                className="w-full px-8 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-semibold text-lg"
               />
 
               <div className="mt-4 text-sm text-gray-600">

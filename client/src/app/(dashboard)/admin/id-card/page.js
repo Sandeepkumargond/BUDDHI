@@ -2,7 +2,7 @@
 import { useState, useEffect } from "react";
 import { showToast } from "@/lib/toast";
 import { apiService } from "@/lib/api";
-import { FiPlus, FiEdit, FiToggleLeft, FiToggleRight, FiUsers } from "react-icons/fi";
+import { FiPlus, FiEdit, FiToggleLeft, FiToggleRight, FiUsers, FiTrash2 } from "react-icons/fi";
 
 export default function IdCardManagement() {
   const [activeTab, setActiveTab] = useState("forms");
@@ -12,6 +12,8 @@ export default function IdCardManagement() {
   const [isLoading, setIsLoading] = useState(false);
   const [showFormModal, setShowFormModal] = useState(false);
   const [selectedForm, setSelectedForm] = useState(null);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [formToDelete, setFormToDelete] = useState(null);
   const [filter, setFilter] = useState({ status: "", academicYear: "" });
   
   const [formData, setFormData] = useState({
@@ -97,6 +99,24 @@ export default function IdCardManagement() {
     }
   };
 
+  const handleDeleteForm = async () => {
+    if (!formToDelete) return;
+    
+    setIsLoading(true);
+    try {
+      await apiService.request(`/id-card/forms/${formToDelete._id}`, { method: "DELETE" });
+      showToast.success("Form deleted successfully");
+      setShowDeleteModal(false);
+      setFormToDelete(null);
+      fetchForms();
+      fetchStatistics();
+    } catch (error) {
+      showToast.error(error.message || "Failed to delete form");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const resetFormData = () => {
     setFormData({
       title: "ID Card Application Form",
@@ -153,10 +173,6 @@ export default function IdCardManagement() {
           <div className="bg-white p-4 rounded-lg shadow">
             <p className="text-sm text-gray-600">Total Applications</p>
             <p className="text-2xl font-bold">{statistics.totalApplications}</p>
-          </div>
-          <div className="bg-white p-4 rounded-lg shadow">
-            <p className="text-sm text-gray-600">Total Revenue</p>
-            <p className="text-2xl font-bold">₹{statistics.totalRevenue}</p>
           </div>
           {statistics.statusWise.map((stat) => (
             <div key={stat._id} className="bg-white p-4 rounded-lg shadow">
@@ -227,12 +243,23 @@ export default function IdCardManagement() {
                           <p className="text-sm text-gray-600 mt-2">{form.instructions}</p>
                         )}
                       </div>
-                      <button
-                        onClick={() => handleToggleFormStatus(form._id)}
-                        className="text-2xl text-gray-600 hover:text-black"
-                      >
-                        {form.isActive ? <FiToggleRight /> : <FiToggleLeft />}
-                      </button>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => handleToggleFormStatus(form._id)}
+                          className="text-2xl text-gray-600 hover:text-black"
+                        >
+                          {form.isActive ? <FiToggleRight /> : <FiToggleLeft />}
+                        </button>
+                        <button
+                          onClick={() => {
+                            setFormToDelete(form);
+                            setShowDeleteModal(true);
+                          }}
+                          className="text-xl text-red-600 hover:text-red-800"
+                        >
+                          <FiTrash2 />
+                        </button>
+                      </div>
                     </div>
                   </div>
                 ))}
@@ -430,6 +457,47 @@ export default function IdCardManagement() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md">
+            <h2 className="text-xl font-bold mb-4 text-red-600">Delete ID Card Form</h2>
+            <p className="text-gray-700 mb-6">
+              Are you sure you want to delete the form <strong>"{formToDelete?.title}"</strong>?
+              {formToDelete && (
+                <span className="block mt-2 text-sm text-gray-600">
+                  Academic Year: {formToDelete.academicYear}
+                </span>
+              )}
+            </p>
+            <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-6">
+              <p className="text-sm text-yellow-800">
+                <strong>Warning:</strong> This action cannot be undone. The form can only be deleted if there are no applications associated with it.
+              </p>
+            </div>
+            <div className="flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setShowDeleteModal(false);
+                  setFormToDelete(null);
+                }}
+                className="px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleDeleteForm}
+                disabled={isLoading}
+                className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 disabled:opacity-50"
+              >
+                {isLoading ? "Deleting..." : "Delete Form"}
+              </button>
+            </div>
           </div>
         </div>
       )}

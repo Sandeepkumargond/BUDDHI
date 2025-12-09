@@ -21,7 +21,6 @@ export const createIdCardForm = asyncHandler(async (req, res) => {
     const form = await IdCardForm.create({
         title: title || "ID Card Application Form",
         academicYear,
-        fee,
         instructions,
         requiredDocuments: requiredDocuments || [],
         deadline: new Date(deadline),
@@ -106,6 +105,28 @@ export const toggleFormStatus = asyncHandler(async (req, res) => {
 
     return res.status(200).json(
         new ApiResponse(200, form, `Form ${form.isActive ? 'activated' : 'deactivated'} successfully`)
+    );
+});
+
+// Delete ID Card Form
+export const deleteIdCardForm = asyncHandler(async (req, res) => {
+    const { formId } = req.params;
+
+    if (!mongoose.isValidObjectId(formId)) {
+        throw new ApiError(400, "Invalid form ID");
+    }
+
+    const form = await IdCardForm.findByIdAndDelete(formId);
+    
+    if (!form) {
+        throw new ApiError(404, "Form not found");
+    }
+
+    // Also delete all applications associated with this form
+    await IdCardApplication.deleteMany({ formId });
+
+    return res.status(200).json(
+        new ApiResponse(200, { deletedForm: form }, "Form and associated applications deleted successfully")
     );
 });
 

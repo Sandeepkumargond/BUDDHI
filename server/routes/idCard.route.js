@@ -6,6 +6,7 @@ import {
     getActiveIdCardForm,
     updateIdCardForm,
     toggleFormStatus,
+    deleteIdCardForm,
     getAllApplications,
     getApplicationById,
     updateApplicationStatus,
@@ -21,6 +22,7 @@ router.route("/forms").get(authenticateAdmin, getAllIdCardForms);
 router.route("/forms/active").get(authenticateAdmin, getActiveIdCardForm);
 router.route("/forms/:formId").patch(authenticateAdmin, updateIdCardForm);
 router.route("/forms/:formId/toggle").patch(authenticateAdmin, toggleFormStatus);
+router.route("/forms/:formId").delete(authenticateAdmin, deleteIdCardForm);
 
 router.route("/applications").get(authenticateAdmin, getAllApplications);
 router.route("/applications/:applicationId").get(authenticateAdmin, getApplicationById);

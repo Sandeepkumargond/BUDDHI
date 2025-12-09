@@ -9,6 +9,7 @@ import {
 	verifyAndRecordPayment,
 	getTransactionStatus,
 	getStudentFeePayments,
+	getAllFeePayments,
 } from "../controllers/razorpay.controller.js";
 import { authenticateAdmin } from "../middlewares/admin.middleware.js";
 import { authenticateStudent } from "../middlewares/student.middleware.js";
@@ -60,6 +61,12 @@ router.route('/transaction-status').get(
 router.route('/payments').get(
 	authenticateStudent,
 	getStudentFeePayments
+);
+
+// Admin route to get all payments
+router.route('/admin/all-payments').get(
+	authenticateAdmin,
+	getAllFeePayments
 );
 
 export default router;
