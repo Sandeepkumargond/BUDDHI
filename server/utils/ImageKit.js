@@ -296,11 +296,53 @@ const deleteStudyMaterial = async (fileId) => {
     }
 };
 
+// Generic document upload (e.g., bonafide PDFs or attachments)
+const uploadDocument = async (localFilePath, options = {}) => {
+    const {
+        folder = '/Buddhi_archives/documents/',
+        fileNamePrefix = 'document',
+        tags = []
+    } = options;
+
+    try {
+        if (!localFilePath || !fs.existsSync(localFilePath)) {
+            return { error: true, message: "No file found at path" };
+        }
+
+        const fileBuffer = fs.readFileSync(localFilePath);
+        const base64File = fileBuffer.toString('base64');
+        const fileName = `${fileNamePrefix}_${Date.now()}_${Math.random().toString(36).substring(7)}`;
+
+        const response = await imagekit.upload({
+            file: base64File,
+            fileName,
+            folder,
+            tags,
+        });
+
+        fs.unlinkSync(localFilePath);
+
+        return {
+            error: false,
+            url: response.url,
+            fileId: response.fileId,
+            name: response.name,
+            size: response.size,
+        };
+    } catch (error) {
+        if (localFilePath && fs.existsSync(localFilePath)) {
+            fs.unlinkSync(localFilePath);
+        }
+        return { error: true, message: error.message || "Error uploading document" };
+    }
+};
+
 export { 
     uploadImageOnImageKit, 
     deleteFromImageKit, 
     getFileIdFromUrl, 
     uploadNoticeAttachment,
     uploadStudyMaterial,
-    deleteStudyMaterial 
+    deleteStudyMaterial,
+    uploadDocument
 };

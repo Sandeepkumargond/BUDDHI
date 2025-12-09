@@ -1,14 +1,12 @@
 // Base URL resolution: prefer explicit env, else infer from window origin (client-side) or default localhost.
 // Ensure single /api/v1 suffix.
 function resolveBaseUrl() {
-  let raw = process.env.NEXT_PUBLIC_API_BASE_URL;
-  if (!raw && typeof window !== 'undefined') {
-    raw = window.location.origin; // fallback to current origin in production if env missing
-  }
-  if (!raw) raw = 'http://localhost:5000';
-  // Strip trailing slashes
+  // Prefer explicit envs; avoid window origin fallback to prevent pointing at port 3000
+  let raw = process.env.NEXT_PUBLIC_API_BASE_URL
+    || process.env.NEXT_PUBLIC_API_BASE
+    || process.env.NEXT_PUBLIC_SERVER_URL
+    || 'http://localhost:5000';
   raw = raw.replace(/\/$/, '');
-  // If raw already ends with /api or /api/v1 leave, else append /api/v1
   if (!/\/api(\/v1)?$/.test(raw)) raw = `${raw}/api/v1`;
   return raw;
 }
@@ -17,7 +15,7 @@ class ApiService {
   constructor() {
     this.baseURL = resolveBaseUrl();
     this.accessToken = null; // in-memory token fallback if cookies blocked cross-site
-    try { console.info('[apiService] Base URL:', this.baseURL); } catch {}
+    try { console.info('[apiService] Base URL:', this.baseURL); } catch { }
   }
 
   setAccessToken(token) {
@@ -59,7 +57,7 @@ class ApiService {
     }
 
     try {
-      try { console.debug('[apiService] Request', { url, method, headers }); } catch {}
+      try { console.debug('[apiService] Request', { url, method, headers }); } catch { }
       const response = await fetch(url, config);
 
       // Check if response is JSON
@@ -98,7 +96,7 @@ class ApiService {
           message = 'Unknown error occurred';
         }
       }
-      
+
       const errorInfo = {
         message,
         status: error?.status,
@@ -126,7 +124,8 @@ class ApiService {
       'admin': '/admin/login',
       'subadmin': '/sub-admin/login',
       'student': '/student/login',
-      'faculty': '/faculty/login'
+      'faculty': '/faculty/login',
+      'alumni': '/alumni/login'
     };
 
     const endpoint = roleEndpoints[role];
@@ -157,7 +156,8 @@ class ApiService {
       'admin': '/admin/refresh-access-token',
       'subadmin': '/sub-admin/refresh-access-token',
       'student': '/student/refresh-access-token',
-      'faculty': '/faculty/refresh-access-token'
+      'faculty': '/faculty/refresh-access-token',
+      'alumni': '/alumni/refresh-access-token'
     };
 
     const endpoint = roleEndpoints[role];
@@ -187,7 +187,8 @@ class ApiService {
       'admin': '/admin/logout',
       'subadmin': '/sub-admin/logout',
       'student': '/student/logout',
-      'faculty': '/faculty/logout'
+      'faculty': '/faculty/logout',
+      'alumni': '/alumni/logout'
     };
 
     const endpoint = roleEndpoints[role];
@@ -403,9 +404,10 @@ class ApiService {
     const roleEndpoints = {
       'superadmin': '/super-admin/profile',
       'admin': '/admin/profile',
-      'subadmin': '/sub-admin/profile', 
+      'subadmin': '/sub-admin/profile',
       'student': '/student/profile',
-      'faculty': '/faculty/profile'
+      'faculty': '/faculty/profile',
+      'alumni': '/alumni/profile'
     };
 
     const endpoint = roleEndpoints[role];
@@ -603,6 +605,17 @@ class ApiService {
     });
   }
 
+  // Analytics (Faculty & Admin)
+  async getStudentRiskAnalytics(role = 'faculty') {
+    const endpoint = role === 'admin'
+      ? '/admin/analytics/risk-trends'
+      : '/faculty/analytics/risk-trends';
+
+    return this.request(endpoint, {
+      method: 'GET'
+    });
+  }
+
   // Feedback endpoints
   async submitFeedback(feedbackData) {
     return this.request('/student/submit-feedback', {
@@ -722,6 +735,362 @@ class ApiService {
       method: 'GET'
     });
   }
+
+  // ========== Razorpay Payment Integration ==========
+  
+  // Create Razorpay order
+  async createRazorpayOrder(payload) {
+    return this.request('/razorpay/order', {
+      method: 'POST',
+      body: payload
+    });
+  }
+
+  // Verify payment and create fee payment record
+  async verifyRazorpayPayment(payload) {
+    return this.request('/razorpay/verify', {
+      method: 'POST',
+      body: payload
+    });
+  }
+
+  // Get transaction status
+  async getRazorpayTransactionStatus(orderId) {
+    return this.request(`/razorpay/transaction-status?orderId=${encodeURIComponent(orderId)}`, {
+      method: 'GET'
+    });
+  }
+  // ============ Alumni Methods ============
+
+  // Alumni Authentication
+  async loginAlumni(credentials) {
+    return this.request('/alumni/login', {
+      method: 'POST',
+      body: credentials
+    });
+  }
+
+  async logoutAlumni() {
+    return this.request('/alumni/logout', {
+      method: 'POST'
+    });
+  }
+
+  // Alumni Profile
+  async getAlumniProfile() {
+    return this.request('/alumni/profile', {
+      method: 'GET'
+    });
+  }
+
+  // Get student's fee payments (via Razorpay)
+  async getStudentFeePayments() {
+    return this.request('/razorpay/payments', {
+      method: 'GET'
+    });
+  }
+
+  // Admin: Get Razorpay credentials
+  async getRazorpayCredentials() {
+    return this.request('/razorpay/credentials', {
+      method: 'GET'
+    });
+  }
+
+  // Admin: Save/update Razorpay credentials
+  async updateRazorpayCredentials(payload) {
+    return this.request('/razorpay/credentials', {
+      method: 'POST',
+      body: payload
+    });
+  }
+
+  // Admin: Delete Razorpay credentials
+  async deleteRazorpayCredentials() {
+    return this.request('/razorpay/credentials', {
+      method: 'DELETE'
+    });
+  }
+
+  async updateAlumniProfile(data) {
+    return this.request('/alumni/profile/update', {
+      method: 'PATCH',
+      body: data
+    });
+  }
+  // Alumni Internship Management
+  async addInternshipOpportunity(data) {
+    return this.request('/alumni/internships/add', {
+      method: 'POST',
+      body: data
+    });
+  }
+
+  async updateInternshipOpportunity(internshipId, data) {
+    return this.request(`/alumni/internships/${internshipId}`, {
+      method: 'PATCH',
+      body: data
+    });
+  }
+
+  async deleteInternshipOpportunity(internshipId) {
+    return this.request(`/alumni/internships/${internshipId}`, {
+      method: 'DELETE'
+    });
+  }
+
+  // Admin: Test Razorpay credentials
+  async testRazorpayCredentials(payload) {
+    return this.request('/razorpay/credentials/test', {
+      method: 'POST',
+      body: payload
+    });
+  }
+  // Alumni Referral Management
+  async addReferral(data) {
+    return this.request('/alumni/referrals/add', {
+      method: 'POST',
+      body: data
+    });
+  }
+
+  async updateReferral(referralId, data) {
+    return this.request(`/alumni/referrals/${referralId}`, {
+      method: 'PATCH',
+      body: data
+    });
+  }
+
+  async deleteReferral(referralId) {
+    return this.request(`/alumni/referrals/${referralId}`, {
+      method: 'DELETE'
+    });
+  }
+
+  // Alumni Donation Management
+  async addDonation(data) {
+    return this.request('/alumni/donations/add', {
+      method: 'POST',
+      body: data
+    });
+  }
+
+  // Public Alumni Endpoints (for students)
+  async getAllInternshipOpportunities(filters = {}) {
+    const params = new URLSearchParams(filters).toString();
+    return this.request(`/alumni/internships?${params}`, {
+      method: 'GET'
+    });
+  }
+
+  async getAllReferrals(filters = {}) {
+    const params = new URLSearchParams(filters).toString();
+    return this.request(`/alumni/referrals?${params}`, {
+      method: 'GET'
+    });
+  }
+
+  // Admin Alumni Management
+  async registerAlumni(data) {
+    return this.request('/alumni/admin/register', {
+      method: 'POST',
+      body: data
+    });
+  }
+
+  async listAllAlumni(filters = {}) {
+    const params = new URLSearchParams(filters).toString();
+    return this.request(`/alumni/admin/list?${params}`, {
+      method: 'GET'
+    });
+  }
+
+  async getAlumniById(alumniId) {
+    return this.request(`/alumni/admin/${alumniId}`, {
+      method: 'GET'
+    });
+  }
+
+  async updateAlumniStatus(alumniId, data) {
+    return this.request(`/alumni/admin/${alumniId}/status`, {
+      method: 'PATCH',
+      body: data
+    });
+  }
+
+  async deleteAlumniById(alumniId) {
+    return this.request(`/alumni/admin/${alumniId}`, {
+      method: 'DELETE'
+    });
+  }
+
+  async getDonationStats() {
+    return this.request('/alumni/admin/stats/donations', {
+      method: 'GET'
+    });
+  }
+
+  async updateDonationStatus(alumniId, donationId, data) {
+    return this.request(`/alumni/admin/${alumniId}/donations/${donationId}/status`, {
+      method: 'PATCH',
+      body: data
+    });
+  }
+
+  async approveInternship(alumniId, internshipId, isApproved) {
+    return this.request(`/alumni/admin/${alumniId}/internships/${internshipId}/approval`, {
+      method: 'PATCH',
+      body: { isApproved }
+    });
+  }
+
+  async approveReferral(alumniId, referralId, isApproved) {
+    return this.request(`/alumni/admin/${alumniId}/referrals/${referralId}/approval`, {
+      method: 'PATCH',
+      body: { isApproved }
+    });
+  }
+
+  // Leave Management
+  async applyLeave(formData) {
+    return this.request('/leaves/student/apply', {
+      method: 'POST',
+      body: formData
+    });
+  }
+
+  async applyLeaveFaculty(formData) {
+    return this.request('/leaves/faculty/apply', {
+      method: 'POST',
+      body: formData
+    });
+  }
+
+  async getMyLeaves(status = '', page = 1, limit = 20) {
+    let url = '/leaves/student/my-leaves?';
+    if (status) url += `status=${status}&`;
+    url += `page=${page}&limit=${limit}`;
+    return this.request(url, { method: 'GET' });
+  }
+
+  async getMyLeavesFaculty(status = '', page = 1, limit = 20) {
+    let url = '/leaves/faculty/my-leaves?';
+    if (status) url += `status=${status}&`;
+    url += `page=${page}&limit=${limit}`;
+    return this.request(url, { method: 'GET' });
+  }
+
+  async getLeaveById(leaveId) {
+    return this.request(`/leaves/student/${leaveId}`, {
+      method: 'GET'
+    });
+  }
+
+  async getLeaveByIdFaculty(leaveId) {
+    return this.request(`/leaves/faculty/${leaveId}`, {
+      method: 'GET'
+    });
+  }
+
+  async cancelLeave(leaveId) {
+    return this.request(`/leaves/student/${leaveId}/cancel`, {
+      method: 'DELETE'
+    });
+  }
+
+  async cancelLeaveFaculty(leaveId) {
+    return this.request(`/leaves/faculty/${leaveId}/cancel`, {
+      method: 'DELETE'
+    });
+  }
+
+  // Admin Leave Management
+  async getAllLeaves(status = '', applicantType = '', search = '', page = 1, limit = 20) {
+    let url = '/leaves/admin/all?';
+    if (status && status !== '') url += `status=${status}&`;
+    if (applicantType && applicantType !== '') url += `applicantType=${applicantType}&`;
+    if (search && search !== '') url += `search=${search}&`;
+    url += `page=${page}&limit=${limit}`;
+    return this.request(url, { method: 'GET' });
+  }
+
+  async reviewLeave(leaveId, status, adminRemarks = '') {
+    return this.request(`/leaves/admin/${leaveId}/review`, {
+      method: 'PATCH',
+      body: { status, adminRemarks }
+    });
+  }
+
+  async deleteLeave(leaveId) {
+    return this.request(`/leaves/admin/${leaveId}`, {
+      method: 'DELETE'
+    });
+  }
+
+  // Scholarships
+  async applyScholarship(formData) {
+    return this.request('/scholarships/student/apply', {
+      method: 'POST',
+      body: formData,
+    });
+  }
+
+  async getMyScholarships(status = '', page = 1, limit = 20) {
+    let url = '/scholarships/student/my?';
+    if (status) url += `status=${status}&`;
+    url += `page=${page}&limit=${limit}`;
+    return this.request(url, { method: 'GET' });
+  }
+
+  async getAllScholarships(status = '', search = '', page = 1, limit = 20) {
+    let url = '/scholarships/admin/all?';
+    if (status) url += `status=${status}&`;
+    if (search) url += `search=${encodeURIComponent(search)}&`;
+    url += `page=${page}&limit=${limit}`;
+    return this.request(url, { method: 'GET' });
+  }
+
+  async reviewScholarship(scholarshipId, status, adminRemarks = '') {
+    return this.request(`/scholarships/admin/${scholarshipId}/review`, {
+      method: 'PATCH',
+      body: { status, adminRemarks },
+    });
+  }
+
+  // Bonafide Certificates
+  async applyBonafide(formData) {
+    return this.request('/bonafide/student/apply', {
+      method: 'POST',
+      body: formData,
+    });
+  }
+
+  async getMyBonafides(status = '', page = 1, limit = 20) {
+    let url = '/bonafide/student/my?';
+    if (status) url += `status=${status}&`;
+    url += `page=${page}&limit=${limit}`;
+    return this.request(url, { method: 'GET' });
+  }
+
+  async getMyBonafideById(bonafideId) {
+    return this.request(`/bonafide/student/${bonafideId}`, { method: 'GET' });
+  }
+
+  async getAllBonafides(status = '', search = '', page = 1, limit = 20) {
+    let url = '/bonafide/admin/all?';
+    if (status) url += `status=${status}&`;
+    if (search) url += `search=${encodeURIComponent(search)}&`;
+    url += `page=${page}&limit=${limit}`;
+    return this.request(url, { method: 'GET' });
+  }
+
+  async reviewBonafide(bonafideId, status, rejectionReason = '') {
+    return this.request(`/bonafide/admin/${bonafideId}/review`, {
+      method: 'PATCH',
+      body: { status, rejectionReason },
+    });
+  }
 }
+
 
 export const apiService = new ApiService();

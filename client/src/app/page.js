@@ -176,7 +176,7 @@ const Homepage = () => {
 
     {/* How it Works */}
 
-    <section id="how-it-works" className="bg-white py-20">
+    <section id="how-it-works" className="bg-gradient-to-b from-gray-50 to-white py-20">
       <div className="container mx-auto px-6 md:px-12 lg:px-20">
         {/* Header */}
         <div className="text-center mb-16">
@@ -188,37 +188,79 @@ const Homepage = () => {
           </p>
         </div>
 
-        {/* Main Layout */}
-        <div className="flex flex-col md:flex-row items-center gap-10">
-          {/* Left: Steps Section */}
-          <div className="flex-1 bg-gray-200 p-8 rounded-2xl border border-gray-200 shadow-sm">
-            {HOW_IT_WORKS.steps.map((step, index) => (
-              <div
-                key={index}
-                className="mb-8 last:mb-0 flex items-start gap-4"
-              >
-                <div className="mt-1">
-                  <CircleCheckBig className="text-green-500 w-7 h-7" />
-                </div>
-                <div>
-                  <h6 className="text-lg font-semibold text-gray-800 uppercase tracking-wide">
-                    {step.title}
-                  </h6>
-                  <p className="text-gray-600 mt-1">{step.text}</p>
-                </div>
-              </div>
-            ))}
+        {/* Horizontal Flow Diagram */}
+        <div className="relative">
+          {/* Desktop View - Horizontal */}
+          <div className="hidden md:block">
+            <div className="flex items-start justify-between relative">
+              {/* Connection Line */}
+              <div className="absolute top-16 left-0 right-0 h-1" style={{ zIndex: 0, backgroundColor: '#E2F3F8' }}></div>
+              
+              {HOW_IT_WORKS.steps.map((step, index) => {
+                const colors = ['#AEE7F7', '#C9CCFF', '#F9DB66'];
+                const bgColor = colors[index % 3];
+                
+                return (
+                  <div key={index} className="flex-1 flex flex-col items-center relative" style={{ zIndex: 1 }}>
+                    {/* Circle Step */}
+                    <div 
+                      className="w-32 h-32 rounded-full flex items-center justify-center font-bold text-3xl mb-6 transition-all hover:scale-110"
+                      style={{ 
+                        backgroundColor: bgColor,
+                        color: '#ffffff',
+                        boxShadow: '0 10px 30px rgba(0, 0, 0, 0.1)'
+                      }}
+                    >
+                      {index + 1}
+                    </div>
+                    
+                    {/* Step Content */}
+                    <div className="text-center px-4">
+                      <h6 className="text-lg font-bold text-gray-800 mb-2 uppercase tracking-wide">
+                        {step.title}
+                      </h6>
+                      <p className="text-gray-600 text-sm leading-relaxed">
+                        {step.text}
+                      </p>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
           </div>
 
-          {/* Right: Image Section */}
-          <div className="flex-1 flex justify-center">
-            <Image
-              src="/image4.jpg" 
-              alt="How it works illustration"
-              width={500}
-              height={500}
-              className="rounded-2xl shadow-md object-cover"
-            />
+          {/* Mobile View - Vertical */}
+          <div className="md:hidden space-y-8">
+            {HOW_IT_WORKS.steps.map((step, index) => {
+              const colors = ['#AEE7F7', '#C9CCFF', '#F9DB66'];
+              const bgColor = colors[index % 3];
+              
+              return (
+                <div key={index} className="flex items-start gap-6">
+                  {/* Circle Step */}
+                  <div 
+                    className="w-20 h-20 rounded-full flex items-center justify-center font-bold text-2xl flex-shrink-0"
+                    style={{ 
+                      backgroundColor: bgColor,
+                      color: '#ffffff',
+                      boxShadow: '0 10px 30px rgba(0, 0, 0, 0.1)'
+                    }}
+                  >
+                    {index + 1}
+                  </div>
+                  
+                  {/* Step Content */}
+                  <div className="flex-1 pt-2">
+                    <h6 className="text-lg font-bold text-gray-800 mb-2 uppercase tracking-wide">
+                      {step.title}
+                    </h6>
+                    <p className="text-gray-600 text-sm leading-relaxed">
+                      {step.text}
+                    </p>
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </div>
       </div>
@@ -237,40 +279,92 @@ const Homepage = () => {
         {/* Generate features based on detected controllers */}
         {(() => {
           const FEATURES = [
-            { id: 'healthCheck', title: 'Health Check', desc: 'Server health and diagnostics endpoints.', url: '/health' },
-            { id: 'student', title: 'Student Management', desc: 'Student registration, profiles and portals.', url: '/student' },
-            { id: 'registration', title: 'Registration', desc: 'Course and student registrations.', url: '/registration' },
-            { id: 'admitCard', title: 'Admit Cards', desc: 'Generate and download admit cards.', url: '/admit-card' },
-            { id: 'gradeCard', title: 'Exams & Grades', desc: 'Exam management and grade cards.', url: '/grade-card' },
-            { id: 'attendance', title: 'Attendance', desc: 'Timetable and attendance tracking.', url: '/attendance' },
-            { id: 'monthlyAttendance', title: 'Monthly Attendance', desc: 'Monthly attendance summaries and reports.', url: '/monthly-attendance' },
-            { id: 'studyMaterial', title: 'Study Material', desc: 'Upload, categorize and download materials.', url: '/study-material' },
-            { id: 'course', title: 'Courses', desc: 'Course catalog and curriculum management.', url: '/courses' },
-            { id: 'department', title: 'Departments', desc: 'Department-level configuration and listing.', url: '/departments' },
-            { id: 'faculty', title: 'Faculty', desc: 'Faculty profiles and assignments.', url: '/faculty' },
-            { id: 'feePayment', title: 'Fees & Payments', desc: 'Fee collection and Razorpay transactions.', url: '/fee-payment' },
-            { id: 'hostel', title: 'Hostel Management', desc: 'Hostel applications and room allocations.', url: '/hostel' },
-            { id: 'notice', title: 'Notices & Announcements', desc: 'Publish notices and announcements.', url: '/notices' },
-            { id: 'razorpay', title: 'Razorpay', desc: 'Payment gateway integrations and transactions.', url: '/razorpay' },
-            { id: 'subAdmin', title: 'Sub-Admins', desc: 'Sub-admin accounts and permissions.', url: '/sub-admins' },
-            { id: 'superAdmin', title: 'Super Admin', desc: 'Super admin controls and global settings.', url: '/super-admin' },
-            { id: 'admin', title: 'Admin & Staff', desc: 'University administration and staff tools.', url: '/admin' },
+            { 
+              id: 'student', 
+              title: 'Student Management', 
+              desc: 'Complete student lifecycle management including registration, profiles, portals, admit cards, and grade cards.',
+              subFeatures: ['Registration', 'Student Profiles', 'Admit Cards', 'Grade Cards'],
+              url: '/student' 
+            },
+            { 
+              id: 'attendance', 
+              title: 'Attendance & Tracking', 
+              desc: 'Comprehensive attendance management with daily tracking, monthly reports, and automated summaries.',
+              subFeatures: ['Daily Attendance', 'Monthly Reports', 'Timetable Management'],
+              url: '/attendance' 
+            },
+            { 
+              id: 'academics', 
+              title: 'Academic Resources', 
+              desc: 'Centralized platform for courses, study materials, curriculum management, and department organization.',
+              subFeatures: ['Courses', 'Study Materials', 'Departments', 'Curriculum'],
+              url: '/courses' 
+            },
+            { 
+              id: 'faculty', 
+              title: 'Faculty Management', 
+              desc: 'Faculty profiles, assignments, course allocations, and teaching resource management.',
+              subFeatures: ['Faculty Profiles', 'Course Assignments', 'Teaching Resources'],
+              url: '/faculty' 
+            },
+            { 
+              id: 'feePayment', 
+              title: 'Fees & Payments', 
+              desc: 'Integrated fee collection system with Razorpay gateway, payment tracking, and transaction management.',
+              subFeatures: ['Fee Collection', 'Payment Gateway', 'Transaction History'],
+              url: '/fee-payment' 
+            },
+            { 
+              id: 'hostel', 
+              title: 'Hostel & Facilities', 
+              desc: 'Complete hostel management including applications, room allocations, and facility maintenance.',
+              subFeatures: ['Hostel Applications', 'Room Allocation', 'Facility Management'],
+              url: '/hostel' 
+            },
+            { 
+              id: 'communication', 
+              title: 'Communication Hub', 
+              desc: 'Centralized platform for notices, announcements, and campus-wide communications.',
+              subFeatures: ['Notices', 'Announcements', 'Notifications'],
+              url: '/notices' 
+            },
+            { 
+              id: 'admin', 
+              title: 'Administration', 
+              desc: 'Powerful admin tools including super admin controls, sub-admin management, and global settings.',
+              subFeatures: ['Super Admin', 'Sub-Admins', 'Staff Management', 'Settings'],
+              url: '/admin' 
+            },
           ]
 
           return (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
               {FEATURES.map(feature => (
-                <div key={feature.id} className="bg-white rounded-lg border p-6 shadow-sm flex flex-col justify-between">
+                <div key={feature.id} className="bg-white rounded-xl border-2 p-8 shadow-lg hover:shadow-2xl transition-all duration-300 flex flex-col justify-between min-h-[320px] hover:scale-105 hover:border-opacity-80" style={{ borderColor: 'var(--primary)' }}>
                   <div>
-                    <div className="mb-3">
-                      <span className="inline-block bg-slate-800 text-white text-xs px-3 py-1 rounded-full">{feature.title.split(' ')[0]}</span>
+                    <div className="mb-4 flex items-center justify-between">
+                      <span className="inline-block bg-slate-800 text-white text-sm font-medium px-4 py-2 rounded-full shadow-md">{feature.title.split(' ')[0]}</span>
+                      <CircleCheckBig className="w-6 h-6 text-green-500" />
                     </div>
-                    <h3 className="text-lg font-semibold mb-2" style={{ color: 'var(--primary)' }}>{feature.title}</h3>
-                    <p className="text-gray-600 mb-4">{feature.desc}</p>
+                    <h3 className="text-xl font-bold mb-3" style={{ color: 'var(--primary)' }}>{feature.title}</h3>
+                    <p className="text-gray-600 text-base leading-relaxed mb-4">{feature.desc}</p>
+                    
+                    {feature.subFeatures && (
+                      <div className="mt-4">
+                        <div className="flex flex-wrap gap-2">
+                          {feature.subFeatures.map((sub, idx) => (
+                            <span key={idx} className="text-xs bg-gray-100 text-gray-700 px-3 py-1 rounded-full">
+                              {sub}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
-                  <div className="mt-4 flex items-center justify-between">
-                    <Link href={feature.url} className="text-sm text-neutral-700 hover:text-neutral-900">Open</Link>
-                    <CircleCheckBig className="w-5 h-5 text-green-500" />
+                  <div className="mt-6 pt-4 border-t">
+                    <Link href={feature.url} className="inline-flex items-center text-sm font-semibold text-neutral-700 hover:text-neutral-900 transition-colors">
+                      Explore →
+                    </Link>
                   </div>
                 </div>  
               ))}
@@ -281,33 +375,43 @@ const Homepage = () => {
     </section>
 
     {/* services Section */}
-     <div id="services" className='max-w-6xl mx-auto my-12 px-4'>
-      <h2 className="mb-8 text-center text-3xl font-semibold tracking-tight sm:text-4xl lg:text-5xl">
-        Services
-      </h2>
-
-      <div className="flex flex-col lg:flex-row items-start gap-8">
-        <div className="w-full lg:w-1/2">
-          <div className="rounded-xl overflow-hidden shadow-lg">
-            <Image
-              className='w-full h-80 object-cover'
-              src="/image3.jpg"
-              width={1200}
-              height={800}
-              alt="services"
-            />
-          </div>
+    <section id="services" className='py-20 bg-gradient-to-b from-gray-50 to-white'>
+      <div className='container mx-auto px-6 md:px-12 lg:px-20'>
+        <div className="text-center mb-16">
+          <h2 className="text-4xl md:text-5xl font-bold text-gray-900 tracking-tight">
+            Our <span style={{ color: 'var(--primary)' }}>Services</span>
+          </h2>
+          <p className="mx-auto mt-4 max-w-3xl text-lg text-gray-600">
+            Comprehensive solutions designed to streamline your institution's operations
+          </p>
         </div>
 
-        <div className="w-full lg:w-1/2">
-         <div className="bg-white/5 dark:bg-black/40 border border-white/6 rounded-lg p-6 shadow-sm h-full flex items-center">
-            <p className="text-neutral-700 dark:text-neutral-300 leading-relaxed">
-              {paragraph}
-            </p>
+        <div className="flex flex-col lg:flex-row items-center gap-12">
+          {/* Left: Image Section */}
+          <div className="w-full lg:w-1/2">
+            <div className="relative rounded-2xl overflow-hidden shadow-2xl">
+              <Image
+                className='w-full h-[500px] object-cover'
+                src="/image3.jpg"
+                width={1200}
+                height={800}
+                alt="services"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent"></div>
+            </div>
+          </div>
+
+          {/* Right: Services Paragraph */}
+          <div className="w-full lg:w-1/2">
+            <div className="rounded-2xl p-8 shadow-xl bg-gray-50">
+              <p className="text-gray-800 text-lg leading-relaxed">
+                {paragraph}
+              </p>
+            </div>
           </div>
         </div>
       </div>
-    </div>
+    </section>
 
     {/* Request to Register Section */}
     <section id="request" className="py-16 bg-gray-50">

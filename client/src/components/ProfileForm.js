@@ -2,6 +2,19 @@ import { useState, useEffect } from 'react';
 import Image from 'next/image';
 
 const ProfileForm = ({ user, onSave, userType }) => {
+  const parseMaybeJsonArray = (val) => {
+    if (Array.isArray(val)) return val;
+    if (typeof val === 'string') {
+      try {
+        const parsed = JSON.parse(val);
+        return Array.isArray(parsed) ? parsed : [val];
+      } catch {
+        return val.split(',').map(v => v.trim()).filter(Boolean);
+      }
+    }
+    return [];
+  };
+
   const [formData, setFormData] = useState({
     firstName: user?.firstName || '',
     lastName: user?.lastName || '',
@@ -33,14 +46,26 @@ const ProfileForm = ({ user, onSave, userType }) => {
     // faculty-specific
     department: user?.department || '',
     about: user?.about || '',
-    specialization: user?.specialization || []
+    specialization: user?.specialization || [],
+    // alumni-specific
+    degree: user?.degree || '',
+    batch: user?.batch || '',
+    graduationYear: user?.graduationYear || '',
+    rollNumber: user?.rollNumber || '',
+    currentCompany: user?.currentCompany || '',
+    currentDesignation: user?.currentDesignation || '',
+    industry: user?.industry || '',
+    linkedinUrl: user?.linkedinUrl || '',
+    alternateEmail: user?.alternateEmail || '',
+    willingToMentor: !!user?.willingToMentor,
+    bio: user?.bio || '',
+    areasOfExpertise: parseMaybeJsonArray(user?.areasOfExpertise)
   });
 
   const [isEditing, setIsEditing] = useState(false);
   const [selectedImage, setSelectedImage] = useState(null);
   const [imagePreview, setImagePreview] = useState(user?.imageUrl || null);
-  const [selectedSign, setSelectedSign] = useState(null);
-  const [signPreview, setSignPreview] = useState(user?.signUrl || null);
+  // Signature removed per request
 
   // Update form data when user prop changes
   useEffect(() => {
@@ -75,10 +100,22 @@ const ProfileForm = ({ user, onSave, userType }) => {
         abcId: user?.abcId || '',
         department: user?.department || '',
         about: user?.about || '',
-        specialization: user?.specialization || []
+        specialization: parseMaybeJsonArray(user?.specialization),
+        degree: user?.degree || '',
+        batch: user?.batch || '',
+        graduationYear: user?.graduationYear || '',
+        rollNumber: user?.rollNumber || '',
+        currentCompany: user?.currentCompany || '',
+        currentDesignation: user?.currentDesignation || '',
+        industry: user?.industry || '',
+        linkedinUrl: user?.linkedinUrl || '',
+        alternateEmail: user?.alternateEmail || '',
+        willingToMentor: !!user?.willingToMentor,
+        bio: user?.bio || '',
+        areasOfExpertise: parseMaybeJsonArray(user?.areasOfExpertise)
       }));
       setImagePreview(user?.imageUrl || null);
-      setSignPreview(user?.signUrl || null);
+      // signature removed
     }
   }, [user]);
 
@@ -128,17 +165,7 @@ const ProfileForm = ({ user, onSave, userType }) => {
     }
   };
 
-  const handleSignChange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      setSelectedSign(file);
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setSignPreview(reader.result);
-      };
-      reader.readAsDataURL(file);
-    }
-  };
+  // signature upload removed
 
     // specialization handlers (faculty)
     const handleSpecializationChange = (index, value) => {
@@ -163,16 +190,23 @@ const ProfileForm = ({ user, onSave, userType }) => {
     let allowedKeys = [
       'firstName', 'lastName', 'dateOfBirth', 'personalMail', 'mobile', 'address',
       'fatherName', 'motherName', 'fatherMobile', 'motherMobile', 'fatherOccupation', 'motherOccupation',
-      'annualIncome', 'bloodGroup', 'religion', 'category', 'gender', 'aadharNo', 'pwd', 'pwdPercentage', 'pwdCertificateUrl', 'signUrl', 'imageUrl', 'abcId', 'email', 'social'
+      'annualIncome', 'bloodGroup', 'religion', 'category', 'gender', 'aadharNo', 'pwd', 'pwdPercentage', 'pwdCertificateUrl', 'imageUrl', 'abcId', 'email', 'social'
     ];
 
     if (userType === 'faculty') {
       allowedKeys = Array.from(new Set([...allowedKeys, 'department', 'about', 'specialization']));
     }
 
+    if (userType === 'alumni') {
+      allowedKeys = Array.from(new Set([...allowedKeys,
+        'alternateEmail', 'department', 'degree', 'batch', 'graduationYear', 'rollNumber',
+        'currentCompany', 'currentDesignation', 'industry', 'linkedinUrl', 'willingToMentor', 'bio', 'areasOfExpertise'
+      ]));
+    }
+
     Object.keys(formData).forEach(key => {
       if (!allowedKeys.includes(key)) return;
-      if (key === 'social' || key === 'specialization') {
+      if (key === 'social' || key === 'specialization' || key === 'areasOfExpertise') {
         dataToSubmit.append(key, JSON.stringify(formData[key] || []));
       } else {
         dataToSubmit.append(key, formData[key]);
@@ -182,9 +216,7 @@ const ProfileForm = ({ user, onSave, userType }) => {
     if (selectedImage) {
       dataToSubmit.append('image', selectedImage);
     }
-    if (selectedSign) {
-      dataToSubmit.append('sign', selectedSign);
-    }
+    // signature removed
 
     await onSave(dataToSubmit);
     setIsEditing(false);
@@ -226,58 +258,43 @@ const ProfileForm = ({ user, onSave, userType }) => {
       </div>
 
       <form onSubmit={handleSubmit}>
-        {/* Profile Image Section */}
-        <div className="mb-8 text-center">
-          <div className="relative inline-block">
-            <div className="w-32 h-32 rounded-full overflow-hidden bg-gray-200 mx-auto">
-              {imagePreview ? (
-                <Image
-                  src={imagePreview}
-                  alt="Profile"
-                  width={128}
-                  height={128}
-                  className="w-full h-full object-cover"
-                />
-              ) : (
-                <div className="w-full h-full flex items-center justify-center text-gray-400">
-                  <svg className="w-12 h-12" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
+        {/* Profile Image Section (disabled for alumni; use imageUrl field instead) */}
+        {userType !== 'alumni' && (
+          <div className="mb-8 text-center">
+            <div className="relative inline-block">
+              <div className="w-32 h-32 rounded-full overflow-hidden bg-gray-200 mx-auto">
+                {imagePreview ? (
+                  <Image
+                    src={imagePreview}
+                    alt="Profile"
+                    width={128}
+                    height={128}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center text-gray-400">
+                    <svg className="w-12 h-12" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
+                    </svg>
+                  </div>
+                )}
+              </div>
+              {isEditing && (
+                <label className="absolute bottom-0 right-0 bg-blue-500 text-white p-2 rounded-full cursor-pointer hover:bg-blue-600">
+                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" clipRule="evenodd" />
                   </svg>
-                </div>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageChange}
+                    className="hidden"
+                  />
+                </label>
               )}
             </div>
-            {isEditing && (
-              <label className="absolute bottom-0 right-0 bg-blue-500 text-white p-2 rounded-full cursor-pointer hover:bg-blue-600">
-                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" clipRule="evenodd" />
-                </svg>
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={handleImageChange}
-                  className="hidden"
-                />
-              </label>
-            )}
           </div>
-          {/* Signature preview and upload */}
-          <div className="mt-4 text-center">
-            <p className="text-sm text-gray-600 mb-2">Signature</p>
-            <div className="w-48 h-24 mx-auto border rounded-md overflow-hidden bg-gray-50 mb-2">
-              {signPreview ? (
-                <img src={signPreview} alt="Signature" className="w-full h-full object-contain" />
-              ) : (
-                <div className="w-full h-full flex items-center justify-center text-gray-400">No signature</div>
-              )}
-            </div>
-            {isEditing && (
-              <label className="inline-block px-3 py-1 bg-blue-500 text-white rounded cursor-pointer hover:bg-blue-600">
-                Upload Signature
-                <input type="file" accept="image/*" onChange={handleSignChange} className="hidden" />
-              </label>
-            )}
-          </div>
-        </div>
+        )}
 
         {/* Personal Information */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
@@ -287,11 +304,13 @@ const ProfileForm = ({ user, onSave, userType }) => {
           {renderField('Last Name', 'lastName', 'text', true)}
           {renderField('Email', 'email', 'email', true, true)}
           {renderField('Personal Email', 'personalMail', 'email', true)}
+          {userType === 'alumni' && renderField('Alternate Email', 'alternateEmail', 'email')}
           {renderField('Mobile', 'mobile', 'tel')}
+          {renderField('Date of Birth', 'dateOfBirth', 'date')}
+          {renderField('Gender', 'gender', 'text')}
 
           {userType === 'faculty' && (
             <>
-              {renderField('Date of Birth', 'dateOfBirth', 'date')}
               {renderField('Department', 'department', 'text', true)}
               {renderField('Sign URL', 'signUrl', 'text')}
               <div className="md:col-span-2">
@@ -383,6 +402,60 @@ const ProfileForm = ({ user, onSave, userType }) => {
               {renderField('College Name', 'collegeName', 'text', true, true)}
               {renderField('College Registration No', 'collegeRegistartionNo', 'text', true, true)}
               {renderField('Abbreviation', 'abbreviation', 'text', true, true)}
+            </>
+          )}
+
+          {userType === 'alumni' && (
+            <>
+              {renderField('Department', 'department', 'text', true)}
+              {renderField('Degree', 'degree', 'text', true)}
+              {renderField('Batch', 'batch', 'text', true)}
+              {renderField('Graduation Year', 'graduationYear', 'number', true)}
+              {renderField('Roll Number', 'rollNumber', 'text')}
+              {renderField('Current Company', 'currentCompany', 'text')}
+              {renderField('Current Designation', 'currentDesignation', 'text')}
+              {renderField('Industry', 'industry', 'text')}
+              {renderField('LinkedIn URL', 'linkedinUrl', 'url')}
+              <div className="md:col-span-2">
+                <label className="block text-sm font-medium text-gray-700 mb-1">Areas of Expertise</label>
+                {formData.areasOfExpertise?.map((area, idx) => (
+                  <div key={idx} className="flex items-center space-x-2 mb-2">
+                    <input
+                      type="text"
+                      value={area || ''}
+                      onChange={(e) => {
+                        const updated = [...(formData.areasOfExpertise || [])];
+                        updated[idx] = e.target.value;
+                        setFormData(prev => ({ ...prev, areasOfExpertise: updated }));
+                      }}
+                      disabled={!isEditing}
+                      className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${!isEditing ? 'bg-gray-100 cursor-not-allowed' : ''}`}
+                    />
+                    {isEditing && (
+                      <button type="button" onClick={() => setFormData(prev => ({ ...prev, areasOfExpertise: prev.areasOfExpertise.filter((_, i) => i !== idx) }))} className="bg-red-500 text-white px-2 py-1 rounded">Remove</button>
+                    )}
+                  </div>
+                ))}
+                {isEditing && (
+                  <button type="button" onClick={() => setFormData(prev => ({ ...prev, areasOfExpertise: [...(prev.areasOfExpertise || []), ''] }))} className="bg-green-500 text-white px-3 py-1 rounded">Add Expertise</button>
+                )}
+              </div>
+              <div className="md:col-span-2">
+                <label className="block text-sm font-medium text-gray-700 mb-1">Bio</label>
+                <textarea
+                  name="bio"
+                  value={formData.bio || ''}
+                  onChange={handleInputChange}
+                  disabled={!isEditing}
+                  className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${!isEditing ? 'bg-gray-100 cursor-not-allowed' : ''}`}
+                />
+              </div>
+              <div className="flex items-center space-x-4">
+                <label className="flex items-center space-x-2">
+                  <input type="checkbox" name="willingToMentor" checked={!!formData.willingToMentor} onChange={(e) => setFormData(prev => ({ ...prev, willingToMentor: e.target.checked }))} disabled={!isEditing} />
+                  <span>Willing to Mentor</span>
+                </label>
+              </div>
             </>
           )}
         </div>

@@ -56,7 +56,8 @@ export default function SignIn() {
           'admin': '/admin',
           'subadmin': '/subadmin',
           'student': '/student',
-          'faculty': '/faculty'
+          'faculty': '/faculty',
+          'alumni': '/alumni'
         };
         
         const redirectPath = dashboardRoutes[formData.role] || '/dashboard';
@@ -112,6 +113,7 @@ export default function SignIn() {
               >
                 <option value="student">Student</option>
                 <option value="faculty">Faculty</option>
+                <option value="alumni">Alumni</option>
                 <option value="subadmin">Sub Admin</option>
                 <option value="admin">Admin</option>
                 <option value="superadmin">Super Admin</option>

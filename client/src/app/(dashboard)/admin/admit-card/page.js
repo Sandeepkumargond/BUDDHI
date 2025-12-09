@@ -237,7 +237,16 @@ export default function AdminAdmitCardPublishPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           <div>
             <label className="block text-sm font-medium">Exam Type <span className="text-red-600">*</span></label>
-            <input className="w-full border rounded p-2" placeholder="End Semester Examination" value={examType} onChange={(e) => setExamType(e.target.value)} required />
+            <select
+              className="w-full border rounded p-2"
+              value={examType}
+              onChange={(e) => setExamType(e.target.value)}
+              required
+            >
+              <option value="">Select exam type…</option>
+              <option value="Mid Semester">Mid Semester</option>
+              <option value="End Semester">End Semester</option>
+            </select>
             {triedSubmit && !examType ? <div className="text-xs text-red-600 mt-1">Required</div> : null}
           </div>
           <div>

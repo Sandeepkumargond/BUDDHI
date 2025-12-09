@@ -5,7 +5,7 @@ import { useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 // React Icons imports for sidebar items
 import { MdDashboard, MdAppRegistration, MdPayment, MdAnnouncement, MdPendingActions, MdAssessment, MdFeedback } from "react-icons/md";
-import { FaIdCard, FaGraduationCap, FaClipboardCheck, FaCommentDots, FaBookOpen, FaMoneyBillWave, FaChalkboardTeacher, FaUserGraduate, FaUserShield, FaBuilding, FaUserPlus, FaUserEdit, FaUniversity, FaBed } from "react-icons/fa";
+import { FaIdCard, FaGraduationCap, FaClipboardCheck, FaCommentDots, FaBookOpen, FaMoneyBillWave, FaChalkboardTeacher, FaUserGraduate, FaUserShield, FaBuilding, FaUserPlus, FaUserEdit, FaUniversity, FaBed, FaUserTie, FaBriefcase, FaCalendarAlt } from "react-icons/fa";
 import { FiSettings } from "react-icons/fi";
 
 const menusByRole = {
@@ -37,6 +37,11 @@ const menusByRole = {
     { Icon: FaClipboardCheck, label: "Attendance", href: "/student/attendance" },
     { Icon: FaCommentDots, label: "Feedback", href: "/student/feedback" },
     { Icon: FaChalkboardTeacher, label: "Faculties", href: "/student/faculties" },
+    { Icon: FaBriefcase, label: "Opportunities", href: "/student/opportunities" },
+    { Icon: FaMoneyBillWave, label: "Scholarships", href: "/student/scholarships" },
+    { Icon: FaIdCard, label: "Bonafide", href: "/student/bonafide" },
+    { Icon: FaCalendarAlt, label: "Leave", href: "/student/leaves" },
+    { Icon: FaClipboardCheck, label: "PYQs", href: "/student/pyqs" },
   ],
 
   faculty: [
@@ -47,12 +52,14 @@ const menusByRole = {
     { Icon: MdAssessment, label: "Marks", href: "/faculty/marks" },
     { Icon: FaBookOpen, label: "Study Materials", href: "/faculty/study-material" },
     { Icon: MdAnnouncement, label: "Class Notices", href: "/faculty/class-notices" },
+    { Icon: FaCalendarAlt, label: "Leave", href: "/faculty/leaves" },
   ],
 
   admin: [
     { Icon: MdDashboard, label: "Dashboard", href: "/admin" },
     { Icon: FaChalkboardTeacher, label: "Faculty Management", href: "/admin/faculty" },
     { Icon: FaUserGraduate, label: "Students", href: "/admin_subadmin/students" },
+    { Icon: FaUserTie, label: "Alumni", href: "/admin/alumni" },
     { Icon: FaMoneyBillWave, label: "Finance", href: "/admin/finance" },
     { Icon: FaUserShield, label: "Sub Admins", href: "/admin/subadmins" },
     { Icon: FaBuilding, label: "Departments", href: "/admin/departments" },
@@ -112,14 +119,33 @@ const menusByRole = {
         { label: "Razorpay", href: "/admin/settings/razorpay" }
       ]
     },
+    { Icon: FaMoneyBillWave, label: "Scholarships", href: "/admin/scholarships" },
+    { Icon: FaIdCard, label: "Bonafide", href: "/admin/bonafide" },
+    { Icon: FaCalendarAlt, label: "Leave Management", href: "/admin/leaves" },
 
+  ],
+
+  alumni: [
+    { Icon: MdDashboard, label: "Dashboard", href: "/alumni" },
+    { Icon: FaBriefcase, label: "Internships", href: "/alumni/internships" },
+    { Icon: FaUserTie, label: "Referrals", href: "/alumni/referrals" },
+    { Icon: FaMoneyBillWave, label: "Donations", href: "/alumni/donations" },
+    { Icon: FaUserGraduate, label: "Profile", href: "/alumni/profile" },
   ],
 
   subadmin: [
     { Icon: MdDashboard, label: "Dashboard", href: "/subadmin" },
     { Icon: FaUserPlus, label: "Add Students", href: "/admin_subadmin/students/create" },
     { Icon: FaUserEdit, label: "View & Edit Students", href: "/admin_subadmin/students" },
-    
+    {
+      Icon: FaClipboardCheck,
+      label: "PYQ Management",
+      isDropdown: true,
+      subItems: [
+        { label: "Upload PYQ", href: "/subadmin/pyqs" },
+        { label: "Manage PYQs", href: "/subadmin/pyqs/manage" }
+      ]
+    },
   ],
 
   superadmin: [
