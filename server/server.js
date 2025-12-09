@@ -50,7 +50,13 @@ import pyqRoutes from "./routes/pyq.route.js";
 import idCardRoutes from "./routes/idCard.route.js";
 import idCardStudentRoutes from "./routes/idCardStudent.route.js";
 import libraryRoutes from "./routes/library.route.js";
+import messageRoutes from "./routes/message.route.js";
 import ApiError from "./utils/ApiError.js";
+import { createServer } from 'http';
+import { initializeSocket } from './socket.js';
+
+// Create HTTP server for Socket.io
+const httpServer = createServer(app);
 
 // route declarations
 app.use("/api/v1/health", healthCheckRoutes);
@@ -74,6 +80,7 @@ app.use("/api/v1/pyq", pyqRoutes);
 app.use("/api/v1/id-card", idCardRoutes);
 app.use("/api/v1/id-card-student", idCardStudentRoutes);
 app.use("/api/v1/library", libraryRoutes);
+app.use("/api/v1/messages", messageRoutes);
 
 // Centralized error handler to ensure JSON responses instead of default HTML
 app.use((err, req, res, next) => {
@@ -95,7 +102,10 @@ app.use((err, req, res, next) => {
 });
 
 connectDB().then(() => {
-    app.listen(PORT, () => {
+    // Initialize Socket.io
+    initializeSocket(httpServer);
+
+    httpServer.listen(PORT, () => {
         console.log(`Server is running on port ${PORT}`);
     });
 }).catch((error) => {

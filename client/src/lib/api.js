@@ -105,7 +105,7 @@ class ApiService {
         endpoint: error?.endpoint || endpoint,
         type: error?.constructor?.name || typeof error
       };
-      
+
       // Reduce noise for expected session expiry errors
       const isSessionError = message.includes('Session expired') || message.includes('Session invalid');
       if (!isSessionError) {
@@ -744,7 +744,7 @@ class ApiService {
   }
 
   // ========== Razorpay Payment Integration ==========
-  
+
   // Create Razorpay order
   async createRazorpayOrder(payload) {
     return this.request('/razorpay/order', {
@@ -1095,6 +1095,65 @@ class ApiService {
     return this.request(`/bonafide/admin/${bonafideId}/review`, {
       method: 'PATCH',
       body: { status, rejectionReason },
+    });
+  }
+
+  // ============ Messaging Methods ============
+
+  // Get user's conversations
+  async getConversations() {
+    return this.request('/messages/conversations', {
+      method: 'GET'
+    });
+  }
+
+  // Get messages in a conversation
+  async getConversationMessages(conversationId, page = 1, limit = 50) {
+    return this.request(`/messages/conversations/${conversationId}?page=${page}&limit=${limit}`, {
+      method: 'GET'
+    });
+  }
+
+  // Send a message
+  async sendMessage(receiverId, receiverModel, content, attachments = []) {
+    return this.request('/messages/send', {
+      method: 'POST',
+      body: { receiverId, receiverModel, content, attachments }
+    });
+  }
+
+  // Mark message as read
+  async markMessageAsRead(messageId) {
+    return this.request(`/messages/${messageId}/read`, {
+      method: 'PATCH'
+    });
+  }
+
+  // Mark all messages in conversation as read
+  async markConversationAsRead(conversationId) {
+    return this.request(`/messages/conversations/${conversationId}/read`, {
+      method: 'PATCH'
+    });
+  }
+
+  // Delete a message
+  async deleteMessage(messageId) {
+    return this.request(`/messages/${messageId}`, {
+      method: 'DELETE'
+    });
+  }
+
+  // Search users (alumni or students)
+  async searchUsers(role, query = '') {
+    return this.request(`/messages/search-users?role=${role}&query=${encodeURIComponent(query)}`, {
+      method: 'GET'
+    });
+  }
+
+  // Get unread message count
+  async getUnreadMessageCount() {
+    return this.request('/messages/unread-count', {
+      method: 'GET'
     });
   }
 }
