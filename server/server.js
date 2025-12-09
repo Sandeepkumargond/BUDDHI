@@ -17,8 +17,8 @@ const allowedOrigins = (process.env.CORS_ORIGIN || 'http://localhost:3000')
     .filter(Boolean);
 
 app.use(cors({
-        origin: allowedOrigins,
-        credentials: true,
+    origin: allowedOrigins,
+    credentials: true,
 }));
 
 app.use(express.json({ limit: "16kb" }));
@@ -49,6 +49,7 @@ import bonafideRoutes from "./routes/bonafide.route.js";
 import pyqRoutes from "./routes/pyq.route.js";
 import idCardRoutes from "./routes/idCard.route.js";
 import idCardStudentRoutes from "./routes/idCardStudent.route.js";
+import libraryRoutes from "./routes/library.route.js";
 import ApiError from "./utils/ApiError.js";
 
 // route declarations
@@ -72,6 +73,7 @@ app.use("/api/v1/bonafide", bonafideRoutes);
 app.use("/api/v1/pyq", pyqRoutes);
 app.use("/api/v1/id-card", idCardRoutes);
 app.use("/api/v1/id-card-student", idCardStudentRoutes);
+app.use("/api/v1/library", libraryRoutes);
 
 // Centralized error handler to ensure JSON responses instead of default HTML
 app.use((err, req, res, next) => {

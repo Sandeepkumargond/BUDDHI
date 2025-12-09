@@ -97,22 +97,42 @@ export const adminUpdateDepartment = asyncHandler(async (req, res) => {
 export const adminDeleteDepartment = asyncHandler(async (req, res) => {
   const { code } = req.params;
   
+  console.log('[adminDeleteDepartment] Attempting to delete department with code:', code);
+  
   if (!code) throw new ApiError(400, "Department code is required");
 
   const department = await Department.findOne({ code });
-  if (!department) throw new ApiError(404, "Department not found");
+  if (!department) {
+    console.log('[adminDeleteDepartment] Department not found with code:', code);
+    throw new ApiError(404, "Department not found");
+  }
+
+  console.log('[adminDeleteDepartment] Found department:', department);
 
   // Check if there are any faculty or students in this department
   const facultyCount = await Faculty.countDocuments({ department: code });
   const studentCount = await Student.countDocuments({ branch: code });
 
+  console.log('[adminDeleteDepartment] Faculty count:', facultyCount, 'Student count:', studentCount);
+
   if (facultyCount > 0 || studentCount > 0) {
     throw new ApiError(400, `Cannot delete department. It has ${facultyCount} faculty and ${studentCount} students.`);
   }
 
-  await Department.deleteOne({ code });
+  // Use findOneAndDelete for more reliable deletion
+  const deleted = await Department.findOneAndDelete({ code });
+  
+  console.log('[adminDeleteDepartment] Deleted result:', deleted);
+  
+  if (!deleted) {
+    throw new ApiError(500, "Failed to delete department");
+  }
+
+  // Verify deletion
+  const verification = await Department.findOne({ code });
+  console.log('[adminDeleteDepartment] Verification check (should be null):', verification);
 
   return res.status(200).json(
-    new ApiResponse(200, {}, "Department deleted successfully")
+    new ApiResponse(200, { deletedDepartment: deleted }, "Department deleted successfully")
   );
 });
