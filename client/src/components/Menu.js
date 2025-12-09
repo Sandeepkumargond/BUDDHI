@@ -41,6 +41,7 @@ const menusByRole = {
     { Icon: FaMoneyBillWave, label: "Scholarships", href: "/student/scholarships" },
     { Icon: FaIdCard, label: "Bonafide", href: "/student/bonafide" },
     { Icon: FaCalendarAlt, label: "Leave", href: "/student/leaves" },
+    { Icon: FaClipboardCheck, label: "PYQs", href: "/student/pyqs" },
   ],
 
   faculty: [
@@ -136,7 +137,15 @@ const menusByRole = {
     { Icon: MdDashboard, label: "Dashboard", href: "/subadmin" },
     { Icon: FaUserPlus, label: "Add Students", href: "/admin_subadmin/students/create" },
     { Icon: FaUserEdit, label: "View & Edit Students", href: "/admin_subadmin/students" },
-    
+    {
+      Icon: FaClipboardCheck,
+      label: "PYQ Management",
+      isDropdown: true,
+      subItems: [
+        { label: "Upload PYQ", href: "/subadmin/pyqs" },
+        { label: "Manage PYQs", href: "/subadmin/pyqs/manage" }
+      ]
+    },
   ],
 
   superadmin: [
