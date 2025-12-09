@@ -4,6 +4,7 @@ import { authenticateFaculty } from "../middlewares/faculty.middleware.js";
 import { upload } from "../middlewares/multer.middleware.js";
 import { saveAttendance, listMyAttendance, getAttendanceById, getStudentsForAttendance, getMyAssignedCourses, deleteAttendance, getCourseStudents } from "../controllers/attendance.controller.js";
 import { getMonthlyAttendance, updateActiveDays, updateStudentAttendance, bulkUpdateAttendance, finalizeAttendance, unfinalizeAttendance, getMyMonthlyAttendances, deleteMonthlyAttendance, syncStudents } from "../controllers/monthlyAttendance.controller.js";
+import { getStudentRiskAnalytics } from "../controllers/analytics.controller.js";
 
 const router = Router();
 
@@ -131,6 +132,12 @@ router.route('/monthly-attendance/sync-students').patch(
 router.route('/monthly-attendance/:attendanceId').delete(
     authenticateFaculty,
     deleteMonthlyAttendance
+);
+
+// Analytics
+router.route('/analytics/risk-trends').get(
+    authenticateFaculty,
+    getStudentRiskAnalytics
 );
 
 // Parametric route MUST come last to avoid catching specific route names

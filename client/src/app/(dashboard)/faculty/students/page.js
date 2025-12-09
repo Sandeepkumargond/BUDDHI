@@ -33,7 +33,7 @@ function FacultyStudentsPage() {
   const [loading, setLoading] = useState(false);
   const [selectedClass, setSelectedClass] = useState(null);
   const [studentsLoaded, setStudentsLoaded] = useState(false);
-  
+
   // BUDDHI Status stats
   const [statusStats, setStatusStats] = useState({
     atRisk: 0,
@@ -51,49 +51,76 @@ function FacultyStudentsPage() {
   useEffect(() => {
     async function fetchInitialData() {
       try {
-        // Fetch assigned courses using the same method as attendance
-        const response = await apiService.facultyListMyCourses();
-        const courses = response?.data?.courses || [];
+        setLoading(true);
+        // 1. Fetch Assigned Courses
+        const coursesRes = await apiService.facultyListMyCourses();
+        const courses = coursesRes?.data?.courses || [];
         setAssignedClasses(courses);
 
-        // Fetch all students across all courses for overall stats
+        // 2. Fetch ML Risk Analytics (Batch)
+        let riskMap = {};
+        try {
+          const riskRes = await apiService.getStudentRiskAnalytics();
+          const riskData = riskRes?.data || [];
+          riskData.forEach(r => {
+            riskMap[r.enrollmentNo] = r.risk_level;
+          });
+          console.log("ML Risk Data Loaded:", Object.keys(riskMap).length);
+        } catch (e) {
+          console.error("ML Analytics Failed:", e);
+        }
+
+        // Helper to map Risk to Score
+        const getScoreFromRisk = (risk) => {
+          if (!risk) return 75; // Default Normal
+          if (risk === 'critical') return 30; // < 40
+          if (risk === 'on_the_verge_of_drop') return 50; // 40-60
+          if (risk === 'moderate_risk') return 55; // 40-60
+          return 85; // > 60
+        };
+
+        // 3. Fetch All Students & Merge Risk
         let allStudentsList = [];
         for (const course of courses) {
           try {
             const studentsRes = await apiService.facultyGetCourseStudents(
               course.course._id,
-              {
-                semester: course.semester,
-                section: course.section || '',
-                batch: course.batch || ''
-              }
+              { semester: course.semester, section: course.section || '', batch: course.batch || '' }
             );
             const courseStudents = studentsRes?.data?.students || [];
-            allStudentsList = [...allStudentsList, ...courseStudents];
+
+            // Enrich with Risk Score
+            const enrichedStudents = courseStudents.map(s => ({
+              ...s,
+              buddhiScore: getScoreFromRisk(riskMap[s.enrollmentNo] || 'no_risk'),
+              riskLevel: riskMap[s.enrollmentNo] || 'no_risk'
+            }));
+
+            allStudentsList = [...allStudentsList, ...enrichedStudents];
           } catch (err) {
             console.error(`Failed to fetch students for course ${course.course.code}:`, err);
           }
         }
-        
-        // Remove duplicates based on student _id
+
+        // Remove duplicates
         const uniqueStudents = Array.from(
           new Map(allStudentsList.map(s => [s._id, s])).values()
         );
-        
-        // Calculate overall BUDDHI status distribution
-        const atRisk = uniqueStudents.filter(s => (s.buddhiScore || 50) < 40).length;
-        const onTheVerge = uniqueStudents.filter(s => {
-          const score = s.buddhiScore || 50;
-          return score >= 40 && score < 60;
-        }).length;
-        const normal = uniqueStudents.filter(s => (s.buddhiScore || 50) >= 60).length;
-        
+
+        setStudents(uniqueStudents); // Initialize main list with all students temporarily or just for stats
+
+        // Calculate Stats
+        const atRisk = uniqueStudents.filter(s => s.buddhiScore < 40).length;
+        const onTheVerge = uniqueStudents.filter(s => s.buddhiScore >= 40 && s.buddhiScore < 60).length;
+        const normal = uniqueStudents.filter(s => s.buddhiScore >= 60).length;
+
         setStatusStats({ atRisk, onTheVerge, normal });
       } catch (error) {
         console.error("Fetch data error:", error);
-        showToast.error("Failed to load assigned courses");
+        showToast.error("Failed to load dashboard data");
       } finally {
         setClassesLoading(false);
+        setLoading(false);
       }
     }
 
@@ -106,7 +133,7 @@ function FacultyStudentsPage() {
   const loadStudentsForClass = async (courseData) => {
     setLoading(true);
     setSelectedClass(courseData);
-    
+
     try {
       // Fetch students for the selected course using the same API as attendance
       const response = await apiService.facultyGetCourseStudents(
@@ -118,16 +145,40 @@ function FacultyStudentsPage() {
         }
       );
       const studentList = response?.data?.students || [];
-      setStudents(studentList);
+
+      // Fetch ML Risk Data and enrich students
+      let riskMap = {};
+      try {
+        const riskRes = await apiService.getStudentRiskAnalytics();
+        const riskData = riskRes?.data || [];
+        riskData.forEach(r => {
+          riskMap[r.enrollmentNo] = r.risk_level;
+        });
+      } catch (e) {
+        console.error("ML Analytics Failed for class:", e);
+      }
+
+      const getScoreFromRisk = (risk) => {
+        if (!risk) return 75;
+        if (risk === 'critical') return 30;
+        if (risk === 'on_the_verge_of_drop') return 50;
+        if (risk === 'moderate_risk') return 55;
+        return 85;
+      };
+
+      const enrichedStudents = studentList.map(s => ({
+        ...s,
+        buddhiScore: getScoreFromRisk(riskMap[s.enrollmentNo] || 'no_risk'),
+        riskLevel: riskMap[s.enrollmentNo] || 'no_risk'
+      }));
+
+      setStudents(enrichedStudents);
 
       // Calculate BUDDHI status distribution for this class
-      const atRisk = studentList.filter(s => (s.buddhiScore || 50) < 40).length;
-      const onTheVerge = studentList.filter(s => {
-        const score = s.buddhiScore || 50;
-        return score >= 40 && score < 60;
-      }).length;
-      const normal = studentList.filter(s => (s.buddhiScore || 50) >= 60).length;
-      
+      const atRisk = enrichedStudents.filter(s => s.buddhiScore < 40).length;
+      const onTheVerge = enrichedStudents.filter(s => s.buddhiScore >= 40 && s.buddhiScore < 60).length;
+      const normal = enrichedStudents.filter(s => s.buddhiScore >= 60).length;
+
       setStatusStats({ atRisk, onTheVerge, normal });
       setStudentsLoaded(true);
     } catch (error) {
@@ -156,17 +207,17 @@ function FacultyStudentsPage() {
   ----------------------------- */
   const filtered = useMemo(() => {
     return students.filter((s) => {
-        if (!searchTerm) return true;
-        const term = searchTerm.toLowerCase();
-        return (
-          s.firstName.toLowerCase().includes(term) ||
-          s.lastName.toLowerCase().includes(term) ||
-          s.email.toLowerCase().includes(term) ||
-          s.enrollmentNo.toLowerCase().includes(term) ||
-          s.rollNo.toLowerCase().includes(term) ||
-          s.mobile.includes(term)
-        );
-      });
+      if (!searchTerm) return true;
+      const term = searchTerm.toLowerCase();
+      return (
+        s.firstName.toLowerCase().includes(term) ||
+        s.lastName.toLowerCase().includes(term) ||
+        s.email.toLowerCase().includes(term) ||
+        s.enrollmentNo.toLowerCase().includes(term) ||
+        s.rollNo.toLowerCase().includes(term) ||
+        s.mobile.includes(term)
+      );
+    });
   }, [students, searchTerm]);
 
   /* ----------------------------
@@ -218,7 +269,7 @@ function FacultyStudentsPage() {
     return (
       <tr key={item._id} className="border-b border-gray-200 even:bg-slate-50 text-sm hover:bg-gray-50">
         <td className="p-3 text-center">{index + 1}</td>
-        
+
         <td className="p-3">
           <div>
             <h3 className="font-semibold text-gray-900">
@@ -229,7 +280,7 @@ function FacultyStudentsPage() {
         </td>
 
         <td className="hidden md:table-cell p-3 font-medium">{item.rollNo}</td>
-        
+
         <td className="hidden lg:table-cell p-3">
           <div className="text-xs">
             <div className="font-medium text-gray-900">{item.branch}</div>
@@ -241,9 +292,8 @@ function FacultyStudentsPage() {
           <div className="flex items-center gap-2">
             <div className="flex-1 bg-gray-200 rounded-full h-2">
               <div
-                className={`h-2 rounded-full ${
-                  attendance >= 75 ? 'bg-green-500' : attendance >= 60 ? 'bg-yellow-500' : 'bg-red-500'
-                }`}
+                className={`h-2 rounded-full ${attendance >= 75 ? 'bg-green-500' : attendance >= 60 ? 'bg-yellow-500' : 'bg-red-500'
+                  }`}
                 style={{ width: `${attendance}%` }}
               />
             </div>
@@ -290,7 +340,7 @@ function FacultyStudentsPage() {
                   <Image src="/moreDark.png" alt="" width={20} height={20} />
                 </button>
               </div>
-              
+
               <div className="grid grid-cols-3 gap-4 mb-6">
                 {/* At-Risk */}
                 <DonutProgress
@@ -327,7 +377,14 @@ function FacultyStudentsPage() {
                 </button>
               </div>
               <div className="h-64">
-                <BuddhiTrendChart />
+                <BuddhiTrendChart
+                  data={[{
+                    month: 'Current',
+                    atRisk: statusStats.atRisk,
+                    onTheVerge: statusStats.onTheVerge,
+                    normal: statusStats.normal
+                  }]}
+                />
               </div>
             </div>
           </div>
@@ -389,7 +446,7 @@ function FacultyStudentsPage() {
                   <Image src="/moreDark.png" alt="" width={20} height={20} />
                 </button>
               </div>
-              
+
               <div className="grid grid-cols-3 gap-4 mb-6">
                 {/* At-Risk */}
                 <DonutProgress
@@ -426,7 +483,14 @@ function FacultyStudentsPage() {
                 </button>
               </div>
               <div className="h-64">
-                <BuddhiTrendChart />
+                <BuddhiTrendChart
+                  data={[{
+                    month: 'Current',
+                    atRisk: statusStats.atRisk,
+                    onTheVerge: statusStats.onTheVerge,
+                    normal: statusStats.normal
+                  }]}
+                />
               </div>
             </div>
           </div>
