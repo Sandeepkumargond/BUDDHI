@@ -379,7 +379,7 @@ const Homepage = () => {
       <div className='container mx-auto px-6 md:px-12 lg:px-20'>
         <div className="text-center mb-16">
           <h2 className="text-4xl md:text-5xl font-bold text-gray-900 tracking-tight">
-            Our <span style={{ color: 'var(--primary)' }}>Services</span>
+            Our Services 
           </h2>
           <p className="mx-auto mt-4 max-w-3xl text-lg text-gray-600">
             Comprehensive solutions designed to streamline your institution's operations
