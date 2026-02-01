@@ -39,28 +39,6 @@ const NoticeBoard = () => {
     }
   };
 
-  const getPriorityColor = (priority) => {
-    switch (priority) {
-      case 'urgent': return 'bg-red-100 border-l-red-500';
-      case 'high': return 'bg-orange-100 border-l-orange-500';
-      case 'normal': return 'bg-blue-100 border-l-blue-500';
-      case 'low': return 'bg-green-100 border-l-green-500';
-      default: return 'bg-gray-100 border-l-gray-500';
-    }
-  };
-
-  const getCategoryIcon = (category) => {
-    switch (category) {
-      case 'academic': return '📚';
-      case 'examination': return '📝';
-      case 'event': return '🎉';
-      case 'holiday': return '🏖️';
-      case 'urgent': return '🚨';
-      case 'admission': return '🎓';
-      default: return '📢';
-    }
-  };
-
   const formatDate = (dateString) => {
     const date = new Date(dateString);
     return date.toLocaleDateString('en-US', {
@@ -70,7 +48,7 @@ const NoticeBoard = () => {
     });
   };
 
-  const truncateText = (text, maxLength = 80) => {
+  const truncateText = (text, maxLength = 100) => {
     if (text.length <= maxLength) return text;
     return text.substr(0, maxLength) + '...';
   };
@@ -91,8 +69,7 @@ const NoticeBoard = () => {
   return (
     <div className="bg-white p-4 rounded-md border shadow-sm">
       <div className="flex items-center justify-between mb-4">
-        <h1 className="text-xl font-semibold text-gray-900 flex items-center gap-2">
-          <span>📋</span>
+        <h1 className="text-xl font-semibold text-gray-900">
           Notice Board
         </h1>
         <Link 
@@ -107,13 +84,13 @@ const NoticeBoard = () => {
         <div className="space-y-3">
           {[...Array(3)].map((_, index) => (
             <div key={index} className="animate-pulse">
-              <div className="bg-gray-200 rounded-md p-4 border-l-4 border-l-gray-300">
+              <div className="bg-gray-100 rounded-lg p-4">
                 <div className="flex items-center justify-between mb-2">
-                  <div className="h-4 bg-gray-300 rounded w-3/4"></div>
-                  <div className="h-3 bg-gray-300 rounded w-16"></div>
+                  <div className="h-4 bg-gray-200 rounded w-3/4"></div>
+                  <div className="h-3 bg-gray-200 rounded w-16"></div>
                 </div>
-                <div className="h-3 bg-gray-300 rounded w-full mb-1"></div>
-                <div className="h-3 bg-gray-300 rounded w-2/3"></div>
+                <div className="h-3 bg-gray-200 rounded w-full mb-1"></div>
+                <div className="h-3 bg-gray-200 rounded w-2/3"></div>
               </div>
             </div>
           ))}
@@ -134,84 +111,38 @@ const NoticeBoard = () => {
           </Link>
         </div>
       ) : (
-        <div className="space-y-3 max-h-96 overflow-y-auto">
-          {notices.map((notice, index) => (
+        <div className="space-y-3">
+          {notices.map((notice) => (
             <div
               key={notice._id}
-              className={`${getPriorityColor(notice.priority)} rounded-md p-4 border-l-4 hover:shadow-sm transition-shadow cursor-pointer relative`}
+              className="bg-gray-50 rounded-lg p-4 border hover:shadow-md transition-shadow"
             >
-              {notice.isPinned && (
-                <div className="absolute top-2 right-2">
-                  <span className="text-purple-600 text-sm" title="Pinned">📌</span>
-                </div>
-              )}
-              
               <div className="flex items-start justify-between mb-2">
-                <div className="flex items-center gap-2 flex-1 pr-6">
-                  <span className="text-sm">{getCategoryIcon(notice.category)}</span>
-                  <h2 className="font-medium text-gray-900 text-sm line-clamp-1">
-                    {notice.title}
-                  </h2>
-                  {notice.priority === 'urgent' && (
-                    <span className="bg-red-600 text-white text-xs px-1.5 py-0.5 rounded font-medium">
-                      URGENT
-                    </span>
-                  )}
-                </div>
-                <span className="text-xs text-gray-500 bg-white rounded px-2 py-1 whitespace-nowrap">
+                <h3 className="font-medium text-gray-900 text-sm flex-1 pr-4">
+                  {notice.title}
+                </h3>
+                <span className="text-xs text-gray-500 whitespace-nowrap">
                   {formatDate(notice.publishDate)}
                 </span>
               </div>
               
-              <p className="text-sm text-gray-600 mb-2 leading-relaxed">
+              <p className="text-sm text-gray-600 mb-3 leading-relaxed">
                 {truncateText(notice.content)}
               </p>
               
-              <div className="flex items-center justify-between text-xs text-gray-500">
-                <div className="flex items-center gap-3">
-                  <span className="flex items-center gap-1">
-                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                    </svg>
-                    {notice.viewCount || 0}
-                  </span>
-                  <span>For: {notice.audience}</span>
-                  {notice.attachmentUrl && (
-                    <span className="flex items-center gap-1">
-                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
-                      </svg>
-                      Attachment
-                    </span>
-                  )}
-                </div>
+              <div className="flex items-center justify-between">
+                <span className="text-xs text-gray-500">
+                  For: {notice.audience}
+                </span>
                 <Link
                   href={`/admin/notices/${notice._id}`}
-                  className="text-blue-600 hover:text-blue-800 font-medium"
+                  className="text-blue-600 hover:text-blue-800 text-sm font-medium"
                 >
                   Read more →
                 </Link>
               </div>
             </div>
           ))}
-        </div>
-      )}
-
-      {/* Running notices ticker for urgent notices */}
-      {notices.some(notice => notice.priority === 'urgent') && (
-        <div className="mt-4 bg-red-50 border border-red-200 rounded-md p-2">
-          <div className="flex items-center gap-2">
-            <span className="text-red-600 font-medium text-xs">URGENT:</span>
-            <div className="flex-1 overflow-hidden">
-              <div className="animate-marquee whitespace-nowrap text-red-700 text-xs">
-                {notices
-                  .filter(notice => notice.priority === 'urgent')
-                  .map(notice => notice.title)
-                  .join(' • ')}
-              </div>
-            </div>
-          </div>
         </div>
       )}
     </div>
