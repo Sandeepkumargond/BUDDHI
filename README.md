@@ -362,11 +362,7 @@ python app.py
 * Blockchain-based academic certificates
 * Voice-enabled system navigation
 
----
 
-## License
-
-ISC License
 
 ---
 
